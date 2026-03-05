@@ -6,6 +6,10 @@ class Settings(BaseSettings):
     database_url: str
     openai_api_key: str
 
+    @property
+    def async_database_url(self) -> str:
+        return self.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
     class Config:
         env_file = ".env"
 
