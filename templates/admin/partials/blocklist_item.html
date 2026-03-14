@@ -1,0 +1,11 @@
+<li class="chip">
+  <span>{{ term }}</span>
+  <button type="button" class="chip-remove"
+    hx-delete="/admin/blocklist/remove"
+    hx-vals='{"term": "{{ term }}"}'
+    hx-target="closest li"
+    hx-swap="outerHTML"
+    aria-label="Remove {{ term }}">
+    &times;
+  </button>
+</li>

@@ -8,3 +8,6 @@ pydantic
 pydantic-settings
 httpx
 alembic
+jinja2
+python-multipart
+itsdangerous

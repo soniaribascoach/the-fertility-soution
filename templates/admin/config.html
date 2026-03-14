@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if saved %}
+<div class="success-banner" id="saved-toast">
+  Settings saved successfully.
+</div>
+{% endif %}
+
+<div class="page-header">
+  <h1>Settings</h1>
+  <p>Configure AI behavior, scoring, and messaging for your lead funnel.</p>
+</div>
+
+<form method="post" action="/admin/config/save">
+
+  <section class="config-section">
+    <div class="section-header">
+      <div class="section-icon">🔗</div>
+      <h2>Booking Link</h2>
+    </div>
+    <p class="hint">The URL sent to qualified leads to book a consultation.</p>
+    <input type="url" name="booking_link" value="{{ cfg.booking_link or '' }}" placeholder="https://calendly.com/your-link">
+  </section>
+
+  <section class="config-section">
+    <div class="section-header">
+      <div class="section-icon">🎯</div>
+      <h2>Score Threshold</h2>
+    </div>
+    <p class="hint">Minimum lead score (0–100) required to receive the booking link.</p>
+    <input type="number" name="score_threshold" value="{{ cfg.score_threshold or '' }}" min="0" max="100" placeholder="70" style="max-width: 140px;">
+  </section>
+
+  <section class="config-section">
+    <div class="section-header">
+      <div class="section-icon">🤖</div>
+      <h2>System Prompt</h2>
+    </div>
+    <p class="hint">The AI persona and instructions used when responding to leads.</p>
+    <textarea name="system_prompt" rows="10">{{ cfg.system_prompt or '' }}</textarea>
+  </section>
+
+  <section class="config-section">
+    <div class="section-header">
+      <div class="section-icon">🚫</div>
+      <h2>Hard No's</h2>
+    </div>
+    <p class="hint">One topic per line. If a lead mentions any of these, stop engaging immediately.</p>
+    <textarea name="hard_nos" rows="6">{{ cfg.hard_nos or '' }}</textarea>
+  </section>
+
+  <section class="config-section">
+    <div class="section-header">
+      <div class="section-icon">🧬</div>
+      <h2>Medical Blocklist</h2>
+    </div>
+    <p class="hint">One term per line. Leads asking about these medical topics will not receive the booking link.</p>
+    <textarea name="medical_blocklist" rows="6" id="medical_blocklist_textarea">{{ cfg.medical_blocklist or '' }}</textarea>
+
+    <hr class="section-divider">
+
+    <p class="hint" style="margin-bottom: 8px;">Quick add / remove chips:</p>
+    <ul class="chip-list" id="blocklist-chips">
+      {% for term in blocklist_items %}
+        {% include "admin/partials/blocklist_item.html" %}
+      {% endfor %}
+    </ul>
+
+    <div class="add-term-row">
+      <input type="text" id="new-term" name="term" placeholder="Type a term and click Add…">
+      <button type="button" class="btn-add"
+        hx-post="/admin/blocklist/add"
+        hx-include="#new-term"
+        hx-target="#blocklist-chips"
+        hx-swap="beforeend"
+        hx-on::after-request="document.getElementById('new-term').value = ''">
+        + Add
+      </button>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button type="submit" class="btn-primary">Save All Settings</button>
+  </div>
+
+</form>
+
+{% if saved %}
+<script>
+  setTimeout(() => {
+    const toast = document.getElementById('saved-toast');
+    if (toast) { toast.style.transition = 'opacity 0.4s'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }
+  }, 3500);
+</script>
+{% endif %}
+
+{% endblock %}

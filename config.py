@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     environment: str = "development"
     database_url: str
     openai_api_key: str
+    admin_password: str = "changeme"
+    secret_key: str = "changeme-set-a-real-secret-key"
 
     @property
     def async_database_url(self) -> str:

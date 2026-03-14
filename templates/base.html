@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Fertility Solution</title>
+  <link rel="stylesheet" href="/static/admin.css">
+  <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5ViYgSibmK" crossorigin="anonymous"></script>
+</head>
+<body>
+  <nav class="admin-nav">
+    <span class="nav-brand">Fertility Admin</span>
+    <div class="nav-links">
+      <a href="/admin/config">Settings</a>
+      <a href="/admin/logout">Sign out</a>
+    </div>
+  </nav>
+  <main class="admin-main">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
