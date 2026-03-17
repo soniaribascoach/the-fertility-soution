@@ -1,21 +1,40 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.serializers.webhook import ManychatContactPayload
 from app.repositories.event import create_event
 from app.repositories.config import get_all_config
+from app.services.webhook import handle_contact
+from app.services.manychat import ManyChatService
 
 router = APIRouter()
 
 
 @router.post("/contact")
-async def manychat_contact(payload: ManychatContactPayload, db: AsyncSession = Depends(get_db)):
-    cfg = await get_all_config(db)
-    # cfg keys available: booking_link, score_threshold, system_prompt, hard_nos, medical_blocklist
+async def manychat_contact(
+    payload: ManychatContactPayload,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    await create_event(db, payload.model_dump())
 
-    event = await create_event(db, payload.model_dump())
-    ts = event.created_at.strftime("%Y-%m-%d %H:%M:%S UTC")
-    name = payload.name or f"{payload.first_name or ''} {payload.last_name or ''}".strip() or "Unknown"
-    username = f"@{payload.ig_username}" if payload.ig_username else payload.id
-    text = payload.last_input_text or ""
-    return {"reply": f"{name} ({username}) sent: '{text}' — logged at {ts}"}
+    cfg = await get_all_config(db)
+
+    openai_client = request.app.state.openai_client
+    mc_svc = request.app.state.mc_svc
+
+    user_id = str(payload.ig_id or payload.id)
+    user_message = payload.last_input_text or ""
+    first_name = payload.first_name
+
+    reply = await handle_contact(
+        instagram_user_id=user_id,
+        user_message=user_message,
+        first_name=first_name,
+        db=db,
+        cfg=cfg,
+        openai_client=openai_client,
+        mc_svc=mc_svc,
+    )
+
+    return {"status": "ok", "reply": reply}

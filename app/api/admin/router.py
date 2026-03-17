@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -11,12 +13,18 @@ from app.api.admin.auth import (
     record_failed_attempt,
     reset_attempts,
 )
+from app.services.ai import (
+    generate_reply,
+    check_medical_blocklist,
+    compute_score,
+)
 from config import settings
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-CONFIG_KEYS = ["booking_link", "score_threshold", "system_prompt", "hard_nos", "medical_blocklist"]
+CONFIG_KEYS = ["booking_link", "score_threshold", "prompt_about", "prompt_services",
+               "prompt_tone", "medical_blocklist", "medical_deflection"]
 
 
 @router.get("/admin")
@@ -74,7 +82,6 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
         cfg.setdefault(key, "")
 
     blocklist_items = [t for t in cfg.get("medical_blocklist", "").split("\n") if t.strip()]
-    hard_nos_items = [t for t in cfg.get("hard_nos", "").split("\n") if t.strip()]
 
     return templates.TemplateResponse(
         "admin/config.html",
@@ -82,7 +89,6 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
             "request": request,
             "cfg": cfg,
             "blocklist_items": blocklist_items,
-            "hard_nos_items": hard_nos_items,
             "saved": saved == "true",
         },
     )
@@ -93,9 +99,11 @@ async def config_save(
     request: Request,
     booking_link: str = Form(""),
     score_threshold: str = Form(""),
-    system_prompt: str = Form(""),
-    hard_nos: str = Form(""),
+    prompt_about: str = Form(""),
+    prompt_services: str = Form(""),
+    prompt_tone: str = Form(""),
     medical_blocklist: str = Form(""),
+    medical_deflection: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     if not is_authenticated(request):
@@ -103,9 +111,11 @@ async def config_save(
 
     await set_config(db, "booking_link", booking_link)
     await set_config(db, "score_threshold", score_threshold)
-    await set_config(db, "system_prompt", system_prompt)
-    await set_config(db, "hard_nos", hard_nos)
+    await set_config(db, "prompt_about", prompt_about)
+    await set_config(db, "prompt_services", prompt_services)
+    await set_config(db, "prompt_tone", prompt_tone)
     await set_config(db, "medical_blocklist", medical_blocklist)
+    await set_config(db, "medical_deflection", medical_deflection)
 
     return RedirectResponse("/admin/config?saved=true", status_code=302)
 
@@ -128,7 +138,7 @@ async def blocklist_add(request: Request, term: str = Form(...), db: AsyncSessio
     )
 
 
-@router.delete("/admin/blocklist/remove")
+@router.post("/admin/blocklist/remove")
 async def blocklist_remove(request: Request, term: str = Form(...), db: AsyncSession = Depends(get_db)):
     if not is_authenticated(request):
         return RedirectResponse("/admin/login", status_code=302)
@@ -138,3 +148,137 @@ async def blocklist_remove(request: Request, term: str = Form(...), db: AsyncSes
     await set_config(db, "medical_blocklist", "\n".join(items))
 
     return HTMLResponse("", status_code=200)
+
+
+# ── Chat Preview ───────────────────────────────────────────────────────────────
+
+@router.get("/admin/test", response_class=HTMLResponse)
+async def test_get(request: Request):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    score = request.session.get("preview_score", 0)
+    return templates.TemplateResponse("admin/test.html", {"request": request, "score": score})
+
+
+@router.get("/admin/chat", response_class=HTMLResponse)
+async def chat_get(request: Request, db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    cfg = await get_all_config(db)
+    for key in CONFIG_KEYS:
+        cfg.setdefault(key, "")
+
+    score = request.session.get("preview_score", 50)
+    history = request.session.get("preview_history", [])
+
+    return templates.TemplateResponse(
+        "admin/chat.html",
+        {"request": request, "cfg": cfg, "score": score, "history": history},
+    )
+
+
+@router.post("/admin/chat/send", response_class=HTMLResponse)
+async def chat_send(
+    request: Request,
+    message: str = Form(...),
+    user_name: str = Form("Test User"),
+    db: AsyncSession = Depends(get_db),
+):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    cfg = await get_all_config(db)
+    for key in CONFIG_KEYS:
+        cfg.setdefault(key, "")
+
+    history_dicts = request.session.get("preview_history", [])
+    score = request.session.get("preview_score", 50)
+
+    # Wrap history dicts as objects with .role / .content for generate_reply
+    history_objs = [SimpleNamespace(**h) for h in history_dicts]
+
+    guardrail = None
+    tags = {}
+
+    # Check medical blocklist on incoming message
+    if check_medical_blocklist(message, cfg):
+        guardrail = "medical"
+        booking_link_injected = False
+        # Log user message; no reply sent, flagged for human review
+        history_dicts.append({"role": "user", "content": message})
+        request.session["preview_history"] = history_dicts
+        return templates.TemplateResponse(
+            "admin/partials/chat_message.html",
+            {
+                "request": request,
+                "user_message": message,
+                "ai_reply": "",
+                "tags": {},
+                "score": score,
+                "guardrail": guardrail,
+                "booking_link_injected": False,
+                "booking_url": "",
+            },
+        )
+    else:
+        reply, tags, booking_link_injected = await generate_reply(
+            message,
+            history_objs,
+            cfg,
+            user_name,
+            request.app.state.openai_client,
+        )
+
+    if tags:
+        score = compute_score(tags)
+
+    # Replicate webhook booking-link logic for the preview
+    booking_url = ""
+    if not booking_link_injected and not guardrail:
+        try:
+            threshold = int(cfg.get("score_threshold", "70"))
+        except (ValueError, TypeError):
+            threshold = 70
+        already_sent = request.session.get("preview_booking_sent", False)
+        if score >= threshold and not already_sent:
+            booking_url = cfg.get("booking_link", "")
+            booking_link_injected = True
+            request.session["preview_booking_sent"] = True
+
+    # Persist to session
+    history_dicts.append({"role": "user", "content": message})
+    history_dicts.append({"role": "assistant", "content": reply})
+    request.session["preview_history"] = history_dicts
+    request.session["preview_score"] = score
+    request.session["preview_tags"] = tags
+
+    return templates.TemplateResponse(
+        "admin/partials/chat_message.html",
+        {
+            "request": request,
+            "user_message": message,
+            "ai_reply": reply,
+            "tags": tags,
+            "score": score,
+            "guardrail": guardrail,
+            "booking_link_injected": booking_link_injected,
+            "booking_url": booking_url,
+        },
+    )
+
+
+@router.post("/admin/chat/reset", response_class=HTMLResponse)
+async def chat_reset(request: Request):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    request.session.pop("preview_history", None)
+    request.session.pop("preview_score", None)
+    request.session.pop("preview_tags", None)
+    request.session.pop("preview_booking_sent", None)
+
+    return HTMLResponse(
+        '<span id="score-badge" hx-swap-oob="true">Score: 0</span>',
+        status_code=200,
+    )

@@ -11,3 +11,9 @@ alembic
 jinja2
 python-multipart
 itsdangerous
+openai>=1.30.0
+arize-phoenix-otel>=0.6.0
+openinference-instrumentation-openai>=0.1.12
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-mock>=3.12.0

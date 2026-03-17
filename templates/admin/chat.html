@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="mb-4">
+  <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Chat Preview</h1>
+  <p class="mt-1 text-sm text-slate-500">Test AI responses using current config. Conversation is not saved to leads.</p>
+</div>
+
+<div class="flex items-center gap-3 mb-4">
+  <span id="score-badge" class="inline-block bg-violet-100 text-violet-600 text-xs font-bold px-3 py-1 rounded-full border border-violet-200">Score: {{ score }}</span>
+
+  <form method="post" action="/admin/chat/reset"
+        hx-post="/admin/chat/reset"
+        hx-target="#chat-messages"
+        hx-swap="innerHTML"
+        style="display:inline;">
+    <button type="submit" class="px-4 py-2 bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors">Reset</button>
+  </form>
+</div>
+
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col" style="height: calc(100vh - 280px); min-height: 400px;">
+  <div class="flex-1 overflow-y-auto p-5 flex flex-col gap-4" id="chat-messages">
+    {% for msg in history %}
+      {% if msg.role == "user" %}
+        <div class="self-end max-w-[72%] bg-violet-600 text-white rounded-xl rounded-br-sm px-4 py-2.5 text-sm leading-relaxed">
+          <span class="block text-[0.7rem] font-semibold uppercase tracking-wider mb-1 text-white/80">You</span>
+          <p>{{ msg.content }}</p>
+        </div>
+      {% elif msg.role == "assistant" %}
+        <div class="self-start max-w-[72%] bg-slate-50 border border-slate-200 rounded-xl rounded-bl-sm px-4 py-2.5 text-sm leading-relaxed">
+          <span class="block text-[0.7rem] font-semibold uppercase tracking-wider mb-1 text-slate-400">AI</span>
+          <p>{{ msg.content }}</p>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <form class="flex gap-2 p-3.5 border-t border-slate-200" id="chat-form"
+        hx-post="/admin/chat/send"
+        hx-target="#chat-messages"
+        hx-swap="beforeend"
+        hx-on::after-request="this.reset(); document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;">
+    <input type="text" name="message" id="chat-input" placeholder="Type a message…" autocomplete="off" required
+      class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all">
+    <button type="submit" id="send-btn"
+      class="inline-flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-500 text-white rounded-lg px-7 py-2.5 text-sm font-semibold shadow-md hover:-translate-y-px hover:shadow-lg active:translate-y-0 transition-all">
+      <svg id="send-spinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+      </svg>
+      <span id="send-label">✦ Send</span>
+    </button>
+  </form>
+</div>
+
+<script>
+  // Enter to send
+  document.getElementById('chat-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      document.getElementById('chat-form').requestSubmit();
+    }
+  });
+
+  // Send button loader
+  document.getElementById('chat-form').addEventListener('htmx:beforeRequest', function() {
+    document.getElementById('send-spinner').classList.remove('hidden');
+    document.getElementById('send-label').textContent = 'Sending…';
+    document.getElementById('send-btn').disabled = true;
+  });
+  document.getElementById('chat-form').addEventListener('htmx:afterRequest', function() {
+    document.getElementById('send-spinner').classList.add('hidden');
+    document.getElementById('send-label').textContent = '✦ Send';
+    document.getElementById('send-btn').disabled = false;
+  });
+
+  // Auto-scroll to bottom on new messages
+  document.body.addEventListener('htmx:afterSwap', function(e) {
+    if (e.detail.target.id === 'chat-messages') {
+      e.detail.target.scrollTop = e.detail.target.scrollHeight;
+    }
+  });
+</script>
+
+{% endblock %}

@@ -4,19 +4,54 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — Fertility Solution</title>
-  <link rel="stylesheet" href="/static/admin.css">
-  <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5ViYgSibmK" crossorigin="anonymous"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#7c3aed', light: '#ede9fe', dark: '#5b21b6', glow: 'rgba(124,58,237,0.15)' }
+          },
+          keyframes: {
+            chipIn:    { from: { opacity: '0', transform: 'scale(0.85)' }, to: { opacity: '1', transform: 'scale(1)' } },
+            slideDown: { from: { opacity: '0', transform: 'translateY(-8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+            fadeUp:    { from: { opacity: '0', transform: 'translateY(16px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+          },
+          animation: {
+            chipIn:    'chipIn 0.15s ease',
+            slideDown: 'slideDown 0.25s ease',
+            fadeUp:    'fadeUp 0.3s ease',
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
-<body>
-  <nav class="admin-nav">
-    <span class="nav-brand">Fertility Admin</span>
-    <div class="nav-links">
-      <a href="/admin/config">Settings</a>
-      <a href="/admin/logout">Sign out</a>
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+
+  <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-slate-200 flex items-center justify-between px-6 h-14 shadow-sm">
+    <span class="font-bold text-slate-900 flex items-center gap-2 text-[15px] tracking-tight">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0">
+        <rect width="26" height="26" rx="7" fill="#7c3aed"/>
+        <rect x="6" y="7" width="14" height="2" rx="1" fill="white" opacity="0.9"/>
+        <rect x="6" y="12" width="10" height="2" rx="1" fill="white" opacity="0.9"/>
+        <rect x="6" y="17" width="7" height="2" rx="1" fill="white" opacity="0.9"/>
+      </svg>
+      Admin Panel
+    </span>
+    <div class="flex items-center gap-0.5">
+      <a href="/admin/chat" class="text-slate-500 hover:bg-violet-50 hover:text-violet-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">Chat Preview</a>
+      <a href="/admin/test" class="text-slate-500 hover:bg-violet-50 hover:text-violet-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">Test Scripts</a>
+      <a href="/admin/config" class="text-slate-500 hover:bg-violet-50 hover:text-violet-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">Settings</a>
+      <a href="/admin/logout" class="text-slate-400 hover:bg-red-50 hover:text-red-500 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ml-2">Sign out</a>
     </div>
   </nav>
-  <main class="admin-main">
+
+  <main class="max-w-3xl mx-auto px-5 py-8 pb-16">
     {% block content %}{% endblock %}
   </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
 </body>
 </html>
