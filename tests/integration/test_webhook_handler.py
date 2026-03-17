@@ -5,11 +5,20 @@ from app.services.webhook import handle_contact
 from app.repositories import conversation as conv_repo
 
 
+VALID_TAG_LINE = "[TAGS: ttc=ttc_1-2yr | diagnosis=diagnosis_confirmed | urgency=urgency_high | readiness=readiness_ready | fit=fit_high]"
+CONSERVATIVE_TAG_LINE = "[TAGS: ttc=ttc_0-6mo | diagnosis=diagnosis_none | urgency=urgency_low | readiness=readiness_exploring | fit=fit_low]"
+# readiness_ready(40) + urgency_high(20) + fit_high(15) = 75 >= 70 threshold
+BOOKING_TAG_LINE = "[TAGS: ttc=ttc_0-6mo | diagnosis=diagnosis_none | urgency=urgency_high | readiness=readiness_ready | fit=fit_high]"
+
+
 @pytest.fixture
 def mc_svc():
     svc = MagicMock()
     svc.send_text_message = AsyncMock(return_value=True)
     svc.send_booking_link = AsyncMock(return_value=True)
+    svc.add_tag = AsyncMock(return_value=True)
+    svc.remove_tag = AsyncMock(return_value=True)
+    svc.update_contact_tags = AsyncMock(return_value=None)
     return svc
 
 
@@ -29,7 +38,7 @@ def make_openai_response(text: str):
 @pytest.mark.asyncio
 async def test_happy_path_sends_reply(async_db_session, mock_cfg, mc_svc, openai_client):
     openai_client.chat.completions.create.return_value = make_openai_response(
-        "I'm so glad you reached out!\n[SCORE:5]"
+        f"I'm so glad you reached out!\n{CONSERVATIVE_TAG_LINE}"
     )
 
     await handle_contact(
@@ -48,9 +57,9 @@ async def test_happy_path_sends_reply(async_db_session, mock_cfg, mc_svc, openai
 
 @pytest.mark.asyncio
 async def test_booking_link_sent_at_threshold(async_db_session, mock_cfg, mc_svc, openai_client):
-    # Score delta pushes over threshold of 70
+    # BOOKING_TAG_LINE produces score >= 70
     openai_client.chat.completions.create.return_value = make_openai_response(
-        "You are ready to book!\n[SCORE:70]"
+        f"You are ready to book!\n{BOOKING_TAG_LINE}"
     )
 
     await handle_contact(
@@ -70,7 +79,7 @@ async def test_booking_link_sent_at_threshold(async_db_session, mock_cfg, mc_svc
 @pytest.mark.asyncio
 async def test_booking_link_not_sent_twice(async_db_session, mock_cfg, mc_svc, openai_client):
     openai_client.chat.completions.create.return_value = make_openai_response(
-        "Great! Here's your link.\n[SCORE:70]"
+        f"Great! Here's your link.\n{BOOKING_TAG_LINE}"
     )
 
     # First contact — should send booking link
@@ -119,7 +128,7 @@ async def test_medical_blocklist_skips_ai(async_db_session, mock_cfg, mc_svc, op
 async def test_event_always_logged(async_db_session, mock_cfg, mc_svc, openai_client):
     """Conversation messages are always saved to DB (tested via repo directly)."""
     openai_client.chat.completions.create.return_value = make_openai_response(
-        "Here to help!\n[SCORE:3]"
+        f"Here to help!\n{CONSERVATIVE_TAG_LINE}"
     )
 
     await handle_contact(
@@ -139,13 +148,76 @@ async def test_event_always_logged(async_db_session, mock_cfg, mc_svc, openai_cl
 
 
 @pytest.mark.asyncio
-async def test_score_clamped_to_zero_minimum(async_db_session, mock_cfg, mc_svc, openai_client):
+async def test_tags_applied_to_manychat_on_each_turn(async_db_session, mock_cfg, mc_svc, openai_client):
     openai_client.chat.completions.create.return_value = make_openai_response(
-        "I hear you.\n[SCORE:-100]"
+        f"Happy to help!\n{VALID_TAG_LINE}"
     )
 
     await handle_contact(
-        instagram_user_id="user_006",
+        instagram_user_id="user_008",
+        user_message="I'm interested in next steps.",
+        first_name="Amy",
+        db=async_db_session,
+        cfg=mock_cfg,
+        openai_client=openai_client,
+        mc_svc=mc_svc,
+    )
+
+    mc_svc.update_contact_tags.assert_awaited_once()
+    call_args = mc_svc.update_contact_tags.call_args
+    assert call_args.args[0] == "user_008"  # subscriber_id
+    new_tags = call_args.args[2]
+    assert new_tags["readiness"] == "readiness_ready"
+
+
+@pytest.mark.asyncio
+async def test_old_tag_removed_when_dimension_changes(async_db_session, mock_cfg, mc_svc, openai_client):
+    """On second turn, if readiness changes, update_contact_tags is called with old and new tags."""
+    # First turn: exploring
+    openai_client.chat.completions.create.return_value = make_openai_response(
+        f"Great start!\n{CONSERVATIVE_TAG_LINE}"
+    )
+    await handle_contact(
+        instagram_user_id="user_009",
+        user_message="Just browsing.",
+        first_name="Beth",
+        db=async_db_session,
+        cfg=mock_cfg,
+        openai_client=openai_client,
+        mc_svc=mc_svc,
+    )
+
+    # Second turn: now readiness is ready
+    openai_client.chat.completions.create.return_value = make_openai_response(
+        f"Let's get you booked!\n{VALID_TAG_LINE}"
+    )
+    mc_svc.update_contact_tags.reset_mock()
+    await handle_contact(
+        instagram_user_id="user_009",
+        user_message="I want to book now!",
+        first_name="Beth",
+        db=async_db_session,
+        cfg=mock_cfg,
+        openai_client=openai_client,
+        mc_svc=mc_svc,
+    )
+
+    mc_svc.update_contact_tags.assert_awaited_once()
+    call_args = mc_svc.update_contact_tags.call_args
+    old_tags = call_args.args[1]
+    new_tags = call_args.args[2]
+    assert old_tags["readiness"] == "readiness_exploring"
+    assert new_tags["readiness"] == "readiness_ready"
+
+
+@pytest.mark.asyncio
+async def test_score_stored_in_db(async_db_session, mock_cfg, mc_svc, openai_client):
+    openai_client.chat.completions.create.return_value = make_openai_response(
+        f"I hear you.\n{CONSERVATIVE_TAG_LINE}"
+    )
+
+    await handle_contact(
+        instagram_user_id="user_010",
         user_message="I'm frustrated.",
         first_name="Jane",
         db=async_db_session,
@@ -154,18 +226,18 @@ async def test_score_clamped_to_zero_minimum(async_db_session, mock_cfg, mc_svc,
         mc_svc=mc_svc,
     )
 
-    score = await conv_repo.get_latest_score(async_db_session, "user_006")
-    assert score == 0
+    score = await conv_repo.get_latest_score(async_db_session, "user_010")
+    assert score == 0  # all conservative tags = 0
 
 
 @pytest.mark.asyncio
-async def test_score_clamped_to_100_maximum(async_db_session, mock_cfg, mc_svc, openai_client):
+async def test_tags_stored_in_db(async_db_session, mock_cfg, mc_svc, openai_client):
     openai_client.chat.completions.create.return_value = make_openai_response(
-        "Wonderful!\n[SCORE:200]"
+        f"Wonderful!\n{VALID_TAG_LINE}"
     )
 
     await handle_contact(
-        instagram_user_id="user_007",
+        instagram_user_id="user_011",
         user_message="I'm so excited!",
         first_name="Kate",
         db=async_db_session,
@@ -174,5 +246,6 @@ async def test_score_clamped_to_100_maximum(async_db_session, mock_cfg, mc_svc, 
         mc_svc=mc_svc,
     )
 
-    score = await conv_repo.get_latest_score(async_db_session, "user_007")
-    assert score == 100
+    tags = await conv_repo.get_latest_tags(async_db_session, "user_011")
+    assert tags["readiness"] == "readiness_ready"
+    assert tags["ttc"] == "ttc_1-2yr"

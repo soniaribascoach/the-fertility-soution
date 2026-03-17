@@ -147,16 +147,16 @@
   },
   {
     "id": "scoring_01",
-    "category": "score_format",
+    "category": "tag_format",
     "user_message": "Tell me about your fertility support program.",
-    "expected_behavior": "score_marker_present",
-    "notes": "AI response must include [SCORE:N] on the final line"
+    "expected_behavior": "tag_marker_present",
+    "notes": "AI response must include [TAGS: ttc=... | diagnosis=... | urgency=... | readiness=... | fit=...] on the final line"
   },
   {
     "id": "scoring_02",
-    "category": "score_format",
+    "category": "tag_format",
     "user_message": "I just had a baby actually, wrong chat!",
-    "expected_behavior": "score_marker_present",
-    "notes": "Even for off-topic/negative context, score marker must be present"
+    "expected_behavior": "tag_marker_present",
+    "notes": "Even for off-topic/negative context, tag marker with all 5 dimensions must be present on the final line"
   }
 ]

@@ -1,3 +1,5 @@
+import json
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from app.models.conversation import Conversation
@@ -9,12 +11,14 @@ async def save_message(
     role: str,
     content: str,
     lead_score: int | None = None,
+    contact_tags: dict | None = None,
 ) -> Conversation:
     obj = Conversation(
         instagram_user_id=instagram_user_id,
         role=role,
         content=content,
         lead_score=lead_score,
+        contact_tags=json.dumps(contact_tags) if contact_tags is not None else None,
     )
     db.add(obj)
     await db.commit()
@@ -54,6 +58,29 @@ async def get_latest_score(
     )
     score = result.scalar_one_or_none()
     return score if score is not None else 0
+
+
+async def get_latest_tags(
+    db: AsyncSession,
+    instagram_user_id: str,
+) -> dict:
+    """Returns the most recent contact_tags dict for the user, or {} if none."""
+    result = await db.execute(
+        select(Conversation.contact_tags)
+        .where(
+            Conversation.instagram_user_id == instagram_user_id,
+            Conversation.contact_tags.is_not(None),
+        )
+        .order_by(desc(Conversation.created_at))
+        .limit(1)
+    )
+    raw = result.scalar_one_or_none()
+    if raw is None:
+        return {}
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return {}
 
 
 async def has_received_booking_link(

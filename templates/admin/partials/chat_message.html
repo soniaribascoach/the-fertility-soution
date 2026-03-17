@@ -4,22 +4,49 @@
     <p>{{ user_message }}</p>
   </div>
 
+  {% if guardrail == "medical" %}
+  <div class="self-start max-w-[72%] bg-amber-50 border border-amber-300 rounded-xl rounded-bl-sm px-4 py-2.5 text-sm">
+    <span class="block text-[0.7rem] font-semibold uppercase tracking-wider mb-1 text-amber-600">
+      <span data-badge="guardrail">⚕ Medical query — flagged for human review</span>
+    </span>
+    <p class="text-amber-800 text-xs">No reply was sent. The contact has been tagged <strong>needs_human_review</strong> in ManyChat.</p>
+  </div>
+  {% else %}
   <div class="self-start max-w-[72%] bg-slate-50 border border-slate-200 rounded-xl rounded-bl-sm px-4 py-2.5 text-sm leading-relaxed">
     <span class="block text-[0.7rem] font-semibold uppercase tracking-wider mb-1 text-slate-400">AI
-      {% if guardrail == "medical" %}
-        <span class="bg-sky-100 text-sky-800 border border-sky-300 text-[0.68rem] font-semibold px-1.5 py-0.5 rounded-full ml-1.5 align-middle">⚕ Medical deflection</span>
-      {% endif %}
       {% if booking_link_injected %}
-        <span class="bg-green-100 text-green-800 border border-green-300 text-[0.68rem] font-semibold px-1.5 py-0.5 rounded-full ml-1.5 align-middle">🔗 Booking link sent</span>
+        <span data-badge="booking" class="bg-green-100 text-green-800 border border-green-300 text-[0.68rem] font-semibold px-1.5 py-0.5 rounded-full ml-1.5 align-middle">🔗 Booking link sent</span>
       {% endif %}
     </span>
     <p>{{ ai_reply }}</p>
-    {% if not guardrail %}
-      <span class="inline-block text-xs font-bold mt-2 px-2 py-0.5 rounded-full {% if delta > 0 %}bg-green-100 text-green-700{% elif delta < 0 %}bg-red-100 text-red-700{% else %}bg-slate-100 text-slate-500{% endif %}">
-        {{ '+' if delta > 0 else '' }}{{ delta }}
-      </span>
+    {% if tags %}
+      <div class="flex flex-wrap gap-1 mt-2">
+        {% for dim, val in tags.items() %}
+          {% if '_ready' in val or '_high' in val or '_confirmed' in val or '2yr+' in val or '1-2yr' in val %}
+            {% set chip_class = 'bg-green-100 text-green-800 border-green-300' %}
+          {% elif '_considering' in val or '_medium' in val or '_suspected' in val or '6-12mo' in val %}
+            {% set chip_class = 'bg-amber-100 text-amber-800 border-amber-300' %}
+          {% else %}
+            {% set chip_class = 'bg-slate-100 text-slate-600 border-slate-300' %}
+          {% endif %}
+          <span class="inline-block text-[0.65rem] font-medium px-1.5 py-0.5 rounded border {{ chip_class }}">{{ val }}</span>
+        {% endfor %}
+      </div>
     {% endif %}
   </div>
+  {% endif %}
+
+  {% if booking_link_injected %}
+  <div class="self-start max-w-[72%] bg-green-50 border border-green-200 rounded-xl rounded-bl-sm px-4 py-2.5 text-sm">
+    <span class="block text-[0.7rem] font-semibold uppercase tracking-wider mb-1 text-green-500">Booking link <span data-badge="booking" class="bg-green-100 text-green-800 border border-green-300 text-[0.68rem] font-semibold px-1.5 py-0.5 rounded-full ml-0.5 align-middle">🔗 Sent</span></span>
+    {% if booking_url %}
+      <a href="{{ booking_url }}" target="_blank" class="text-green-700 font-medium underline underline-offset-2 break-all">{{ booking_url }}</a>
+    {% else %}
+      <span class="text-slate-400 italic text-xs">No booking URL configured</span>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 
 <span id="score-badge" hx-swap-oob="true">Score: {{ score }}</span>
+<script type="application/json" id="turn-tags">{{ tags | tojson }}</script>

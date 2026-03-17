@@ -16,7 +16,7 @@ from app.api.admin.auth import (
 from app.services.ai import (
     generate_reply,
     check_medical_blocklist,
-    MEDICAL_DEFLECTION,
+    compute_score,
 )
 from config import settings
 
@@ -156,7 +156,7 @@ async def blocklist_remove(request: Request, term: str = Form(...), db: AsyncSes
 async def test_get(request: Request):
     if not is_authenticated(request):
         return RedirectResponse("/admin/login", status_code=302)
-    score = request.session.get("preview_score", 50)
+    score = request.session.get("preview_score", 0)
     return templates.TemplateResponse("admin/test.html", {"request": request, "score": score})
 
 
@@ -199,15 +199,30 @@ async def chat_send(
     history_objs = [SimpleNamespace(**h) for h in history_dicts]
 
     guardrail = None
+    tags = {}
 
     # Check medical blocklist on incoming message
     if check_medical_blocklist(message, cfg):
-        reply = cfg.get("medical_deflection") or MEDICAL_DEFLECTION
-        delta = 0
         guardrail = "medical"
         booking_link_injected = False
+        # Log user message; no reply sent, flagged for human review
+        history_dicts.append({"role": "user", "content": message})
+        request.session["preview_history"] = history_dicts
+        return templates.TemplateResponse(
+            "admin/partials/chat_message.html",
+            {
+                "request": request,
+                "user_message": message,
+                "ai_reply": "",
+                "tags": {},
+                "score": score,
+                "guardrail": guardrail,
+                "booking_link_injected": False,
+                "booking_url": "",
+            },
+        )
     else:
-        reply, delta, booking_link_injected = await generate_reply(
+        reply, tags, booking_link_injected = await generate_reply(
             message,
             history_objs,
             cfg,
@@ -215,13 +230,28 @@ async def chat_send(
             request.app.state.openai_client,
         )
 
-    score = max(0, min(100, score + delta))
+    if tags:
+        score = compute_score(tags)
+
+    # Replicate webhook booking-link logic for the preview
+    booking_url = ""
+    if not booking_link_injected and not guardrail:
+        try:
+            threshold = int(cfg.get("score_threshold", "70"))
+        except (ValueError, TypeError):
+            threshold = 70
+        already_sent = request.session.get("preview_booking_sent", False)
+        if score >= threshold and not already_sent:
+            booking_url = cfg.get("booking_link", "")
+            booking_link_injected = True
+            request.session["preview_booking_sent"] = True
 
     # Persist to session
     history_dicts.append({"role": "user", "content": message})
     history_dicts.append({"role": "assistant", "content": reply})
     request.session["preview_history"] = history_dicts
     request.session["preview_score"] = score
+    request.session["preview_tags"] = tags
 
     return templates.TemplateResponse(
         "admin/partials/chat_message.html",
@@ -229,10 +259,11 @@ async def chat_send(
             "request": request,
             "user_message": message,
             "ai_reply": reply,
-            "delta": delta,
+            "tags": tags,
             "score": score,
             "guardrail": guardrail,
             "booking_link_injected": booking_link_injected,
+            "booking_url": booking_url,
         },
     )
 
@@ -244,8 +275,10 @@ async def chat_reset(request: Request):
 
     request.session.pop("preview_history", None)
     request.session.pop("preview_score", None)
+    request.session.pop("preview_tags", None)
+    request.session.pop("preview_booking_sent", None)
 
     return HTMLResponse(
-        '<span id="score-badge" hx-swap-oob="true">Score: 50</span>',
+        '<span id="score-badge" hx-swap-oob="true">Score: 0</span>',
         status_code=200,
     )
