@@ -4,7 +4,9 @@
       "Bash(find /Users/kai/Work/the-fertility-soution -not -path '*/\\\\.venv/*' -not -path '*/__pycache__/*' -type f | grep -E '\\\\.\\(py|txt|toml|yaml|yml|env|json\\)$' | sort)",
       "Bash(tree -I '.venv|.idea|__pycache__|.git' -L 4 /Users/kai/Work/the-fertility-soution 2>/dev/null || find /Users/kai/Work/the-fertility-soution -not -path '*/\\\\.*' -not -path '*/__pycache__/*' -not -path '*/.venv/*' -not -path '*/.idea/*' | sort | sed 's|[^/]*/|  |g')",
       "Bash(.venv/bin/pip install:*)",
-      "Bash(.venv/bin/pytest tests/unit/ tests/integration/ -v 2>&1)"
+      "Bash(.venv/bin/pytest tests/unit/ tests/integration/ -v 2>&1)",
+      "Bash(python:*)",
+      "Bash(chmod:*)"
     ]
   }
 }

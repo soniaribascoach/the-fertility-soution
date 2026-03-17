@@ -34,10 +34,11 @@ async def handle_contact(
     """
     # 1. Medical blocklist — static deflection, no AI call
     if check_medical_blocklist(user_message, cfg):
+        deflection = cfg.get("medical_deflection") or MEDICAL_DEFLECTION
         await conv_repo.save_message(db, instagram_user_id, "user", user_message)
-        await conv_repo.save_message(db, instagram_user_id, "assistant", MEDICAL_DEFLECTION)
-        await mc_svc.send_text_message(instagram_user_id, MEDICAL_DEFLECTION)
-        return MEDICAL_DEFLECTION
+        await conv_repo.save_message(db, instagram_user_id, "assistant", deflection)
+        await mc_svc.send_text_message(instagram_user_id, deflection)
+        return deflection
 
     # 2. Load history + prior score
     history = await conv_repo.get_history(db, instagram_user_id)
@@ -47,7 +48,7 @@ async def handle_contact(
     await conv_repo.save_message(db, instagram_user_id, "user", user_message)
 
     # 4. Generate AI reply
-    clean_reply, delta = await generate_reply(
+    clean_reply, delta, _ = await generate_reply(
         user_message=user_message,
         history=history,
         cfg=cfg,

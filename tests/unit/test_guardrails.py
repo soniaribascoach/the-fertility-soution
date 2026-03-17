@@ -1,34 +1,5 @@
 import pytest
-from app.services.ai import check_hard_nos, check_medical_blocklist, MEDICAL_DEFLECTION
-
-
-# --- Hard No Tests ---
-
-def test_hard_no_case_insensitive(mock_cfg):
-    assert check_hard_nos("You should visit COMPETITOR for this.", mock_cfg) is True
-
-
-def test_hard_no_exact_word_match(mock_cfg):
-    assert check_hard_nos("Our competitor is not relevant here.", mock_cfg) is True
-
-
-def test_hard_no_partial_word_safe(mock_cfg):
-    # "competitors" should NOT trigger the "competitor" hard-no (word boundary)
-    assert check_hard_nos("We have many competitors in the market.", mock_cfg) is False
-
-
-def test_hard_no_no_match(mock_cfg):
-    assert check_hard_nos("I am so excited to start this journey!", mock_cfg) is False
-
-
-def test_hard_no_empty_config():
-    cfg = {"hard_nos": ""}
-    assert check_hard_nos("competitor", cfg) is False
-
-
-def test_hard_no_multiword_term():
-    cfg = {"hard_nos": "other clinic"}
-    assert check_hard_nos("I was thinking of going to the other clinic.", cfg) is True
+from app.services.ai import check_medical_blocklist, MEDICAL_DEFLECTION
 
 
 # --- Medical Blocklist Tests ---

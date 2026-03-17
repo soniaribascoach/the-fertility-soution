@@ -4,23 +4,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign In — Fertility Admin</title>
-  <link rel="stylesheet" href="/static/admin.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          keyframes: {
+            slideDown: { from: { opacity: '0', transform: 'translateY(-8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+            fadeUp:    { from: { opacity: '0', transform: 'translateY(16px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+          },
+          animation: {
+            slideDown: 'slideDown 0.25s ease',
+            fadeUp:    'fadeUp 0.3s ease',
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body class="login-page">
-  <div class="login-box">
-    <div class="login-logo"></div>
-    <h1>Welcome back</h1>
-    <p class="login-subtitle">Fertility Solution Admin Panel</p>
+<body class="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 flex items-center justify-center">
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl p-10 w-full max-w-sm animate-fadeUp">
+    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-lg mx-auto mb-5"></div>
+    <h1 class="text-xl font-bold text-slate-900 text-center tracking-tight mb-1">Welcome back</h1>
+    <p class="text-sm text-slate-500 text-center mb-7">Fertility Solution Admin Panel</p>
 
     {% if error %}
-    <div class="error-banner">{{ error }}</div>
+    <div class="flex items-center gap-2 bg-red-50 text-red-700 border border-red-200 rounded-lg px-4 py-3 mb-4 text-sm font-medium animate-slideDown">
+      <span>!</span> {{ error }}
+    </div>
     {% endif %}
 
     <form method="post" action="/admin/login">
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" autofocus required placeholder="Enter your password">
-      <button type="submit" class="btn-login">Sign In</button>
+      <label for="password" class="block text-[0.75rem] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
+      <input type="password" id="password" name="password" autofocus required placeholder="Enter your password"
+        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all mb-4">
+      <button type="submit"
+        class="w-full py-3 bg-gradient-to-r from-violet-600 to-purple-500 text-white rounded-lg text-sm font-semibold shadow-md hover:-translate-y-px hover:shadow-lg active:translate-y-0 transition-all">
+        Sign In
+      </button>
     </form>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
 </body>
 </html>

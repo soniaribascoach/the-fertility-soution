@@ -1,7 +1,13 @@
+import logging
 import re
+
 from openai import AsyncOpenAI
 
-SCORE_PATTERN = re.compile(r"\[SCORE:([+-]?\d+)\]")
+logger = logging.getLogger(__name__)
+
+# ── Constants ──────────────────────────────────────────────────────────────────
+
+SCORE_PATTERN = re.compile(r"\[SCORE:\s*([+-]?\d+)\]")
 
 MEDICAL_DEFLECTION = (
     "I really appreciate you sharing that with me. For anything related to medical advice, "
@@ -10,11 +16,17 @@ MEDICAL_DEFLECTION = (
     "emotionally and help you take the next step when you're ready. 💛"
 )
 
-HARD_NO_FALLBACK = (
-    "I want to make sure I'm giving you the best possible support. "
-    "Let's focus on how we can help you move forward on your fertility journey. "
-    "Is there something specific you'd like to explore?"
+PLAIN_TEXT_INSTRUCTIONS = (
+    "Always respond in plain text. "
+    "Do not use markdown formatting, bullet points, numbered lists, headers, bold, italics, or code blocks."
 )
+
+BOOKING_LINK_INSTRUCTIONS = (
+    "Never include a booking link or URL in your replies. "
+    "If the user asks for a booking link or to schedule a call, tell them warmly that someone from the team "
+    "will be in touch shortly to arrange a time — do not mention or insert any link."
+)
+
 
 SCORING_INSTRUCTIONS = """
 At the end of your reply, append a score delta on its own line in the format [SCORE:N] where N is an integer between -20 and +20. This line must be the very last thing in your response and must not appear anywhere else.
@@ -29,31 +41,31 @@ Do not explain the score. Do not use [SCORE:N] anywhere except the final line.
 """
 
 
+# ── System Prompt Builder ──────────────────────────────────────────────────────
+
 def build_system_prompt(cfg: dict) -> str:
     parts = []
 
-    base_prompt = cfg.get("system_prompt", "").strip()
-    if base_prompt:
-        parts.append(base_prompt)
+    about    = cfg.get("prompt_about", "").strip()
+    services = cfg.get("prompt_services", "").strip()
+    tone     = cfg.get("prompt_tone", "").strip()
+    if about or services or tone:
+        if about:    parts.append(f"## About the Business\n{about}")
+        if services: parts.append(f"## Service Offerings\n{services}")
+        if tone:     parts.append(f"## Conversation & Tone\n{tone}")
     else:
         parts.append(
             "You are a warm, empathetic fertility coaching assistant. "
             "You help people explore their fertility journey with compassion and clarity."
         )
 
-    hard_nos_raw = cfg.get("hard_nos", "").strip()
-    if hard_nos_raw:
-        hard_nos_list = [t.strip() for t in hard_nos_raw.splitlines() if t.strip()]
-        if hard_nos_list:
-            formatted = "\n".join(f"- {t}" for t in hard_nos_list)
-            parts.append(
-                f"IMPORTANT — Never discuss, reference, or respond to the following topics:\n{formatted}\n"
-                "If the user raises any of these topics, gently redirect the conversation."
-            )
-
+    parts.append(PLAIN_TEXT_INSTRUCTIONS)
+    parts.append(BOOKING_LINK_INSTRUCTIONS)
     parts.append(SCORING_INSTRUCTIONS.strip())
     return "\n\n".join(parts)
 
+
+# ── Guardrail Checkers ─────────────────────────────────────────────────────────
 
 def _keyword_match(text: str, terms: list[str]) -> bool:
     """Case-insensitive whole-word match for any term in the list."""
@@ -68,17 +80,8 @@ def _keyword_match(text: str, terms: list[str]) -> bool:
     return False
 
 
-def check_hard_nos(text: str, cfg: dict) -> bool:
-    """Returns True if the text contains a hard-no topic (should use fallback)."""
-    raw = cfg.get("hard_nos", "").strip()
-    if not raw:
-        return False
-    terms = [t.strip() for t in raw.splitlines() if t.strip()]
-    return _keyword_match(text, terms)
-
-
 def check_medical_blocklist(text: str, cfg: dict) -> bool:
-    """Returns True if the user message triggers the medical blocklist."""
+    """Returns True if the user's incoming message triggers the medical blocklist."""
     raw = cfg.get("medical_blocklist", "").strip()
     if not raw:
         return False
@@ -86,10 +89,14 @@ def check_medical_blocklist(text: str, cfg: dict) -> bool:
     return _keyword_match(text, terms)
 
 
+# ── Score Parser ───────────────────────────────────────────────────────────────
+
 def parse_score_from_response(text: str) -> tuple[str, int]:
     """
-    Strips the [SCORE:N] marker from the final line.
-    Returns (clean_text, delta). Delta defaults to 0 if marker absent or malformed.
+    Strips the [SCORE:N] marker from the final line of the model's reply.
+
+    Returns a (clean_text, delta) tuple. If the marker is missing or malformed,
+    delta defaults to 0 and any embedded occurrences are stripped from clean_text.
     """
     lines = text.rstrip().splitlines()
     if not lines:
@@ -110,16 +117,17 @@ def parse_score_from_response(text: str) -> tuple[str, int]:
     return clean, 0
 
 
+# ── Main Entry Point ───────────────────────────────────────────────────────────
+
 async def generate_reply(
     user_message: str,
-    history: list,  # list of Conversation ORM objects
+    history: list,  # list of Conversation ORM objects (or objects with .role / .content)
     cfg: dict,
     user_first_name: str | None,
     openai_client: AsyncOpenAI,
-) -> tuple[str, int]:
+) -> tuple[str, int, bool]:
     """
-    Calls GPT-4o and returns (clean_reply, score_delta).
-    Applies hard-no guardrail on the AI response.
+    Calls GPT-4o and returns (clean_reply, score_delta, booking_link_used).
     """
     system_prompt = build_system_prompt(cfg)
 
@@ -140,6 +148,14 @@ async def generate_reply(
     # Add current user message
     messages.append({"role": "user", "content": user_message})
 
+    # ── Prompt debug ────────────────────────────────────────────────────────────
+    logger.info("──────────── OUTGOING PROMPT (%d messages) ────────────", len(messages))
+    for i, m in enumerate(messages):
+        role = m["role"].upper()
+        content = m["content"]
+        logger.info("[%d] %s:\n%s", i, role, content)
+    logger.info("────────────────────────────────────────────────────────────────")
+
     response = await openai_client.chat.completions.create(
         model="gpt-4o",
         messages=messages,
@@ -148,10 +164,30 @@ async def generate_reply(
     )
 
     raw_reply = response.choices[0].message.content or ""
+
+    # ── Response debug ──────────────────────────────────────────────────────────
+    usage = response.usage
+    prompt_tokens    = usage.prompt_tokens     if usage else 0
+    completion_tokens = usage.completion_tokens if usage else 0
+    total_tokens     = usage.total_tokens       if usage else 0
+    # gpt-4o pricing as of 2025: $2.50/1M input, $10.00/1M output
+    input_cost  = prompt_tokens    / 1_000_000 * 2.50
+    output_cost = completion_tokens / 1_000_000 * 10.00
+    total_cost  = input_cost + output_cost
+
+    logger.info("──────────── OPENAI RESPONSE ────────────────────────────────────")
+    logger.info("Raw reply:\n%s", raw_reply)
+    logger.info(
+        "Tokens — prompt: %d | completion: %d | total: %d",
+        prompt_tokens, completion_tokens, total_tokens,
+    )
+    logger.info(
+        "Cost    — input: $%.6f | output: $%.6f | total: $%.6f",
+        input_cost, output_cost, total_cost,
+    )
+    logger.info("Model: %s | Finish reason: %s", response.model, response.choices[0].finish_reason)
+    logger.info("────────────────────────────────────────────────────────────────")
+
     clean_reply, delta = parse_score_from_response(raw_reply)
 
-    # Hard-no guardrail on AI output
-    if check_hard_nos(clean_reply, cfg):
-        return HARD_NO_FALLBACK, 0
-
-    return clean_reply, delta
+    return clean_reply, delta, False

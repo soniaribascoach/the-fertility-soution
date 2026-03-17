@@ -2,86 +2,124 @@
 {% block content %}
 
 {% if saved %}
-<div class="success-banner" id="saved-toast">
-  Settings saved successfully.
+<div class="flex items-center gap-2.5 bg-green-50 text-green-800 border border-green-200 rounded-lg px-4 py-3 mb-5 text-sm font-medium animate-slideDown" id="saved-toast">
+  <span>✓</span> Settings saved successfully.
 </div>
 {% endif %}
 
-<div class="page-header">
-  <h1>Settings</h1>
-  <p>Configure AI behavior, scoring, and messaging for your lead funnel.</p>
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Settings</h1>
+  <p class="mt-1 text-sm text-slate-500">Configure AI behavior, scoring, and messaging for your lead funnel.</p>
 </div>
 
 <form method="post" action="/admin/config/save">
 
-  <section class="config-section">
-    <div class="section-header">
-      <div class="section-icon">🔗</div>
-      <h2>Booking Link</h2>
+  <!-- ── Lead Qualification ────────────────────────────────────────────── -->
+  <section class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Lead Qualification</h2>
+
+    <div class="mb-7">
+      <div class="flex items-center gap-2.5 mb-1.5">
+        <h3 class="text-base font-semibold text-slate-800">Score Threshold</h3>
+      </div>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Each AI reply adds or subtracts up to 20 points based on lead engagement. When the cumulative score hits this number, the booking link is sent exactly once. Recommended: 60–75.</p>
+      <input type="number" name="score_threshold" value="{{ cfg.score_threshold or '' }}" min="0" max="100" placeholder="70"
+        class="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 max-w-[140px]">
     </div>
-    <p class="hint">The URL sent to qualified leads to book a consultation.</p>
-    <input type="url" name="booking_link" value="{{ cfg.booking_link or '' }}" placeholder="https://calendly.com/your-link">
-  </section>
 
-  <section class="config-section">
-    <div class="section-header">
-      <div class="section-icon">🎯</div>
-      <h2>Score Threshold</h2>
-    </div>
-    <p class="hint">Minimum lead score (0–100) required to receive the booking link.</p>
-    <input type="number" name="score_threshold" value="{{ cfg.score_threshold or '' }}" min="0" max="100" placeholder="70" style="max-width: 140px;">
-  </section>
-
-  <section class="config-section">
-    <div class="section-header">
-      <div class="section-icon">🤖</div>
-      <h2>System Prompt</h2>
-    </div>
-    <p class="hint">The AI persona and instructions used when responding to leads.</p>
-    <textarea name="system_prompt" rows="10">{{ cfg.system_prompt or '' }}</textarea>
-  </section>
-
-  <section class="config-section">
-    <div class="section-header">
-      <div class="section-icon">🚫</div>
-      <h2>Hard No's</h2>
-    </div>
-    <p class="hint">One topic per line. If a lead mentions any of these, stop engaging immediately.</p>
-    <textarea name="hard_nos" rows="6">{{ cfg.hard_nos or '' }}</textarea>
-  </section>
-
-  <section class="config-section">
-    <div class="section-header">
-      <div class="section-icon">🧬</div>
-      <h2>Medical Blocklist</h2>
-    </div>
-    <p class="hint">One term per line. Leads asking about these medical topics will not receive the booking link.</p>
-    <textarea name="medical_blocklist" rows="6" id="medical_blocklist_textarea">{{ cfg.medical_blocklist or '' }}</textarea>
-
-    <hr class="section-divider">
-
-    <p class="hint" style="margin-bottom: 8px;">Quick add / remove chips:</p>
-    <ul class="chip-list" id="blocklist-chips">
-      {% for term in blocklist_items %}
-        {% include "admin/partials/blocklist_item.html" %}
-      {% endfor %}
-    </ul>
-
-    <div class="add-term-row">
-      <input type="text" id="new-term" name="term" placeholder="Type a term and click Add…">
-      <button type="button" class="btn-add"
-        hx-post="/admin/blocklist/add"
-        hx-include="#new-term"
-        hx-target="#blocklist-chips"
-        hx-swap="beforeend"
-        hx-on::after-request="document.getElementById('new-term').value = ''">
-        + Add
-      </button>
+    <div class="last:mb-0">
+      <div class="flex items-center gap-2.5 mb-1.5">
+        <h3 class="text-base font-semibold text-slate-800">Booking Link</h3>
+      </div>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Sent automatically once when a lead's score reaches the threshold. Include UTM params if you're tracking conversions.</p>
+      <input type="url" name="booking_link" value="{{ cfg.booking_link or '' }}" placeholder="https://calendly.com/your-link"
+        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
     </div>
   </section>
 
-  <div class="form-actions">
-    <button type="submit" class="btn-primary">Save All Settings</button>
+  <!-- ── AI Behaviour ──────────────────────────────────────────────────── -->
+  <section class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">AI Behaviour</h2>
+
+    <div class="mb-7">
+      <div class="flex items-center gap-2.5 mb-1.5">
+        <h3 class="text-base font-semibold text-slate-800">About the Business</h3>
+      </div>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Describe your clinic, mission, and what makes you unique. This shapes the AI's foundational persona.</p>
+      <textarea name="prompt_about" rows="12"
+        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.prompt_about or '' }}</textarea>
+    </div>
+
+    <div class="mb-7">
+      <div class="flex items-center gap-2.5 mb-1.5">
+        <h3 class="text-base font-semibold text-slate-800">Service Offerings</h3>
+      </div>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">List the treatments, programmes, and support you offer. The AI uses this to match leads with relevant options.</p>
+      <textarea name="prompt_services" rows="12"
+        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.prompt_services or '' }}</textarea>
+    </div>
+
+    <div class="last:mb-0">
+      <div class="flex items-center gap-2.5 mb-1.5">
+        <h3 class="text-base font-semibold text-slate-800">Conversation & Tone Examples</h3>
+      </div>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Provide example phrases or tone guidelines. Helps the AI match your brand voice and communication style.</p>
+      <textarea name="prompt_tone" rows="12"
+        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[100px] leading-relaxed">{{ cfg.prompt_tone or '' }}</textarea>
+    </div>
+  </section>
+
+  <!-- ── Safety Guardrails ─────────────────────────────────────────────── -->
+  <section class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Safety Guardrails</h2>
+
+    <!-- Medical Blocklist -->
+    <div class="mb-7">
+      <div class="flex items-center gap-2.5 mb-1.5">
+        <h3 class="text-base font-semibold text-slate-800">Medical Blocklist</h3>
+      </div>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">One keyword or phrase per line. If the lead's <em>incoming message</em> contains any of these, the AI is skipped entirely and a medical deflection reply is sent immediately. Use for liability-sensitive terms.</p>
+
+      <textarea hidden id="medical_blocklist_hidden" name="medical_blocklist">{{ cfg.medical_blocklist or '' }}</textarea>
+
+      <ul class="flex flex-wrap gap-2 mt-3.5 list-none p-0" id="blocklist-chips">
+        {% for term in blocklist_items %}
+          {% include "admin/partials/blocklist_item.html" %}
+        {% endfor %}
+      </ul>
+
+      <div class="flex gap-2 mt-3.5">
+        <input type="text" id="new-term" name="term" placeholder="Type a term and click Add…"
+          class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
+        <button type="button"
+          class="px-4 py-2.5 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all whitespace-nowrap"
+          hx-post="/admin/blocklist/add"
+          hx-include="#new-term"
+          hx-target="#blocklist-chips"
+          hx-swap="beforeend"
+          hx-on::after-request="document.getElementById('new-term').value = ''">
+          + Add
+        </button>
+      </div>
+    </div>
+
+    <!-- Medical Deflection Message -->
+    <div class="last:mb-0">
+      <div class="flex items-center gap-2.5 mb-1.5">
+        <h3 class="text-base font-semibold text-slate-800">Medical Deflection Message</h3>
+      </div>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">The message sent when a blocklist term is detected. Leave blank to use the default compassionate response.</p>
+      <textarea name="medical_deflection" rows="12"
+        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.medical_deflection or '' }}</textarea>
+    </div>
+
+  </section>
+
+  <div class="mt-6 flex items-center gap-3">
+    <button type="submit"
+      class="inline-flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-500 text-white rounded-lg px-7 py-2.5 text-sm font-semibold shadow-md hover:-translate-y-px hover:shadow-lg active:translate-y-0 transition-all">
+      Save All Settings
+    </button>
   </div>
 
 </form>
@@ -94,5 +132,16 @@
   }, 3500);
 </script>
 {% endif %}
+
+<script>
+  function syncTextarea(chipsId, textareaId) {
+    const chips = document.querySelectorAll('#' + chipsId + ' [data-term]');
+    document.getElementById(textareaId).value =
+      Array.from(chips).map(el => el.dataset.term).join('\n');
+  }
+  document.body.addEventListener('htmx:afterRequest', () => {
+    syncTextarea('blocklist-chips', 'medical_blocklist_hidden');
+  });
+</script>
 
 {% endblock %}

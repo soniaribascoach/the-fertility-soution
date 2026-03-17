@@ -1,7 +1,8 @@
-<li class="chip">
+<li class="inline-flex items-center gap-1.5 bg-violet-100 text-violet-700 border border-violet-300 rounded-full px-3 py-1 text-xs font-medium animate-chipIn" data-term="{{ term }}">
   <span>{{ term }}</span>
-  <button type="button" class="chip-remove"
-    hx-delete="/admin/blocklist/remove"
+  <button type="button"
+    class="text-violet-400 hover:text-red-500 transition-colors text-base leading-none ml-0.5"
+    hx-post="/admin/blocklist/remove"
     hx-vals='{"term": "{{ term }}"}'
     hx-target="closest li"
     hx-swap="outerHTML"

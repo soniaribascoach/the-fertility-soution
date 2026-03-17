@@ -9,9 +9,11 @@ from app.db.database import Base
 @pytest.fixture
 def mock_cfg():
     return {
-        "system_prompt": "You are a warm, empathetic fertility coaching assistant.",
-        "hard_nos": "competitor\nother clinic",
+        "prompt_about": "We are a warm, empathetic fertility coaching clinic.",
+        "prompt_services": "IVF support, fertility coaching, emotional guidance.",
+        "prompt_tone": "Speak with warmth and clarity. Avoid clinical jargon.",
         "medical_blocklist": "metformin\nclomid\nIVF medication",
+        "medical_deflection": "",
         "booking_link": "https://example.com/book",
         "score_threshold": "70",
     }
