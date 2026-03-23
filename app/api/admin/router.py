@@ -24,7 +24,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 CONFIG_KEYS = ["booking_link", "score_threshold", "prompt_about", "prompt_services",
-               "prompt_tone", "medical_blocklist", "medical_deflection"]
+               "prompt_tone", "prompt_flow", "medical_blocklist", "medical_deflection"]
 
 
 @router.get("/admin")
@@ -102,6 +102,7 @@ async def config_save(
     prompt_about: str = Form(""),
     prompt_services: str = Form(""),
     prompt_tone: str = Form(""),
+    prompt_flow: str = Form(""),
     medical_blocklist: str = Form(""),
     medical_deflection: str = Form(""),
     db: AsyncSession = Depends(get_db),
@@ -114,6 +115,7 @@ async def config_save(
     await set_config(db, "prompt_about", prompt_about)
     await set_config(db, "prompt_services", prompt_services)
     await set_config(db, "prompt_tone", prompt_tone)
+    await set_config(db, "prompt_flow", prompt_flow)
     await set_config(db, "medical_blocklist", medical_blocklist)
     await set_config(db, "medical_deflection", medical_deflection)
 

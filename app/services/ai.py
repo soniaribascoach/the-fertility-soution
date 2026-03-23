@@ -67,6 +67,7 @@ def build_system_prompt(cfg: dict) -> str:
     about    = cfg.get("prompt_about", "").strip()
     services = cfg.get("prompt_services", "").strip()
     tone     = cfg.get("prompt_tone", "").strip()
+    flow     = cfg.get("prompt_flow", "").strip()
     if about or services or tone:
         if about:    parts.append(f"## About the Business\n{about}")
         if services: parts.append(f"## Service Offerings\n{services}")
@@ -76,6 +77,9 @@ def build_system_prompt(cfg: dict) -> str:
             "You are a warm, empathetic fertility coaching assistant. "
             "You help people explore their fertility journey with compassion and clarity."
         )
+
+    if flow:
+        parts.append(f"## Conversation Flow\n{flow}")
 
     parts.append(PLAIN_TEXT_INSTRUCTIONS)
     parts.append(BOOKING_LINK_INSTRUCTIONS)

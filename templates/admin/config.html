@@ -59,13 +59,22 @@
         class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.prompt_services or '' }}</textarea>
     </div>
 
-    <div class="last:mb-0">
+    <div class="mb-7">
       <div class="flex items-center gap-2.5 mb-1.5">
         <h3 class="text-base font-semibold text-slate-800">Conversation & Tone Examples</h3>
       </div>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Provide example phrases or tone guidelines. Helps the AI match your brand voice and communication style.</p>
       <textarea name="prompt_tone" rows="12"
         class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[100px] leading-relaxed">{{ cfg.prompt_tone or '' }}</textarea>
+    </div>
+
+    <div class="last:mb-0">
+      <div class="flex items-center gap-2.5 mb-1.5">
+        <h3 class="text-base font-semibold text-slate-800">Conversation Flow</h3>
+      </div>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Describe how the AI should sequence its responses. Use plain language or simple if/then rules — e.g. "If the lead hasn't mentioned their diagnosis, ask about it before discussing treatments."</p>
+      <textarea name="prompt_flow" rows="12"
+        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.prompt_flow or '' }}</textarea>
     </div>
   </section>
 
