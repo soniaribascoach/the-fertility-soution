@@ -15,6 +15,7 @@ from app.api.admin.auth import (
 )
 from app.services.ai import (
     generate_reply,
+    check_human_takeover_triggers,
     check_medical_blocklist,
     compute_score,
 )
@@ -23,8 +24,15 @@ from config import settings
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-CONFIG_KEYS = ["booking_link", "score_threshold", "prompt_about", "prompt_services",
-               "prompt_tone", "prompt_flow", "medical_blocklist", "medical_deflection"]
+CONFIG_KEYS = [
+    "booking_link", "score_threshold", "prompt_scoring_rules",
+    "prompt_about", "prompt_services", "prompt_tone", "prompt_flow",
+    "prompt_hard_rules", "prompt_opening_variants", "prompt_qualification_questions",
+    "prompt_pattern_responses", "prompt_objection_handling", "prompt_authority_proof",
+    "prompt_cta_transitions",
+    "medical_blocklist", "medical_deflection",
+    "human_takeover_triggers",
+]
 
 
 @router.get("/admin")
@@ -81,7 +89,17 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
     for key in CONFIG_KEYS:
         cfg.setdefault(key, "")
 
-    blocklist_items = [t for t in cfg.get("medical_blocklist", "").split("\n") if t.strip()]
+    def _split(key): return [t for t in cfg.get(key, "").split("\n") if t.strip()]
+
+    blocklist_items             = _split("medical_blocklist")
+    takeover_items              = _split("human_takeover_triggers")
+    hard_rule_items             = _split("prompt_hard_rules")
+    opening_variant_items       = _split("prompt_opening_variants")
+    qualification_question_items = _split("prompt_qualification_questions")
+    pattern_response_items      = _split("prompt_pattern_responses")
+    objection_handling_items    = _split("prompt_objection_handling")
+    authority_proof_items       = _split("prompt_authority_proof")
+    cta_transition_items        = _split("prompt_cta_transitions")
 
     return templates.TemplateResponse(
         "admin/config.html",
@@ -89,6 +107,14 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
             "request": request,
             "cfg": cfg,
             "blocklist_items": blocklist_items,
+            "takeover_items": takeover_items,
+            "hard_rule_items": hard_rule_items,
+            "opening_variant_items": opening_variant_items,
+            "qualification_question_items": qualification_question_items,
+            "pattern_response_items": pattern_response_items,
+            "objection_handling_items": objection_handling_items,
+            "authority_proof_items": authority_proof_items,
+            "cta_transition_items": cta_transition_items,
             "saved": saved == "true",
         },
     )
@@ -99,12 +125,21 @@ async def config_save(
     request: Request,
     booking_link: str = Form(""),
     score_threshold: str = Form(""),
+    prompt_scoring_rules: str = Form(""),
     prompt_about: str = Form(""),
     prompt_services: str = Form(""),
     prompt_tone: str = Form(""),
     prompt_flow: str = Form(""),
+    prompt_hard_rules: str = Form(""),
+    prompt_opening_variants: str = Form(""),
+    prompt_qualification_questions: str = Form(""),
+    prompt_pattern_responses: str = Form(""),
+    prompt_objection_handling: str = Form(""),
+    prompt_authority_proof: str = Form(""),
+    prompt_cta_transitions: str = Form(""),
     medical_blocklist: str = Form(""),
     medical_deflection: str = Form(""),
+    human_takeover_triggers: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     if not is_authenticated(request):
@@ -112,12 +147,21 @@ async def config_save(
 
     await set_config(db, "booking_link", booking_link)
     await set_config(db, "score_threshold", score_threshold)
+    await set_config(db, "prompt_scoring_rules", prompt_scoring_rules)
     await set_config(db, "prompt_about", prompt_about)
     await set_config(db, "prompt_services", prompt_services)
     await set_config(db, "prompt_tone", prompt_tone)
     await set_config(db, "prompt_flow", prompt_flow)
+    await set_config(db, "prompt_hard_rules", prompt_hard_rules)
+    await set_config(db, "prompt_opening_variants", prompt_opening_variants)
+    await set_config(db, "prompt_qualification_questions", prompt_qualification_questions)
+    await set_config(db, "prompt_pattern_responses", prompt_pattern_responses)
+    await set_config(db, "prompt_objection_handling", prompt_objection_handling)
+    await set_config(db, "prompt_authority_proof", prompt_authority_proof)
+    await set_config(db, "prompt_cta_transitions", prompt_cta_transitions)
     await set_config(db, "medical_blocklist", medical_blocklist)
     await set_config(db, "medical_deflection", medical_deflection)
+    await set_config(db, "human_takeover_triggers", human_takeover_triggers)
 
     return RedirectResponse("/admin/config?saved=true", status_code=302)
 
@@ -148,6 +192,36 @@ async def blocklist_remove(request: Request, term: str = Form(...), db: AsyncSes
     current = await get_config(db, "medical_blocklist") or ""
     items = [t for t in current.split("\n") if t.strip() and t.strip() != term.strip()]
     await set_config(db, "medical_blocklist", "\n".join(items))
+
+    return HTMLResponse("", status_code=200)
+
+
+@router.post("/admin/takeover/add", response_class=HTMLResponse)
+async def takeover_add(request: Request, term: str = Form(...), db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    current = await get_config(db, "human_takeover_triggers") or ""
+    items = [t for t in current.split("\n") if t.strip()]
+    term = term.strip()
+    if term and term not in items:
+        items.append(term)
+    await set_config(db, "human_takeover_triggers", "\n".join(items))
+
+    return templates.TemplateResponse(
+        "admin/partials/takeover_item.html",
+        {"request": request, "term": term},
+    )
+
+
+@router.post("/admin/takeover/remove")
+async def takeover_remove(request: Request, term: str = Form(...), db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    current = await get_config(db, "human_takeover_triggers") or ""
+    items = [t for t in current.split("\n") if t.strip() and t.strip() != term.strip()]
+    await set_config(db, "human_takeover_triggers", "\n".join(items))
 
     return HTMLResponse("", status_code=200)
 
@@ -206,8 +280,25 @@ async def chat_send(
     # Check medical blocklist on incoming message
     if check_medical_blocklist(message, cfg):
         guardrail = "medical"
-        booking_link_injected = False
-        # Log user message; no reply sent, flagged for human review
+        history_dicts.append({"role": "user", "content": message})
+        request.session["preview_history"] = history_dicts
+        return templates.TemplateResponse(
+            "admin/partials/chat_message.html",
+            {
+                "request": request,
+                "user_message": message,
+                "ai_reply": "",
+                "tags": {},
+                "score": score,
+                "guardrail": guardrail,
+                "booking_link_injected": False,
+                "booking_url": "",
+            },
+        )
+
+    # Check human takeover triggers
+    if check_human_takeover_triggers(message, cfg):
+        guardrail = "takeover"
         history_dicts.append({"role": "user", "content": message})
         request.session["preview_history"] = history_dicts
         return templates.TemplateResponse(

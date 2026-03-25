@@ -11,6 +11,13 @@
     </span>
     <p class="text-amber-800 text-xs">No reply was sent. The contact has been tagged <strong>needs_human_review</strong> in ManyChat.</p>
   </div>
+  {% elif guardrail == "takeover" %}
+  <div class="self-start max-w-[72%] bg-orange-50 border border-orange-300 rounded-xl rounded-bl-sm px-4 py-2.5 text-sm">
+    <span class="block text-[0.7rem] font-semibold uppercase tracking-wider mb-1 text-orange-600">
+      <span data-badge="guardrail">👤 Human takeover triggered</span>
+    </span>
+    <p class="text-orange-800 text-xs">A handover message was sent. The contact has been tagged <strong>needs_human_review</strong> in ManyChat.</p>
+  </div>
   {% else %}
   <div class="self-start max-w-[72%] bg-slate-50 border border-slate-200 rounded-xl rounded-bl-sm px-4 py-2.5 text-sm leading-relaxed">
     <span class="block text-[0.7rem] font-semibold uppercase tracking-wider mb-1 text-slate-400">AI

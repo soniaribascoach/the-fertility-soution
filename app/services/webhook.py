@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories import conversation as conv_repo
 from app.services.ai import (
+    check_human_takeover_triggers,
     check_medical_blocklist,
     compute_score,
     generate_reply,
@@ -35,6 +36,19 @@ async def handle_contact(
         await conv_repo.save_message(db, instagram_user_id, "system", "[MEDICAL_FLAGGED]")
         await mc_svc.add_tag(instagram_user_id, "needs_human_review")
         return ""
+
+    # 1b. Human takeover triggers — hand off to team, no AI reply
+    if check_human_takeover_triggers(user_message, cfg):
+        await conv_repo.save_message(db, instagram_user_id, "user", user_message)
+        await conv_repo.save_message(db, instagram_user_id, "system", "[TAKEOVER_FLAGGED]")
+        await mc_svc.add_tag(instagram_user_id, "needs_human_review")
+        handover_msg = (
+            "Thank you for sharing that with me. I want to make sure you get the "
+            "personal support you deserve — a member of our team will reach out to "
+            "you directly very soon. \U0001f49b"
+        )
+        await mc_svc.send_text_message(instagram_user_id, handover_msg)
+        return handover_msg
 
     # 2. Load history + prior tags
     history = await conv_repo.get_history(db, instagram_user_id)

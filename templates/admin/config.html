@@ -12,91 +12,262 @@
   <p class="mt-1 text-sm text-slate-500">Configure AI behavior, scoring, and messaging for your lead funnel.</p>
 </div>
 
+<!-- ── Tab Navigation ──────────────────────────────────────────────────── -->
+<div class="border-b border-slate-200 mb-6">
+  <nav class="-mb-px flex gap-0" aria-label="Settings sections">
+    <button type="button" data-tab="qualification"
+      class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap">
+      Lead Qualification
+    </button>
+    <button type="button" data-tab="behaviour"
+      class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap">
+      AI Behaviour
+    </button>
+    <button type="button" data-tab="coaching"
+      class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap">
+      Advanced Coaching
+    </button>
+    <button type="button" data-tab="safety"
+      class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap">
+      Safety Guardrails
+    </button>
+  </nav>
+</div>
+
 <form method="post" action="/admin/config/save">
 
   <!-- ── Lead Qualification ────────────────────────────────────────────── -->
-  <section class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+  <section data-panel="qualification" class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
     <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Lead Qualification</h2>
 
     <div class="mb-7">
-      <div class="flex items-center gap-2.5 mb-1.5">
-        <h3 class="text-base font-semibold text-slate-800">Score Threshold</h3>
-      </div>
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Score Threshold</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Each AI reply adds or subtracts up to 20 points based on lead engagement. When the cumulative score hits this number, the booking link is sent exactly once. Recommended: 60–75.</p>
       <input type="number" name="score_threshold" value="{{ cfg.score_threshold or '' }}" min="0" max="100" placeholder="70"
         class="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 max-w-[140px]">
     </div>
 
-    <div class="last:mb-0">
-      <div class="flex items-center gap-2.5 mb-1.5">
-        <h3 class="text-base font-semibold text-slate-800">Booking Link</h3>
-      </div>
+    <div class="mb-7">
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Booking Link</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Sent automatically once when a lead's score reaches the threshold. Include UTM params if you're tracking conversions.</p>
       <input type="url" name="booking_link" value="{{ cfg.booking_link or '' }}" placeholder="https://calendly.com/your-link"
         class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
     </div>
+
+    <div>
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Lead Scoring Rules</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Define what signals increase or decrease the lead score. For example: "Sharing a diagnosis should increase urgency. Expressing cost concerns without engagement should reduce readiness." The AI uses this guidance when classifying each conversation turn.</p>
+      <textarea name="prompt_scoring_rules" rows="8"
+        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.prompt_scoring_rules or '' }}</textarea>
+    </div>
   </section>
 
   <!-- ── AI Behaviour ──────────────────────────────────────────────────── -->
-  <section class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+  <section data-panel="behaviour" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
     <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">AI Behaviour</h2>
 
     <div class="mb-7">
-      <div class="flex items-center gap-2.5 mb-1.5">
-        <h3 class="text-base font-semibold text-slate-800">About the Business</h3>
-      </div>
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">About the Business</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Describe your clinic, mission, and what makes you unique. This shapes the AI's foundational persona.</p>
       <textarea name="prompt_about" rows="12"
         class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.prompt_about or '' }}</textarea>
     </div>
 
     <div class="mb-7">
-      <div class="flex items-center gap-2.5 mb-1.5">
-        <h3 class="text-base font-semibold text-slate-800">Service Offerings</h3>
-      </div>
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Service Offerings</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">List the treatments, programmes, and support you offer. The AI uses this to match leads with relevant options.</p>
       <textarea name="prompt_services" rows="12"
         class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.prompt_services or '' }}</textarea>
     </div>
 
     <div class="mb-7">
-      <div class="flex items-center gap-2.5 mb-1.5">
-        <h3 class="text-base font-semibold text-slate-800">Conversation & Tone Examples</h3>
-      </div>
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Conversation & Tone Examples</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Provide example phrases or tone guidelines. Helps the AI match your brand voice and communication style.</p>
       <textarea name="prompt_tone" rows="12"
         class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[100px] leading-relaxed">{{ cfg.prompt_tone or '' }}</textarea>
     </div>
 
-    <div class="last:mb-0">
-      <div class="flex items-center gap-2.5 mb-1.5">
-        <h3 class="text-base font-semibold text-slate-800">Conversation Flow</h3>
-      </div>
+    <div>
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Conversation Flow</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Describe how the AI should sequence its responses. Use plain language or simple if/then rules — e.g. "If the lead hasn't mentioned their diagnosis, ask about it before discussing treatments."</p>
       <textarea name="prompt_flow" rows="12"
         class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.prompt_flow or '' }}</textarea>
     </div>
   </section>
 
+  <!-- ── Advanced AI Coaching ─────────────────────────────────────────── -->
+  <section data-panel="coaching" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Advanced AI Coaching</h2>
+
+    <!-- Opening Message Variants -->
+    <div class="mb-7">
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Opening Message Variants</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Add multiple variations of how the AI can open a conversation so it doesn't feel repetitive. The AI will choose naturally based on context.</p>
+      <textarea hidden id="opening_variants_hidden" name="prompt_opening_variants"></textarea>
+      <div id="opening-variants-list" class="flex flex-col gap-2 mb-3">
+        {% for item in opening_variant_items %}
+        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
+          <input type="text" value="{{ item }}"
+            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
+            placeholder="Type an opening message variant…">
+          <button type="button" onclick="removeRow(this)"
+            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" onclick="addRow('opening-variants-list', 'Type an opening message variant…')"
+        class="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all">
+        + Add Variant
+      </button>
+    </div>
+
+    <!-- Qualification Questions Bank -->
+    <div class="mb-7">
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Qualification Questions Bank</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Add questions grouped by category (e.g. age, time trying, diagnosis, IVF history). The AI uses these to qualify leads naturally rather than in a fixed sequence.</p>
+      <textarea hidden id="qualification_questions_hidden" name="prompt_qualification_questions"></textarea>
+      <div id="qualification-list" class="flex flex-col gap-2 mb-3">
+        {% for item in qualification_question_items %}
+        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
+          <input type="text" value="{{ item }}"
+            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
+            placeholder="e.g. How long have you been trying to conceive?">
+          <button type="button" onclick="removeRow(this)"
+            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" onclick="addRow('qualification-list', 'e.g. How long have you been trying to conceive?')"
+        class="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all">
+        + Add Question
+      </button>
+    </div>
+
+    <!-- Pattern Recognition Responses -->
+    <div class="mb-7">
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Pattern Recognition Responses</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Add responses for common scenarios such as low AMH, PCOS, unexplained infertility, or failed IVF. This helps the AI sound experienced and personalised rather than generic.</p>
+      <textarea hidden id="pattern_responses_hidden" name="prompt_pattern_responses"></textarea>
+      <div id="pattern-responses-list" class="flex flex-col gap-2 mb-3">
+        {% for item in pattern_response_items %}
+        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
+          <input type="text" value="{{ item }}"
+            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
+            placeholder="e.g. Low AMH: acknowledge the worry, share that natural conception is still possible…">
+          <button type="button" onclick="removeRow(this)"
+            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" onclick="addRow('pattern-responses-list', 'e.g. Low AMH: acknowledge the worry, share that natural conception is still possible…')"
+        class="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all">
+        + Add Pattern
+      </button>
+    </div>
+
+    <!-- Objection Handling Library -->
+    <div class="mb-7">
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Objection Handling Library</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Add responses for common objections like cost, feeling overwhelmed, or scepticism. The AI uses these to respond in a human and empathetic way instead of a generic reply.</p>
+      <textarea hidden id="objection_handling_hidden" name="prompt_objection_handling"></textarea>
+      <div id="objection-handling-list" class="flex flex-col gap-2 mb-3">
+        {% for item in objection_handling_items %}
+        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
+          <input type="text" value="{{ item }}"
+            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
+            placeholder="e.g. Cost objection: I completely understand — let's talk about what's included…">
+          <button type="button" onclick="removeRow(this)"
+            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" onclick="addRow('objection-handling-list', 'e.g. Cost objection: I completely understand — let\'s talk about what\'s included…')"
+        class="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all">
+        + Add Objection
+      </button>
+    </div>
+
+    <!-- Authority / Proof Injection -->
+    <div class="mb-7">
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Authority / Proof Injection</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Add phrases that establish credibility — experience, number of clients helped, outcomes. The AI will weave these in naturally at the right moments in the conversation.</p>
+      <textarea hidden id="authority_proof_hidden" name="prompt_authority_proof"></textarea>
+      <div id="authority-proof-list" class="flex flex-col gap-2 mb-3">
+        {% for item in authority_proof_items %}
+        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
+          <input type="text" value="{{ item }}"
+            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
+            placeholder="e.g. Sonia has helped over 500 women get pregnant naturally…">
+          <button type="button" onclick="removeRow(this)"
+            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" onclick="addRow('authority-proof-list', 'e.g. Sonia has helped over 500 women get pregnant naturally…')"
+        class="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all">
+        + Add Proof Point
+      </button>
+    </div>
+
+    <!-- CTA Transition Lines -->
+    <div>
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">CTA Transition Lines</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Add short phrases that naturally lead into booking a call, so the link never feels abrupt. For example: "I'd love to see if we'd be a good fit for you" or "The next step is a quick chat with Sonia."</p>
+      <textarea hidden id="cta_transitions_hidden" name="prompt_cta_transitions"></textarea>
+      <div id="cta-transitions-list" class="flex flex-col gap-2 mb-3">
+        {% for item in cta_transition_items %}
+        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
+          <input type="text" value="{{ item }}"
+            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
+            placeholder="e.g. The next step is a quick chat with Sonia…">
+          <button type="button" onclick="removeRow(this)"
+            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" onclick="addRow('cta-transitions-list', 'e.g. The next step is a quick chat with Sonia…')"
+        class="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all">
+        + Add CTA Line
+      </button>
+    </div>
+  </section>
+
   <!-- ── Safety Guardrails ─────────────────────────────────────────────── -->
-  <section class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+  <section data-panel="safety" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
     <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Safety Guardrails</h2>
+
+    <!-- Hard Rules / Non-Negotiables -->
+    <div class="mb-7">
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Hard Rules / Non-Negotiables</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Strict behaviour rules the AI must always follow. These override all other instructions.</p>
+      <textarea hidden id="hard_rules_hidden" name="prompt_hard_rules"></textarea>
+      <div id="hard-rules-list" class="flex flex-col gap-2 mb-3">
+        {% for item in hard_rule_items %}
+        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
+          <input type="text" value="{{ item }}"
+            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
+            placeholder="e.g. Never give medical advice">
+          <button type="button" onclick="removeRow(this)"
+            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        </div>
+        {% endfor %}
+      </div>
+      <button type="button" onclick="addRow('hard-rules-list', 'e.g. Never give medical advice')"
+        class="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all">
+        + Add Rule
+      </button>
+    </div>
 
     <!-- Medical Blocklist -->
     <div class="mb-7">
-      <div class="flex items-center gap-2.5 mb-1.5">
-        <h3 class="text-base font-semibold text-slate-800">Medical Blocklist</h3>
-      </div>
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Medical Blocklist</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">One keyword or phrase per line. If the lead's <em>incoming message</em> contains any of these, the AI is skipped entirely and a medical deflection reply is sent immediately. Use for liability-sensitive terms.</p>
-
       <textarea hidden id="medical_blocklist_hidden" name="medical_blocklist">{{ cfg.medical_blocklist or '' }}</textarea>
-
       <ul class="flex flex-wrap gap-2 mt-3.5 list-none p-0" id="blocklist-chips">
         {% for term in blocklist_items %}
           {% include "admin/partials/blocklist_item.html" %}
         {% endfor %}
       </ul>
-
       <div class="flex gap-2 mt-3.5">
         <input type="text" id="new-term" name="term" placeholder="Type a term and click Add…"
           class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
@@ -112,11 +283,34 @@
       </div>
     </div>
 
-    <!-- Medical Deflection Message -->
-    <div class="last:mb-0">
-      <div class="flex items-center gap-2.5 mb-1.5">
-        <h3 class="text-base font-semibold text-slate-800">Medical Deflection Message</h3>
+    <!-- Human Takeover Triggers -->
+    <div class="mb-7">
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Human Takeover Triggers</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">One keyword or phrase per line. If the lead's <em>incoming message</em> contains any of these, the AI stops, a warm handover message is sent, and the contact is tagged <strong>needs_human_review</strong> in ManyChat. Use for emotional distress, complex situations, or sensitive topics.</p>
+      <textarea hidden id="human_takeover_triggers_hidden" name="human_takeover_triggers">{{ cfg.human_takeover_triggers or '' }}</textarea>
+      <ul class="flex flex-wrap gap-2 mt-3.5 list-none p-0" id="takeover-chips">
+        {% for term in takeover_items %}
+          {% include "admin/partials/takeover_item.html" %}
+        {% endfor %}
+      </ul>
+      <div class="flex gap-2 mt-3.5">
+        <input type="text" id="new-takeover-term" name="term" placeholder="Type a trigger and click Add…"
+          class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
+        <button type="button"
+          class="px-4 py-2.5 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all whitespace-nowrap"
+          hx-post="/admin/takeover/add"
+          hx-include="#new-takeover-term"
+          hx-target="#takeover-chips"
+          hx-swap="beforeend"
+          hx-on::after-request="document.getElementById('new-takeover-term').value = ''">
+          + Add
+        </button>
       </div>
+    </div>
+
+    <!-- Medical Deflection Message -->
+    <div>
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Medical Deflection Message</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">The message sent when a blocklist term is detected. Leave blank to use the default compassionate response.</p>
       <textarea name="medical_deflection" rows="12"
         class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.medical_deflection or '' }}</textarea>
@@ -133,6 +327,84 @@
 
 </form>
 
+<script>
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+  const TABS = ['qualification', 'behaviour', 'coaching', 'safety'];
+
+  function activateTab(name) {
+    const target = TABS.includes(name) ? name : TABS[0];
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      const active = btn.dataset.tab === target;
+      btn.classList.toggle('border-violet-500', active);
+      btn.classList.toggle('text-violet-700', active);
+      btn.classList.toggle('font-semibold', active);
+      btn.classList.toggle('border-transparent', !active);
+      btn.classList.toggle('text-slate-500', !active);
+    });
+    document.querySelectorAll('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== target; });
+    history.replaceState(null, '', '#' + target);
+  }
+
+  document.querySelectorAll('.tab-btn').forEach(btn =>
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab))
+  );
+
+  const storedTab = sessionStorage.getItem('configTab');
+  sessionStorage.removeItem('configTab');
+  activateTab(location.hash.replace('#', '') || storedTab || TABS[0]);
+
+  // ── Dynamic row helpers ───────────────────────────────────────────────────
+  function addRow(listId, placeholder) {
+    const row = document.createElement('div');
+    row.className = 'dynamic-row flex items-center gap-2 animate-slideDown';
+    row.innerHTML =
+      '<input type="text" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 ' +
+      'focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all ' +
+      'placeholder:text-slate-400" placeholder="' + (placeholder || '') + '">' +
+      '<button type="button" onclick="removeRow(this)" class="flex-shrink-0 w-8 h-8 flex items-center ' +
+      'justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all ' +
+      'text-lg leading-none" aria-label="Remove">&times;</button>';
+    document.getElementById(listId).appendChild(row);
+    row.querySelector('input').focus();
+  }
+
+  function removeRow(btn) {
+    btn.closest('.dynamic-row').remove();
+  }
+
+  // ── Sync all hidden textareas on submit ───────────────────────────────────
+  const DYNAMIC_LISTS = {
+    'hard-rules-list':         'hard_rules_hidden',
+    'opening-variants-list':   'opening_variants_hidden',
+    'qualification-list':      'qualification_questions_hidden',
+    'pattern-responses-list':  'pattern_responses_hidden',
+    'objection-handling-list': 'objection_handling_hidden',
+    'authority-proof-list':    'authority_proof_hidden',
+    'cta-transitions-list':    'cta_transitions_hidden',
+  };
+
+  function syncChips(chipsId, hiddenId) {
+    const chips = document.querySelectorAll('#' + chipsId + ' [data-term]');
+    document.getElementById(hiddenId).value = Array.from(chips).map(el => el.dataset.term).join('\n');
+  }
+
+  document.querySelector('form').addEventListener('submit', function () {
+    syncChips('blocklist-chips', 'medical_blocklist_hidden');
+    syncChips('takeover-chips', 'human_takeover_triggers_hidden');
+    Object.entries(DYNAMIC_LISTS).forEach(([listId, hiddenId]) => {
+      const vals = Array.from(document.querySelectorAll('#' + listId + ' input[type="text"]'))
+        .map(i => i.value.trim()).filter(Boolean);
+      document.getElementById(hiddenId).value = vals.join('\n');
+    });
+    sessionStorage.setItem('configTab', location.hash.replace('#', '') || TABS[0]);
+  });
+
+  document.body.addEventListener('htmx:afterRequest', () => {
+    syncChips('blocklist-chips', 'medical_blocklist_hidden');
+    syncChips('takeover-chips', 'human_takeover_triggers_hidden');
+  });
+</script>
+
 {% if saved %}
 <script>
   setTimeout(() => {
@@ -141,16 +413,5 @@
   }, 3500);
 </script>
 {% endif %}
-
-<script>
-  function syncTextarea(chipsId, textareaId) {
-    const chips = document.querySelectorAll('#' + chipsId + ' [data-term]');
-    document.getElementById(textareaId).value =
-      Array.from(chips).map(el => el.dataset.term).join('\n');
-  }
-  document.body.addEventListener('htmx:afterRequest', () => {
-    syncTextarea('blocklist-chips', 'medical_blocklist_hidden');
-  });
-</script>
 
 {% endblock %}

@@ -81,9 +81,33 @@ def build_system_prompt(cfg: dict) -> str:
     if flow:
         parts.append(f"## Conversation Flow\n{flow}")
 
+    # Advanced AI Coaching fields
+    hard_rules             = cfg.get("prompt_hard_rules", "").strip()
+    opening_variants       = cfg.get("prompt_opening_variants", "").strip()
+    qualification_qs       = cfg.get("prompt_qualification_questions", "").strip()
+    pattern_responses      = cfg.get("prompt_pattern_responses", "").strip()
+    objection_handling     = cfg.get("prompt_objection_handling", "").strip()
+    authority_proof        = cfg.get("prompt_authority_proof", "").strip()
+    cta_transitions        = cfg.get("prompt_cta_transitions", "").strip()
+
+    if hard_rules:         parts.append(f"## Non-Negotiable Rules\n{hard_rules}")
+    if opening_variants:   parts.append(f"## Opening Message Variants\n{opening_variants}")
+    if qualification_qs:   parts.append(f"## Qualification Questions\n{qualification_qs}")
+    if pattern_responses:  parts.append(f"## Pattern Recognition Responses\n{pattern_responses}")
+    if objection_handling: parts.append(f"## Objection Handling\n{objection_handling}")
+    if authority_proof:    parts.append(f"## Authority & Proof Phrases\n{authority_proof}")
+    if cta_transitions:    parts.append(f"## CTA Transition Lines\n{cta_transitions}")
+
     parts.append(PLAIN_TEXT_INSTRUCTIONS)
     parts.append(BOOKING_LINK_INSTRUCTIONS)
-    parts.append(TAGGING_INSTRUCTIONS.strip())
+
+    # Build tagging instructions, optionally with custom scoring guidance
+    tagging = TAGGING_INSTRUCTIONS.strip()
+    scoring_rules = cfg.get("prompt_scoring_rules", "").strip()
+    if scoring_rules:
+        tagging += f"\n\nAdditional scoring guidance from the business:\n{scoring_rules}"
+    parts.append(tagging)
+
     return "\n\n".join(parts)
 
 
@@ -105,6 +129,15 @@ def _keyword_match(text: str, terms: list[str]) -> bool:
 def check_medical_blocklist(text: str, cfg: dict) -> bool:
     """Returns True if the user's incoming message triggers the medical blocklist."""
     raw = cfg.get("medical_blocklist", "").strip()
+    if not raw:
+        return False
+    terms = [t.strip() for t in raw.splitlines() if t.strip()]
+    return _keyword_match(text, terms)
+
+
+def check_human_takeover_triggers(text: str, cfg: dict) -> bool:
+    """Returns True if the user's incoming message triggers a human takeover."""
+    raw = cfg.get("human_takeover_triggers", "").strip()
     if not raw:
         return False
     terms = [t.strip() for t in raw.splitlines() if t.strip()]
