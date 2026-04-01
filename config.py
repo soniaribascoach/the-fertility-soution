@@ -9,8 +9,6 @@ class Settings(BaseSettings):
     admin_password: str = "changeme"
     secret_key: str = "changeme-set-a-real-secret-key"
     manychat_api_token: str = ""
-    phoenix_collector_endpoint: str = ""
-    phoenix_api_key: str = ""
 
     @property
     def async_database_url(self) -> str:

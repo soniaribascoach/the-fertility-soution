@@ -237,13 +237,7 @@ async def generate_reply(
     # Add current user message
     messages.append({"role": "user", "content": user_message})
 
-    # ── Prompt debug ────────────────────────────────────────────────────────────
-    logger.info("──────────── OUTGOING PROMPT (%d messages) ────────────", len(messages))
-    for i, m in enumerate(messages):
-        role = m["role"].upper()
-        content = m["content"]
-        logger.info("[%d] %s:\n%s", i, role, content)
-    logger.info("────────────────────────────────────────────────────────────────")
+    logger.debug("Sending %d messages to OpenAI", len(messages))
 
     response = await openai_client.chat.completions.create(
         model="gpt-4o",
@@ -254,28 +248,18 @@ async def generate_reply(
 
     raw_reply = response.choices[0].message.content or ""
 
-    # ── Response debug ──────────────────────────────────────────────────────────
     usage = response.usage
-    prompt_tokens    = usage.prompt_tokens     if usage else 0
+    prompt_tokens     = usage.prompt_tokens     if usage else 0
     completion_tokens = usage.completion_tokens if usage else 0
-    total_tokens     = usage.total_tokens       if usage else 0
-    # gpt-4o pricing as of 2025: $2.50/1M input, $10.00/1M output
-    input_cost  = prompt_tokens    / 1_000_000 * 2.50
-    output_cost = completion_tokens / 1_000_000 * 10.00
-    total_cost  = input_cost + output_cost
+    total_tokens      = usage.total_tokens      if usage else 0
+    # gpt-4o pricing: $2.50/1M input, $10.00/1M output
+    total_cost = (prompt_tokens / 1_000_000 * 2.50) + (completion_tokens / 1_000_000 * 10.00)
 
-    logger.info("──────────── OPENAI RESPONSE ────────────────────────────────────")
-    logger.info("Raw reply:\n%s", raw_reply)
     logger.info(
-        "Tokens — prompt: %d | completion: %d | total: %d",
-        prompt_tokens, completion_tokens, total_tokens,
+        "OpenAI — tokens: %d in / %d out / %d total | cost: $%.5f | finish: %s",
+        prompt_tokens, completion_tokens, total_tokens, total_cost,
+        response.choices[0].finish_reason,
     )
-    logger.info(
-        "Cost    — input: $%.6f | output: $%.6f | total: $%.6f",
-        input_cost, output_cost, total_cost,
-    )
-    logger.info("Model: %s | Finish reason: %s", response.model, response.choices[0].finish_reason)
-    logger.info("────────────────────────────────────────────────────────────────")
 
     clean_reply, tags = parse_tags_from_response(raw_reply)
 

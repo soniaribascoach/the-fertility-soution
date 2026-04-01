@@ -1,23 +1,15 @@
-from types import SimpleNamespace
-
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.repositories.config import get_all_config, set_config, get_config
+from app.repositories.config import get_all_config, set_config
 from app.api.admin.auth import (
     is_authenticated,
     check_rate_limit,
     record_failed_attempt,
     reset_attempts,
-)
-from app.services.ai import (
-    generate_reply,
-    check_human_takeover_triggers,
-    check_medical_blocklist,
-    compute_score,
 )
 from config import settings
 
@@ -87,7 +79,6 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
         return RedirectResponse("/admin/login", status_code=302)
 
     cfg = await get_all_config(db)
-    # Ensure all keys are present
     for key in CONFIG_KEYS:
         cfg.setdefault(key, "")
 
@@ -166,155 +157,3 @@ async def config_save(
     await set_config(db, "human_takeover_triggers", human_takeover_triggers)
 
     return RedirectResponse("/admin/config?saved=true", status_code=302)
-
-
-# ── Chat Preview ───────────────────────────────────────────────────────────────
-
-@router.get("/admin/test", response_class=HTMLResponse)
-async def test_get(request: Request):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-    score = request.session.get("preview_score", 0)
-    return templates.TemplateResponse(request, "admin/test.html", {"score": score})
-
-
-@router.get("/admin/chat", response_class=HTMLResponse)
-async def chat_get(request: Request, db: AsyncSession = Depends(get_db)):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-
-    cfg = await get_all_config(db)
-    for key in CONFIG_KEYS:
-        cfg.setdefault(key, "")
-
-    score = request.session.get("preview_score", 50)
-    history = request.session.get("preview_history", [])
-
-    return templates.TemplateResponse(
-        request,
-        "admin/chat.html",
-        {"cfg": cfg, "score": score, "history": history},
-    )
-
-
-@router.post("/admin/chat/send", response_class=HTMLResponse)
-async def chat_send(
-    request: Request,
-    message: str = Form(...),
-    user_name: str = Form("Test User"),
-    db: AsyncSession = Depends(get_db),
-):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-
-    cfg = await get_all_config(db)
-    for key in CONFIG_KEYS:
-        cfg.setdefault(key, "")
-
-    history_dicts = request.session.get("preview_history", [])
-    score = request.session.get("preview_score", 50)
-
-    # Wrap history dicts as objects with .role / .content for generate_reply
-    history_objs = [SimpleNamespace(**h) for h in history_dicts]
-
-    guardrail = None
-    tags = {}
-
-    # Check medical blocklist on incoming message
-    if check_medical_blocklist(message, cfg):
-        guardrail = "medical"
-        history_dicts.append({"role": "user", "content": message})
-        request.session["preview_history"] = history_dicts
-        return templates.TemplateResponse(
-            request,
-            "admin/partials/chat_message.html",
-            {
-                "user_message": message,
-                "ai_reply": "",
-                "tags": {},
-                "score": score,
-                "guardrail": guardrail,
-                "booking_link_injected": False,
-                "booking_url": "",
-            },
-        )
-
-    # Check human takeover triggers
-    if check_human_takeover_triggers(message, cfg):
-        guardrail = "takeover"
-        history_dicts.append({"role": "user", "content": message})
-        request.session["preview_history"] = history_dicts
-        return templates.TemplateResponse(
-            request,
-            "admin/partials/chat_message.html",
-            {
-                "user_message": message,
-                "ai_reply": "",
-                "tags": {},
-                "score": score,
-                "guardrail": guardrail,
-                "booking_link_injected": False,
-                "booking_url": "",
-            },
-        )
-    else:
-        reply, tags, booking_link_injected = await generate_reply(
-            message,
-            history_objs,
-            cfg,
-            user_name,
-            request.app.state.openai_client,
-        )
-
-    if tags:
-        score = compute_score(tags)
-
-    # Replicate webhook booking-link logic for the preview
-    booking_url = ""
-    if not booking_link_injected and not guardrail:
-        try:
-            threshold = int(cfg.get("score_threshold", "70"))
-        except (ValueError, TypeError):
-            threshold = 70
-        already_sent = request.session.get("preview_booking_sent", False)
-        if score >= threshold and not already_sent:
-            booking_url = cfg.get("booking_link", "")
-            booking_link_injected = True
-            request.session["preview_booking_sent"] = True
-
-    # Persist to session
-    history_dicts.append({"role": "user", "content": message})
-    history_dicts.append({"role": "assistant", "content": reply})
-    request.session["preview_history"] = history_dicts
-    request.session["preview_score"] = score
-    request.session["preview_tags"] = tags
-
-    return templates.TemplateResponse(
-        request,
-        "admin/partials/chat_message.html",
-        {
-            "user_message": message,
-            "ai_reply": reply,
-            "tags": tags,
-            "score": score,
-            "guardrail": guardrail,
-            "booking_link_injected": booking_link_injected,
-            "booking_url": booking_url,
-        },
-    )
-
-
-@router.post("/admin/chat/reset", response_class=HTMLResponse)
-async def chat_reset(request: Request):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-
-    request.session.pop("preview_history", None)
-    request.session.pop("preview_score", None)
-    request.session.pop("preview_tags", None)
-    request.session.pop("preview_booking_sent", None)
-
-    return HTMLResponse(
-        '<span id="score-badge" hx-swap-oob="true">Score: 0</span>',
-        status_code=200,
-    )
