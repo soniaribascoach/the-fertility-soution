@@ -106,12 +106,9 @@
       <textarea hidden id="opening_variants_hidden" name="prompt_opening_variants"></textarea>
       <div id="opening-variants-list" class="flex flex-col gap-2 mb-3">
         {% for item in opening_variant_items %}
-        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
-          <input type="text" value="{{ item }}"
-            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
-            placeholder="Type an opening message variant…">
-          <button type="button" onclick="removeRow(this)"
-            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        <div class="dynamic-row flex items-start gap-2 animate-slideDown">
+          <textarea rows="1" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-none overflow-hidden leading-relaxed" placeholder="Type an opening message variant…">{{ item }}</textarea>
+          <button type="button" onclick="removeRow(this)" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none mt-1" aria-label="Remove">&times;</button>
         </div>
         {% endfor %}
       </div>
@@ -128,12 +125,9 @@
       <textarea hidden id="qualification_questions_hidden" name="prompt_qualification_questions"></textarea>
       <div id="qualification-list" class="flex flex-col gap-2 mb-3">
         {% for item in qualification_question_items %}
-        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
-          <input type="text" value="{{ item }}"
-            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
-            placeholder="e.g. How long have you been trying to conceive?">
-          <button type="button" onclick="removeRow(this)"
-            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        <div class="dynamic-row flex items-start gap-2 animate-slideDown">
+          <textarea rows="1" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-none overflow-hidden leading-relaxed" placeholder="e.g. How long have you been trying to conceive?">{{ item }}</textarea>
+          <button type="button" onclick="removeRow(this)" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none mt-1" aria-label="Remove">&times;</button>
         </div>
         {% endfor %}
       </div>
@@ -150,12 +144,9 @@
       <textarea hidden id="pattern_responses_hidden" name="prompt_pattern_responses"></textarea>
       <div id="pattern-responses-list" class="flex flex-col gap-2 mb-3">
         {% for item in pattern_response_items %}
-        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
-          <input type="text" value="{{ item }}"
-            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
-            placeholder="e.g. Low AMH: acknowledge the worry, share that natural conception is still possible…">
-          <button type="button" onclick="removeRow(this)"
-            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        <div class="dynamic-row flex items-start gap-2 animate-slideDown">
+          <textarea rows="1" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-none overflow-hidden leading-relaxed" placeholder="e.g. Low AMH: acknowledge the worry, share that natural conception is still possible…">{{ item }}</textarea>
+          <button type="button" onclick="removeRow(this)" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none mt-1" aria-label="Remove">&times;</button>
         </div>
         {% endfor %}
       </div>
@@ -172,12 +163,9 @@
       <textarea hidden id="objection_handling_hidden" name="prompt_objection_handling"></textarea>
       <div id="objection-handling-list" class="flex flex-col gap-2 mb-3">
         {% for item in objection_handling_items %}
-        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
-          <input type="text" value="{{ item }}"
-            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
-            placeholder="e.g. Cost objection: I completely understand — let's talk about what's included…">
-          <button type="button" onclick="removeRow(this)"
-            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        <div class="dynamic-row flex items-start gap-2 animate-slideDown">
+          <textarea rows="1" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-none overflow-hidden leading-relaxed" placeholder="e.g. Cost objection: I completely understand — let's talk about what's included…">{{ item }}</textarea>
+          <button type="button" onclick="removeRow(this)" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none mt-1" aria-label="Remove">&times;</button>
         </div>
         {% endfor %}
       </div>
@@ -194,12 +182,9 @@
       <textarea hidden id="authority_proof_hidden" name="prompt_authority_proof"></textarea>
       <div id="authority-proof-list" class="flex flex-col gap-2 mb-3">
         {% for item in authority_proof_items %}
-        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
-          <input type="text" value="{{ item }}"
-            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
-            placeholder="e.g. Sonia has helped over 500 women get pregnant naturally…">
-          <button type="button" onclick="removeRow(this)"
-            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        <div class="dynamic-row flex items-start gap-2 animate-slideDown">
+          <textarea rows="1" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-none overflow-hidden leading-relaxed" placeholder="e.g. Sonia has helped over 500 women get pregnant naturally…">{{ item }}</textarea>
+          <button type="button" onclick="removeRow(this)" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none mt-1" aria-label="Remove">&times;</button>
         </div>
         {% endfor %}
       </div>
@@ -216,12 +201,9 @@
       <textarea hidden id="cta_transitions_hidden" name="prompt_cta_transitions"></textarea>
       <div id="cta-transitions-list" class="flex flex-col gap-2 mb-3">
         {% for item in cta_transition_items %}
-        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
-          <input type="text" value="{{ item }}"
-            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
-            placeholder="e.g. The next step is a quick chat with Sonia…">
-          <button type="button" onclick="removeRow(this)"
-            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        <div class="dynamic-row flex items-start gap-2 animate-slideDown">
+          <textarea rows="1" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-none overflow-hidden leading-relaxed" placeholder="e.g. The next step is a quick chat with Sonia…">{{ item }}</textarea>
+          <button type="button" onclick="removeRow(this)" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none mt-1" aria-label="Remove">&times;</button>
         </div>
         {% endfor %}
       </div>
@@ -243,12 +225,9 @@
       <textarea hidden id="hard_rules_hidden" name="prompt_hard_rules"></textarea>
       <div id="hard-rules-list" class="flex flex-col gap-2 mb-3">
         {% for item in hard_rule_items %}
-        <div class="dynamic-row flex items-center gap-2 animate-slideDown">
-          <input type="text" value="{{ item }}"
-            class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
-            placeholder="e.g. Never give medical advice">
-          <button type="button" onclick="removeRow(this)"
-            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none" aria-label="Remove">&times;</button>
+        <div class="dynamic-row flex items-start gap-2 animate-slideDown">
+          <textarea rows="1" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-none overflow-hidden leading-relaxed" placeholder="e.g. Never give medical advice">{{ item }}</textarea>
+          <button type="button" onclick="removeRow(this)" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none mt-1" aria-label="Remove">&times;</button>
         </div>
         {% endfor %}
       </div>
@@ -262,56 +241,44 @@
     <div class="mb-7">
       <h3 class="text-base font-semibold text-slate-800 mb-1.5">Medical Blocklist</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">One keyword or phrase per line. If the lead's <em>incoming message</em> contains any of these, the AI is skipped entirely and a medical deflection reply is sent immediately. Use for liability-sensitive terms.</p>
-      <textarea hidden id="medical_blocklist_hidden" name="medical_blocklist">{{ cfg.medical_blocklist or '' }}</textarea>
-      <ul class="flex flex-wrap gap-2 mt-3.5 list-none p-0" id="blocklist-chips">
-        {% for term in blocklist_items %}
-          {% include "admin/partials/blocklist_item.html" %}
+      <textarea hidden id="medical_blocklist_hidden" name="medical_blocklist"></textarea>
+      <div id="blocklist-list" class="flex flex-col gap-2 mb-3">
+        {% for item in blocklist_items %}
+        <div class="dynamic-row flex items-start gap-2 animate-slideDown">
+          <textarea rows="1" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-none overflow-hidden leading-relaxed" placeholder="e.g. miscarriage">{{ item }}</textarea>
+          <button type="button" onclick="removeRow(this)" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none mt-1" aria-label="Remove">&times;</button>
+        </div>
         {% endfor %}
-      </ul>
-      <div class="flex gap-2 mt-3.5">
-        <input type="text" id="new-term" name="term" placeholder="Type a term and click Add…"
-          class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
-        <button type="button"
-          class="px-4 py-2.5 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all whitespace-nowrap"
-          hx-post="/admin/blocklist/add"
-          hx-include="#new-term"
-          hx-target="#blocklist-chips"
-          hx-swap="beforeend"
-          hx-on::after-request="document.getElementById('new-term').value = ''">
-          + Add
-        </button>
       </div>
+      <button type="button" onclick="addRow('blocklist-list', 'e.g. miscarriage')"
+        class="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all">
+        + Add Term
+      </button>
     </div>
 
     <!-- Human Takeover Triggers -->
     <div class="mb-7">
       <h3 class="text-base font-semibold text-slate-800 mb-1.5">Human Takeover Triggers</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">One keyword or phrase per line. If the lead's <em>incoming message</em> contains any of these, the AI stops, a warm handover message is sent, and the contact is tagged <strong>needs_human_review</strong> in ManyChat. Use for emotional distress, complex situations, or sensitive topics.</p>
-      <textarea hidden id="human_takeover_triggers_hidden" name="human_takeover_triggers">{{ cfg.human_takeover_triggers or '' }}</textarea>
-      <ul class="flex flex-wrap gap-2 mt-3.5 list-none p-0" id="takeover-chips">
-        {% for term in takeover_items %}
-          {% include "admin/partials/takeover_item.html" %}
+      <textarea hidden id="human_takeover_triggers_hidden" name="human_takeover_triggers"></textarea>
+      <div id="takeover-list" class="flex flex-col gap-2 mb-3">
+        {% for item in takeover_items %}
+        <div class="dynamic-row flex items-start gap-2 animate-slideDown">
+          <textarea rows="1" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-none overflow-hidden leading-relaxed" placeholder="e.g. I want to speak to someone">{{ item }}</textarea>
+          <button type="button" onclick="removeRow(this)" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none mt-1" aria-label="Remove">&times;</button>
+        </div>
         {% endfor %}
-      </ul>
-      <div class="flex gap-2 mt-3.5">
-        <input type="text" id="new-takeover-term" name="term" placeholder="Type a trigger and click Add…"
-          class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
-        <button type="button"
-          class="px-4 py-2.5 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all whitespace-nowrap"
-          hx-post="/admin/takeover/add"
-          hx-include="#new-takeover-term"
-          hx-target="#takeover-chips"
-          hx-swap="beforeend"
-          hx-on::after-request="document.getElementById('new-takeover-term').value = ''">
-          + Add
-        </button>
       </div>
+      <button type="button" onclick="addRow('takeover-list', 'e.g. I want to speak to someone')"
+        class="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-violet-600 border border-violet-500 rounded-lg text-sm font-semibold hover:bg-violet-600 hover:text-white hover:shadow-md transition-all">
+        + Add Trigger
+      </button>
     </div>
 
     <!-- Medical Deflection Message -->
     <div>
       <h3 class="text-base font-semibold text-slate-800 mb-1.5">Medical Deflection Message</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">The message sent when a blocklist term is detected. Leave blank to use the default compassionate response.</p>
+    <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">The message sent when a blocklist term is detected. Leave blank to use the default compassionate response.</p>
       <textarea name="medical_deflection" rows="12"
         class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.medical_deflection or '' }}</textarea>
     </div>
@@ -342,6 +309,8 @@
       btn.classList.toggle('text-slate-500', !active);
     });
     document.querySelectorAll('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== target; });
+    document.querySelector('[data-panel="' + target + '"]')
+      ?.querySelectorAll('.dynamic-row textarea').forEach(autoResize);
     history.replaceState(null, '', '#' + target);
   }
 
@@ -354,23 +323,43 @@
   activateTab(location.hash.replace('#', '') || storedTab || TABS[0]);
 
   // ── Dynamic row helpers ───────────────────────────────────────────────────
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
   function addRow(listId, placeholder) {
     const row = document.createElement('div');
-    row.className = 'dynamic-row flex items-center gap-2 animate-slideDown';
-    row.innerHTML =
-      '<input type="text" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 ' +
+    row.className = 'dynamic-row flex items-start gap-2 animate-slideDown';
+    const ta = document.createElement('textarea');
+    ta.rows = 1;
+    ta.className = 'flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 ' +
       'focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all ' +
-      'placeholder:text-slate-400" placeholder="' + (placeholder || '') + '">' +
-      '<button type="button" onclick="removeRow(this)" class="flex-shrink-0 w-8 h-8 flex items-center ' +
-      'justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all ' +
-      'text-lg leading-none" aria-label="Remove">&times;</button>';
+      'placeholder:text-slate-400 resize-none overflow-hidden leading-relaxed';
+    ta.placeholder = placeholder || '';
+    ta.addEventListener('input', () => autoResize(ta));
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 ' +
+      'hover:text-red-500 hover:bg-red-50 transition-all text-lg leading-none mt-1';
+    btn.setAttribute('aria-label', 'Remove');
+    btn.innerHTML = '&times;';
+    btn.addEventListener('click', () => removeRow(btn));
+    row.appendChild(ta);
+    row.appendChild(btn);
     document.getElementById(listId).appendChild(row);
-    row.querySelector('input').focus();
+    ta.focus();
   }
 
   function removeRow(btn) {
     btn.closest('.dynamic-row').remove();
   }
+
+  // Initialise auto-resize for pre-filled rows
+  document.querySelectorAll('.dynamic-row textarea').forEach(ta => {
+    autoResize(ta);
+    ta.addEventListener('input', () => autoResize(ta));
+  });
 
   // ── Sync all hidden textareas on submit ───────────────────────────────────
   const DYNAMIC_LISTS = {
@@ -381,27 +370,17 @@
     'objection-handling-list': 'objection_handling_hidden',
     'authority-proof-list':    'authority_proof_hidden',
     'cta-transitions-list':    'cta_transitions_hidden',
+    'blocklist-list':          'medical_blocklist_hidden',
+    'takeover-list':           'human_takeover_triggers_hidden',
   };
 
-  function syncChips(chipsId, hiddenId) {
-    const chips = document.querySelectorAll('#' + chipsId + ' [data-term]');
-    document.getElementById(hiddenId).value = Array.from(chips).map(el => el.dataset.term).join('\n');
-  }
-
   document.querySelector('form').addEventListener('submit', function () {
-    syncChips('blocklist-chips', 'medical_blocklist_hidden');
-    syncChips('takeover-chips', 'human_takeover_triggers_hidden');
     Object.entries(DYNAMIC_LISTS).forEach(([listId, hiddenId]) => {
-      const vals = Array.from(document.querySelectorAll('#' + listId + ' input[type="text"]'))
+      const vals = Array.from(document.querySelectorAll('#' + listId + ' textarea'))
         .map(i => i.value.trim()).filter(Boolean);
       document.getElementById(hiddenId).value = vals.join('\n');
     });
     sessionStorage.setItem('configTab', location.hash.replace('#', '') || TABS[0]);
-  });
-
-  document.body.addEventListener('htmx:afterRequest', () => {
-    syncChips('blocklist-chips', 'medical_blocklist_hidden');
-    syncChips('takeover-chips', 'human_takeover_triggers_hidden');
   });
 </script>
 

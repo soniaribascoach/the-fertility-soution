@@ -166,66 +166,6 @@ async def config_save(
     return RedirectResponse("/admin/config?saved=true", status_code=302)
 
 
-@router.post("/admin/blocklist/add", response_class=HTMLResponse)
-async def blocklist_add(request: Request, term: str = Form(...), db: AsyncSession = Depends(get_db)):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-
-    current = await get_config(db, "medical_blocklist") or ""
-    items = [t for t in current.split("\n") if t.strip()]
-    term = term.strip()
-    if term and term not in items:
-        items.append(term)
-    await set_config(db, "medical_blocklist", "\n".join(items))
-
-    return templates.TemplateResponse(
-        "admin/partials/blocklist_item.html",
-        {"request": request, "term": term},
-    )
-
-
-@router.post("/admin/blocklist/remove")
-async def blocklist_remove(request: Request, term: str = Form(...), db: AsyncSession = Depends(get_db)):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-
-    current = await get_config(db, "medical_blocklist") or ""
-    items = [t for t in current.split("\n") if t.strip() and t.strip() != term.strip()]
-    await set_config(db, "medical_blocklist", "\n".join(items))
-
-    return HTMLResponse("", status_code=200)
-
-
-@router.post("/admin/takeover/add", response_class=HTMLResponse)
-async def takeover_add(request: Request, term: str = Form(...), db: AsyncSession = Depends(get_db)):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-
-    current = await get_config(db, "human_takeover_triggers") or ""
-    items = [t for t in current.split("\n") if t.strip()]
-    term = term.strip()
-    if term and term not in items:
-        items.append(term)
-    await set_config(db, "human_takeover_triggers", "\n".join(items))
-
-    return templates.TemplateResponse(
-        "admin/partials/takeover_item.html",
-        {"request": request, "term": term},
-    )
-
-
-@router.post("/admin/takeover/remove")
-async def takeover_remove(request: Request, term: str = Form(...), db: AsyncSession = Depends(get_db)):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-
-    current = await get_config(db, "human_takeover_triggers") or ""
-    items = [t for t in current.split("\n") if t.strip() and t.strip() != term.strip()]
-    await set_config(db, "human_takeover_triggers", "\n".join(items))
-
-    return HTMLResponse("", status_code=200)
-
-
 # ── Chat Preview ───────────────────────────────────────────────────────────────
 
 @router.get("/admin/test", response_class=HTMLResponse)
