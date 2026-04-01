@@ -44,15 +44,16 @@ async def admin_root(request: Request):
 
 @router.get("/admin/login", response_class=HTMLResponse)
 async def login_get(request: Request):
-    return templates.TemplateResponse("admin/login.html", {"request": request, "error": None})
+    return templates.TemplateResponse(request, "admin/login.html", {"error": None})
 
 
 @router.post("/admin/login", response_class=HTMLResponse)
 async def login_post(request: Request, password: str = Form(...)):
     if not check_rate_limit(request):
         return templates.TemplateResponse(
+            request,
             "admin/login.html",
-            {"request": request, "error": "Too many failed attempts. Try again in 15 minutes."},
+            {"error": "Too many failed attempts. Try again in 15 minutes."},
             status_code=429,
         )
 
@@ -67,8 +68,9 @@ async def login_post(request: Request, password: str = Form(...)):
     else:
         error = f"Invalid password. {remaining} attempt(s) remaining."
     return templates.TemplateResponse(
+        request,
         "admin/login.html",
-        {"request": request, "error": error},
+        {"error": error},
         status_code=401,
     )
 
@@ -102,9 +104,9 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
     cta_transition_items        = _split("prompt_cta_transitions")
 
     return templates.TemplateResponse(
+        request,
         "admin/config.html",
         {
-            "request": request,
             "cfg": cfg,
             "blocklist_items": blocklist_items,
             "takeover_items": takeover_items,
@@ -173,7 +175,7 @@ async def test_get(request: Request):
     if not is_authenticated(request):
         return RedirectResponse("/admin/login", status_code=302)
     score = request.session.get("preview_score", 0)
-    return templates.TemplateResponse("admin/test.html", {"request": request, "score": score})
+    return templates.TemplateResponse(request, "admin/test.html", {"score": score})
 
 
 @router.get("/admin/chat", response_class=HTMLResponse)
@@ -189,8 +191,9 @@ async def chat_get(request: Request, db: AsyncSession = Depends(get_db)):
     history = request.session.get("preview_history", [])
 
     return templates.TemplateResponse(
+        request,
         "admin/chat.html",
-        {"request": request, "cfg": cfg, "score": score, "history": history},
+        {"cfg": cfg, "score": score, "history": history},
     )
 
 
@@ -223,9 +226,9 @@ async def chat_send(
         history_dicts.append({"role": "user", "content": message})
         request.session["preview_history"] = history_dicts
         return templates.TemplateResponse(
+            request,
             "admin/partials/chat_message.html",
             {
-                "request": request,
                 "user_message": message,
                 "ai_reply": "",
                 "tags": {},
@@ -242,9 +245,9 @@ async def chat_send(
         history_dicts.append({"role": "user", "content": message})
         request.session["preview_history"] = history_dicts
         return templates.TemplateResponse(
+            request,
             "admin/partials/chat_message.html",
             {
-                "request": request,
                 "user_message": message,
                 "ai_reply": "",
                 "tags": {},
@@ -287,9 +290,9 @@ async def chat_send(
     request.session["preview_tags"] = tags
 
     return templates.TemplateResponse(
+        request,
         "admin/partials/chat_message.html",
         {
-            "request": request,
             "user_message": message,
             "ai_reply": reply,
             "tags": tags,

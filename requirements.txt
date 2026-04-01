@@ -1,4 +1,4 @@
-fastapi
+fastapi>=0.135.1,<1.0.0
 uvicorn
 sqlalchemy[asyncio]
 asyncpg
