@@ -18,18 +18,21 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        'app_config',
-        sa.Column('key', sa.String(length=100), nullable=False),
-        sa.Column('value', sa.Text(), nullable=True),
-        sa.Column(
-            'updated_at',
-            sa.DateTime(timezone=True),
-            server_default=sa.text('now()'),
-            nullable=True,
-        ),
-        sa.PrimaryKeyConstraint('key'),
-    )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if 'app_config' not in inspector.get_table_names():
+        op.create_table(
+            'app_config',
+            sa.Column('key', sa.String(length=100), nullable=False),
+            sa.Column('value', sa.Text(), nullable=True),
+            sa.Column(
+                'updated_at',
+                sa.DateTime(timezone=True),
+                server_default=sa.text('now()'),
+                nullable=True,
+            ),
+            sa.PrimaryKeyConstraint('key'),
+        )
 
     # Seed default rows
     op.execute(

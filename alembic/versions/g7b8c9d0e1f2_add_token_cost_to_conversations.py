@@ -18,10 +18,17 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('conversations', sa.Column('token_cost',        sa.Float(),       nullable=True))
-    op.add_column('conversations', sa.Column('prompt_tokens',     sa.Integer(),     nullable=True))
-    op.add_column('conversations', sa.Column('completion_tokens', sa.Integer(),     nullable=True))
-    op.add_column('conversations', sa.Column('ai_model',          sa.String(50),    nullable=True))
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_columns = [col['name'] for col in inspector.get_columns('conversations')]
+    if 'token_cost' not in existing_columns:
+        op.add_column('conversations', sa.Column('token_cost',        sa.Float(),       nullable=True))
+    if 'prompt_tokens' not in existing_columns:
+        op.add_column('conversations', sa.Column('prompt_tokens',     sa.Integer(),     nullable=True))
+    if 'completion_tokens' not in existing_columns:
+        op.add_column('conversations', sa.Column('completion_tokens', sa.Integer(),     nullable=True))
+    if 'ai_model' not in existing_columns:
+        op.add_column('conversations', sa.Column('ai_model',          sa.String(50),    nullable=True))
 
 
 def downgrade() -> None:
