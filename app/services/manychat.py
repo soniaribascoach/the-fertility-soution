@@ -50,12 +50,9 @@ class ManyChatService:
     async def send_booking_link(
         self, subscriber_id: str, url: str, first_name: str | None = None
     ) -> bool:
-        name = first_name or "there"
-        text = (
-            f"Hi {name}! Based on our conversation, I think you're ready to take the next step. "
-            f"Here's your booking link to schedule a free consultation: {url} 🌸\n\n"
-            "I can't wait to support you on this journey!"
-        )
+        # The AI reply (sent just before this) already contains the warm CTA transition.
+        # This message delivers only the link itself so it doesn't feel redundant.
+        text = f"Here's the link to book your call: {url}"
         return await self.send_text_message(subscriber_id, text)
 
     async def add_tag(self, subscriber_id: str, tag_name: str) -> bool:

@@ -8,6 +8,7 @@ from app.services.ai import (
     generate_reply,
 )
 from app.services.manychat import ManyChatService
+from app.services.router import build_route_context
 from openai import AsyncOpenAI
 
 
@@ -30,12 +31,15 @@ async def handle_contact(
     6. Save assistant reply
     7. Send booking link or regular message
     """
-    # 1. Medical blocklist — flag for human review, no reply sent
+    # 1. Medical blocklist — flag for human review, send deflection only if configured
     if check_medical_blocklist(user_message, cfg):
+        deflection_msg = cfg.get("medical_deflection", "").strip()
         await conv_repo.save_message(db, instagram_user_id, "user", user_message)
         await conv_repo.save_message(db, instagram_user_id, "system", "[MEDICAL_FLAGGED]")
         await mc_svc.add_tag(instagram_user_id, "needs_human_review")
-        return ""
+        if deflection_msg:
+            await mc_svc.send_text_message(instagram_user_id, deflection_msg)
+        return deflection_msg
 
     # 1b. Human takeover triggers — hand off to team, no AI reply
     if check_human_takeover_triggers(user_message, cfg):
@@ -50,44 +54,65 @@ async def handle_contact(
         await mc_svc.send_text_message(instagram_user_id, handover_msg)
         return handover_msg
 
-    # 2. Load history + prior tags
+    # 2. Load history + prior tags + score
     history = await conv_repo.get_history(db, instagram_user_id)
     prior_tags = await conv_repo.get_latest_tags(db, instagram_user_id)
+    prior_score = await conv_repo.get_latest_score(db, instagram_user_id)
 
-    # 3. Save user message
-    await conv_repo.save_message(db, instagram_user_id, "user", user_message)
-
-    # 4. Generate AI reply
-    clean_reply, new_tags, _ = await generate_reply(
-        user_message=user_message,
-        history=history,
-        cfg=cfg,
-        user_first_name=first_name,
-        openai_client=openai_client,
-    )
-
-    new_score = compute_score(new_tags)
-
-    # 5. Apply tag changes to ManyChat
-    await mc_svc.update_contact_tags(instagram_user_id, prior_tags, new_tags)
-
-    # 6. Save assistant reply with updated score and tags
     try:
         threshold = int(cfg.get("score_threshold", "70"))
     except (ValueError, TypeError):
         threshold = 70
 
+    # 3. Build route context (deterministic signals + LLM classifier)
     already_sent = await conv_repo.has_received_booking_link(db, instagram_user_id)
+    route = await build_route_context(
+        user_message=user_message,
+        history=history,
+        cfg=cfg,
+        prior_tags=prior_tags,
+        current_score=prior_score,
+        threshold=threshold,
+        openai_client=openai_client,
+        already_sent=already_sent,
+    )
 
-    if new_score >= threshold and not already_sent:
-        booking_url = cfg.get("booking_link", "")
-        await mc_svc.send_booking_link(instagram_user_id, booking_url, first_name)
-        # Mark that the booking link was sent by appending a marker to the stored content
+    # 4. Save user message
+    await conv_repo.save_message(db, instagram_user_id, "user", user_message)
+
+    # 5. Generate AI reply with targeted context
+    result = await generate_reply(
+        user_message=user_message,
+        history=history,
+        cfg=cfg,
+        user_first_name=first_name,
+        openai_client=openai_client,
+        route=route,
+    )
+    clean_reply = result.reply
+    new_tags    = result.tags
+    new_score   = compute_score(new_tags)
+
+    # 6. Apply tag changes to ManyChat
+    await mc_svc.update_contact_tags(instagram_user_id, prior_tags, new_tags)
+
+    # 7. Save assistant reply with updated score and tags
+    ai_kwargs = dict(
+        token_cost=result.cost,
+        prompt_tokens=result.prompt_tokens,
+        completion_tokens=result.completion_tokens,
+        ai_model=result.model,
+    )
+
+    if route.booking_fires_now:
+        # AI reply already contains the booking link embedded at the end — send as one message
+        await mc_svc.send_text_message(instagram_user_id, clean_reply)
         await conv_repo.save_message(
             db, instagram_user_id, "assistant",
             clean_reply + " [BOOKING_SENT]",
             lead_score=new_score,
             contact_tags=new_tags,
+            **ai_kwargs,
         )
     else:
         await conv_repo.save_message(
@@ -95,6 +120,7 @@ async def handle_contact(
             clean_reply,
             lead_score=new_score,
             contact_tags=new_tags,
+            **ai_kwargs,
         )
         await mc_svc.send_text_message(instagram_user_id, clean_reply)
 

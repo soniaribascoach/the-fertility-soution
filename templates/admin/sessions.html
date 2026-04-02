@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-xl font-bold text-slate-900">Simulation Sessions</h1>
+    <p class="text-sm text-slate-500 mt-0.5">Saved chats for debugging and scenario testing</p>
+  </div>
+  <a href="/admin/simulate"
+     class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-semibold hover:bg-violet-700 transition-colors">
+    + New Simulation
+  </a>
+</div>
+
+{% if not sessions %}
+<div class="text-center py-16 text-slate-400">
+  <svg class="mx-auto mb-3 text-slate-300" width="44" height="44" fill="none" viewBox="0 0 44 44">
+    <rect width="44" height="44" rx="12" fill="currentColor" opacity="0.3"/>
+    <path d="M14 16h16M14 22h10M14 28h7" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <p class="text-sm font-medium text-slate-500">No saved sessions yet</p>
+  <p class="text-xs mt-1">Run a simulation and click Save to store it here</p>
+</div>
+{% else %}
+<div class="rounded-xl border border-slate-200 overflow-hidden bg-white">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50 border-b border-slate-200">
+      <tr>
+        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Label</th>
+        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">User</th>
+        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Msgs</th>
+        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Note</th>
+        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Date</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for s in sessions %}
+      <tr class="hover:bg-slate-50 transition-colors">
+        <td class="px-4 py-3 font-medium text-slate-800">
+          {{ s.name if s.name else '<span class="text-slate-400 italic">Untitled</span>' | safe }}
+        </td>
+        <td class="px-4 py-3 text-slate-500">
+          {{ s.first_name if s.first_name else '—' }}
+        </td>
+        <td class="px-4 py-3">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-50 text-violet-600">
+            {{ s.message_count }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-slate-500 max-w-xs truncate">
+          {% if s.note %}
+            {{ s.note[:80] }}{% if s.note | length > 80 %}…{% endif %}
+          {% else %}
+            <span class="text-slate-300">—</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-slate-400 whitespace-nowrap text-xs">
+          {{ s.created_at.strftime('%b %d, %Y %H:%M') if s.created_at else '—' }}
+        </td>
+        <td class="px-4 py-3 text-right flex items-center justify-end gap-3">
+          <a href="/admin/simulate/session/{{ s.session_id }}"
+             class="text-xs font-medium text-violet-600 hover:text-violet-800 hover:underline">
+            Open →
+          </a>
+          <form method="post" action="/admin/simulate/session/{{ s.session_id }}/delete"
+                onsubmit="return confirm('Delete this session? This cannot be undone.')">
+            <button type="submit"
+                    class="text-xs font-medium text-red-400 hover:text-red-600 hover:underline">
+              Delete
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}

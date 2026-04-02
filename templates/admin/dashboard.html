@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+  <p class="mt-1 text-sm text-slate-500">AI usage and cost overview across all conversations.</p>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+  <!-- Total AI Replies -->
+  <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <p class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-2">Total AI Replies</p>
+    <p class="text-4xl font-bold text-slate-900">{{ stats.total_messages }}</p>
+  </div>
+
+  <!-- Unique Users -->
+  <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <p class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-2">Unique Users</p>
+    <p class="text-4xl font-bold text-slate-900">{{ stats.unique_users }}</p>
+  </div>
+
+  <!-- Total Cost -->
+  <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <p class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-2">Total Cost</p>
+    <p class="text-4xl font-bold text-violet-700">${{ "%.4f"|format(stats.total_cost_usd) }}</p>
+  </div>
+
+  <!-- Avg Cost / Reply -->
+  <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <p class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-2">Avg Cost / Reply</p>
+    <p class="text-4xl font-bold text-violet-700">${{ "%.4f"|format(stats.avg_cost_per_message) }}</p>
+  </div>
+
+  <!-- Total Tokens -->
+  <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <p class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-2">Total Tokens</p>
+    <p class="text-4xl font-bold text-slate-900">{{ "{:,}".format(stats.total_tokens) }}</p>
+    <p class="text-xs text-slate-400 mt-2">
+      {{ "{:,}".format(stats.total_prompt_tokens) }} prompt &nbsp;·&nbsp; {{ "{:,}".format(stats.total_completion_tokens) }} completion
+    </p>
+  </div>
+
+  <!-- Models Used -->
+  <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <p class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-2">Models Used</p>
+    {% if stats.models_used %}
+      <div class="flex flex-wrap gap-2 mt-1">
+        {% for model in stats.models_used %}
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">{{ model }}</span>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm text-slate-400 mt-1">No data yet</p>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

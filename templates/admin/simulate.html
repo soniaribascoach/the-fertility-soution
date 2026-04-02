@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block content %}
+
+{# Break out of base.html's max-w-3xl padding to fill the viewport #}
+<div class="-mx-5 -mt-8 -mb-16 flex flex-col" style="height: calc(100vh - 3.5rem);">
+
+  {# ── Header bar ──────────────────────────────────────────────────────────── #}
+  <div class="border-b border-slate-200 bg-white px-4 py-2.5 flex flex-wrap items-center gap-2 shrink-0">
+
+    {# First name #}
+    <div class="flex items-center gap-1.5">
+      <label class="text-[0.7rem] text-slate-400 font-medium uppercase tracking-wide whitespace-nowrap">User name</label>
+      <input id="first-name-input" type="text" placeholder="e.g. Emma"
+             value="{{ session.first_name if session and session.first_name else '' }}"
+             class="w-28 border border-slate-200 rounded-md px-2.5 py-1 text-sm focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/30"
+             oninput="document.getElementById('fn-hidden').value = this.value">
+    </div>
+
+    <div class="w-px h-5 bg-slate-200"></div>
+
+    {# Session name #}
+    <div class="flex items-center gap-1.5">
+      <label class="text-[0.7rem] text-slate-400 font-medium uppercase tracking-wide whitespace-nowrap">Label</label>
+      <input id="session-name-input" type="text" placeholder="e.g. High-urgency scenario"
+             value="{{ session.name if session and session.name else '' }}"
+             class="w-48 border border-slate-200 rounded-md px-2.5 py-1 text-sm focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/30">
+    </div>
+
+    {# Save button #}
+    <button
+      hx-post="/admin/simulate/session/save"
+      hx-target="#save-status"
+      hx-swap="innerHTML"
+      hx-include="#save-form-fields"
+      hx-on::before-request="
+        document.getElementById('save-name').value = document.getElementById('session-name-input').value;
+        document.getElementById('save-fn').value = document.getElementById('first-name-input').value;
+        document.getElementById('save-note').value = document.getElementById('note-input').value;
+      "
+      class="px-3 py-1 bg-violet-600 text-white rounded-md text-xs font-semibold hover:bg-violet-700 transition-colors shrink-0">
+      Save
+    </button>
+    <span id="save-status" class="text-xs min-w-[3rem]"></span>
+
+    <div class="w-px h-5 bg-slate-200"></div>
+
+    {# Score display #}
+    <div class="flex items-center gap-1.5">
+      <span class="text-[0.7rem] text-slate-400 font-medium uppercase tracking-wide">Score</span>
+      <span id="score-display" class="font-bold tabular-nums
+        {% if score >= (threshold | default(70)) %}text-green-600
+        {% elif score >= ((threshold | default(70)) // 2) %}text-amber-500
+        {% else %}text-slate-400{% endif %}">{{ score }}</span>
+    </div>
+
+    {# Tag chips #}
+    <div id="tags-display" class="flex flex-wrap gap-1">
+      {% for dim, val in tags.items() %}
+      <span class="px-2 py-0.5 rounded-full text-[0.65rem] font-medium bg-violet-50 text-violet-600 border border-violet-100">{{ val }}</span>
+      {% endfor %}
+    </div>
+
+    <div class="ml-auto flex items-center gap-2">
+      {% if replay_mode %}
+      <a href="/admin/simulate"
+         class="text-xs text-violet-600 font-medium hover:underline">+ New Simulation</a>
+      {% else %}
+      {# Note input (collapsible) #}
+      <button id="note-toggle"
+              onclick="document.getElementById('note-row').classList.toggle('hidden')"
+              class="text-[0.7rem] text-slate-400 hover:text-slate-600 font-medium px-2 py-1 rounded hover:bg-slate-50 transition-colors">
+        Note
+      </button>
+      {% endif %}
+      <a href="/admin/simulate/sessions"
+         class="text-[0.7rem] text-slate-400 hover:text-violet-600 font-medium px-2 py-1 rounded hover:bg-violet-50 transition-colors">
+        Sessions
+      </a>
+    </div>
+  </div>
+
+  {# Note row (hidden by default) #}
+  {% if not replay_mode %}
+  <div id="note-row" class="hidden border-b border-slate-100 bg-slate-50 px-4 py-2">
+    <textarea id="note-input" rows="2" placeholder="Add a note about this simulation session…"
+              class="w-full text-sm border border-slate-200 rounded-md px-3 py-1.5 resize-none focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/30 bg-white">{{ session.note if session and session.note else '' }}</textarea>
+  </div>
+  {% endif %}
+
+  {# Replay banner #}
+  {% if replay_mode %}
+  <div class="bg-amber-50 border-b border-amber-100 px-4 py-2 flex items-center gap-2">
+    <span class="text-xs text-amber-700 font-medium">
+      Viewing saved session{% if session and session.name %}: <strong>{{ session.name }}</strong>{% endif %}
+      {% if session and session.note %} — {{ session.note }}{% endif %}
+    </span>
+    <a href="/admin/simulate" class="ml-auto text-xs text-amber-700 underline">New simulation</a>
+  </div>
+  {% endif %}
+
+  {# ── Chat area ───────────────────────────────────────────────────────────── #}
+  <div id="chat-messages"
+       class="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-3 bg-slate-50">
+
+    {% if not messages %}
+    <div class="flex-1 flex flex-col items-center justify-center gap-2 text-slate-400 select-none">
+      <svg width="40" height="40" fill="none" viewBox="0 0 40 40" class="text-slate-300">
+        <rect width="40" height="40" rx="12" fill="currentColor" opacity="0.3"/>
+        <path d="M12 14h16M12 20h10M12 26h7" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <p class="text-sm font-medium text-slate-500">Start chatting as the user</p>
+      <p class="text-xs text-slate-400">Runs the full AI pipeline — safety checks, scoring, tagging</p>
+    </div>
+    {% else %}
+    {% for msg in messages %}
+      {% if msg.role == "user" %}
+      <div class="flex justify-end">
+        <div class="max-w-[75%] bg-violet-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm leading-relaxed shadow-sm">
+          {{ msg.content }}
+        </div>
+      </div>
+      {% elif msg.role == "assistant" %}
+      {% set tags_dict = {} %}
+      {% if msg.contact_tags %}
+        {% set tags_dict = msg.contact_tags | fromjson %}
+      {% endif %}
+      <div class="flex justify-start">
+        <div class="max-w-[75%] flex flex-col gap-1.5">
+          <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm">
+            {{ msg.content | replace(" [BOOKING_SENT]", "") }}
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5 px-1">
+            {% if msg.lead_score is not none %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-bold
+                         {% if msg.lead_score >= (threshold | default(70)) %}bg-green-100 text-green-700
+                         {% elif msg.lead_score >= ((threshold | default(70)) // 2) %}bg-amber-100 text-amber-700
+                         {% else %}bg-slate-100 text-slate-500{% endif %}">
+              Score {{ msg.lead_score }}
+            </span>
+            {% endif %}
+            {% for dim, val in tags_dict.items() %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-medium bg-violet-50 text-violet-600 border border-violet-100">{{ val }}</span>
+            {% endfor %}
+            {% if msg.token_cost is not none %}
+            <span class="text-[0.65rem] text-slate-400 ml-auto whitespace-nowrap">
+              ${{ "%.5f" | format(msg.token_cost) }} &middot; {{ msg.prompt_tokens }}&uarr; {{ msg.completion_tokens }}&darr;
+            </span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% elif msg.role == "system" %}
+      <div class="flex justify-center">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border
+                    {% if 'MEDICAL' in msg.content %}bg-red-50 text-red-600 border-red-200
+                    {% elif 'TAKEOVER' in msg.content %}bg-amber-50 text-amber-600 border-amber-200
+                    {% else %}bg-slate-100 text-slate-500 border-slate-200{% endif %}">
+          {{ msg.content }}
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    {# Scroll anchor #}
+    <div id="chat-bottom"></div>
+  </div>
+
+  {# ── Input bar ───────────────────────────────────────────────────────────── #}
+  {% if not replay_mode %}
+  <div class="border-t border-slate-200 bg-white px-4 py-3 shrink-0">
+    <form id="chat-form"
+          hx-post="/admin/simulate/send"
+          hx-target="#chat-messages"
+          hx-swap="beforeend"
+          hx-indicator="#send-indicator"
+          hx-on::after-request="document.getElementById('msg-input').value = ''"
+          hx-on::after-settle="var c=document.getElementById('chat-messages'); c.scrollTop=c.scrollHeight;">
+      <input type="hidden" name="session_id" value="{{ session_id }}">
+      <input type="hidden" id="fn-hidden" name="first_name" value="{{ session.first_name if session and session.first_name else '' }}">
+
+      <div class="flex gap-2">
+        <input id="msg-input" name="message" type="text" autocomplete="off" required
+               placeholder="Type a message as the user…"
+               class="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-shadow">
+        <button type="submit"
+                class="px-5 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 active:scale-95 transition-all shrink-0 flex items-center gap-2">
+          <span id="send-indicator" class="htmx-indicator">
+            <svg class="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+          </span>
+          Send
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+
+{# Hidden fields for the save form #}
+<div id="save-form-fields" hidden>
+  <input type="hidden" name="session_id" id="save-session-id" value="{{ session_id }}">
+  <input type="hidden" name="name" id="save-name" value="">
+  <input type="hidden" name="note" id="save-note" value="">
+  <input type="hidden" name="first_name" id="save-fn" value="">
+</div>
+
+<script>
+  // Scroll to bottom on page load when replaying a session
+  document.addEventListener('DOMContentLoaded', function () {
+    var bottom = document.getElementById('chat-bottom');
+    if (bottom) bottom.scrollIntoView();
+  });
+</script>
+
+{% endblock %}

@@ -1,3 +1,6 @@
+import uuid
+import json as _json
+
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -5,6 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.repositories.config import get_all_config, set_config
+from app.repositories import conversation as conversation_repo
+from app.repositories import simulation as sim_repo
+from app.services.simulate import simulate_contact
 from app.api.admin.auth import (
     is_authenticated,
     check_rate_limit,
@@ -15,6 +21,7 @@ from config import settings
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+templates.env.filters["fromjson"] = lambda s: _json.loads(s) if s else {}
 
 CONFIG_KEYS = [
     "booking_link", "score_threshold", "prompt_scoring_rules",
@@ -71,6 +78,14 @@ async def login_post(request: Request, password: str = Form(...)):
 async def logout(request: Request):
     request.session.clear()
     return RedirectResponse("/admin/login", status_code=302)
+
+
+@router.get("/admin/dashboard", response_class=HTMLResponse)
+async def dashboard_get(request: Request, db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    stats = await conversation_repo.get_stats(db)
+    return templates.TemplateResponse(request, "admin/dashboard.html", {"stats": stats})
 
 
 @router.get("/admin/config", response_class=HTMLResponse)
@@ -157,3 +172,151 @@ async def config_save(
     await set_config(db, "human_takeover_triggers", human_takeover_triggers)
 
     return RedirectResponse("/admin/config?saved=true", status_code=302)
+
+
+# ── Simulation ─────────────────────────────────────────────────────────────────
+
+@router.get("/admin/simulate", response_class=HTMLResponse)
+async def simulate_get(request: Request, db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    session_id = str(uuid.uuid4())
+    await sim_repo.get_or_create_session(db, session_id)
+    return templates.TemplateResponse(
+        request,
+        "admin/simulate.html",
+        {"session_id": session_id, "messages": [], "score": 0, "tags": {}, "replay_mode": False, "session": None},
+    )
+
+
+@router.post("/admin/simulate/send", response_class=HTMLResponse)
+async def simulate_send(
+    request: Request,
+    session_id: str = Form(...),
+    message: str = Form(...),
+    first_name: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    if not is_authenticated(request):
+        return HTMLResponse("Unauthorized", status_code=401)
+
+    cfg = await get_all_config(db)
+    openai_client = request.app.state.openai_client
+
+    await sim_repo.get_or_create_session(db, session_id)
+
+    result = await simulate_contact(
+        db=db,
+        openai_client=openai_client,
+        session_id=session_id,
+        message=message.strip(),
+        first_name=first_name.strip() or None,
+        cfg=cfg,
+    )
+
+    sim_user_id = f"sim_{session_id}"
+    current_score = await conversation_repo.get_latest_score(db, sim_user_id)
+    current_tags  = await conversation_repo.get_latest_tags(db, sim_user_id)
+
+    try:
+        threshold = int(cfg.get("score_threshold", "70"))
+    except (ValueError, TypeError):
+        threshold = 70
+
+    return templates.TemplateResponse(
+        request,
+        "admin/partials/sim_message.html",
+        {
+            "user_message": message.strip(),
+            "result": result,
+            "current_score": current_score,
+            "current_tags": current_tags,
+            "threshold": threshold,
+        },
+    )
+
+
+@router.post("/admin/simulate/session/save", response_class=HTMLResponse)
+async def simulate_session_save(
+    request: Request,
+    session_id: str = Form(...),
+    name: str = Form(""),
+    note: str = Form(""),
+    first_name: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    if not is_authenticated(request):
+        return HTMLResponse("Unauthorized", status_code=401)
+
+    await sim_repo.update_session_meta(
+        db, session_id,
+        name=name.strip() or None,
+        note=note.strip() or None,
+        first_name=first_name.strip() or None,
+    )
+    return HTMLResponse(
+        '<span class="text-green-600 text-xs font-medium animate-slideDown">Saved ✓</span>'
+    )
+
+
+@router.get("/admin/simulate/sessions", response_class=HTMLResponse)
+async def simulate_sessions_list(request: Request, db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    sessions = await sim_repo.get_all_sessions(db)
+    return templates.TemplateResponse(
+        request,
+        "admin/sessions.html",
+        {"sessions": sessions},
+    )
+
+
+@router.post("/admin/simulate/session/{session_id}/delete")
+async def simulate_session_delete(
+    session_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    await sim_repo.delete_session(db, session_id)
+    return RedirectResponse("/admin/simulate/sessions", status_code=303)
+
+
+@router.get("/admin/simulate/session/{session_id}", response_class=HTMLResponse)
+async def simulate_session_replay(
+    session_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    session = await sim_repo.get_session(db, session_id)
+    if not session:
+        return RedirectResponse("/admin/simulate/sessions", status_code=302)
+
+    sim_user_id = f"sim_{session_id}"
+    history = await conversation_repo.get_history(db, sim_user_id, limit=100)
+    current_score = await conversation_repo.get_latest_score(db, sim_user_id)
+    current_tags  = await conversation_repo.get_latest_tags(db, sim_user_id)
+
+    cfg = await get_all_config(db)
+    try:
+        threshold = int(cfg.get("score_threshold", "70"))
+    except (ValueError, TypeError):
+        threshold = 70
+
+    return templates.TemplateResponse(
+        request,
+        "admin/simulate.html",
+        {
+            "session_id": session_id,
+            "session": session,
+            "messages": history,
+            "score": current_score,
+            "tags": current_tags,
+            "threshold": threshold,
+            "replay_mode": True,
+        },
+    )

@@ -1,0 +1,78 @@
+{# HTMX fragment — appended to #chat-messages on each send #}
+
+{# User bubble #}
+<div class="flex justify-end animate-fadeUp">
+  <div class="max-w-[75%] bg-violet-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm leading-relaxed shadow-sm">
+    {{ user_message }}
+  </div>
+</div>
+
+{# AI response or block notice #}
+{% if result.blocked %}
+  {% if result.reply %}
+  <div class="flex justify-start animate-fadeUp">
+    <div class="max-w-[75%] flex flex-col gap-1.5">
+      <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm">
+        {{ result.reply }}
+      </div>
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border
+                  {% if result.block_reason == 'medical' %}bg-red-50 text-red-700 border-red-200
+                  {% else %}bg-amber-50 text-amber-700 border-amber-200{% endif %}">
+        {% if result.block_reason == 'medical' %}⚕ Medical deflection sent{% else %}⚠ Human takeover triggered{% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="flex justify-center animate-fadeUp">
+    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium border
+                {% if result.block_reason == 'medical' %}bg-red-50 text-red-700 border-red-200
+                {% else %}bg-amber-50 text-amber-700 border-amber-200{% endif %}">
+      {% if result.block_reason == 'medical' %}⚕ Medical topic flagged. No reply configured.{% else %}⚠ Human takeover triggered. No AI reply sent.{% endif %}
+    </div>
+  </div>
+  {% endif %}
+{% else %}
+<div class="flex justify-start animate-fadeUp">
+  <div class="max-w-[75%] flex flex-col gap-1.5">
+    <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm">
+      {{ result.reply }}
+    </div>
+    {% if result.booking_link_fired %}
+    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs font-medium text-green-700">
+      🔗 Booking link embedded in reply above — threshold reached
+    </div>
+    {% endif %}
+    <div class="flex flex-wrap items-center gap-1.5 px-1">
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-bold
+                   {% if result.score >= threshold %}bg-green-100 text-green-700
+                   {% elif result.score >= (threshold // 2) %}bg-amber-100 text-amber-700
+                   {% else %}bg-slate-100 text-slate-500{% endif %}">
+        Score {{ result.score }}
+      </span>
+      {% for dim, val in result.tags.items() %}
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-medium bg-violet-50 text-violet-600 border border-violet-100">
+        {{ val }}
+      </span>
+      {% endfor %}
+      <span class="text-[0.65rem] text-slate-400 ml-auto whitespace-nowrap">
+        ${{ "%.5f" | format(result.cost) }} &middot; {{ result.prompt_tokens }}&uarr; {{ result.completion_tokens }}&darr; &middot; {{ result.model }}
+      </span>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# OOB swap — updates header score/tags without a separate request #}
+<div id="score-display" hx-swap-oob="innerHTML">
+  <span class="font-bold tabular-nums
+               {% if current_score >= threshold %}text-green-600
+               {% elif current_score >= (threshold // 2) %}text-amber-500
+               {% else %}text-slate-400{% endif %}">
+    {{ current_score }}
+  </span>
+</div>
+<div id="tags-display" hx-swap-oob="innerHTML">
+  {% for dim, val in current_tags.items() %}
+  <span class="px-2 py-0.5 rounded-full text-[0.65rem] font-medium bg-violet-50 text-violet-600 border border-violet-100">{{ val }}</span>
+  {% endfor %}
+</div>

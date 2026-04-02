@@ -16,6 +16,7 @@ from openai import AsyncOpenAI
 from app.api import health, webhook
 from app.api.admin import router as admin_router
 from app.db.database import engine, Base
+from app.models import simulation  # noqa: F401 — registers SimulationSession with Base.metadata
 from app.services.manychat import ManyChatService
 from config import settings
 
