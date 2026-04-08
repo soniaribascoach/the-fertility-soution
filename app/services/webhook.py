@@ -104,9 +104,14 @@ async def handle_contact(
         ai_model=result.model,
     )
 
+    # Split reply into bubbles — each \n\n-separated chunk is sent as a separate message
+    bubbles = [b.strip() for b in clean_reply.split("\n\n") if b.strip()]
+    if not bubbles:
+        bubbles = [clean_reply]
+
     if route.booking_fires_now:
-        # AI reply already contains the booking link embedded at the end — send as one message
-        await mc_svc.send_text_message(instagram_user_id, clean_reply)
+        for bubble in bubbles:
+            await mc_svc.send_text_message(instagram_user_id, bubble)
         await conv_repo.save_message(
             db, instagram_user_id, "assistant",
             clean_reply + " [BOOKING_SENT]",
@@ -122,6 +127,7 @@ async def handle_contact(
             contact_tags=new_tags,
             **ai_kwargs,
         )
-        await mc_svc.send_text_message(instagram_user_id, clean_reply)
+        for bubble in bubbles:
+            await mc_svc.send_text_message(instagram_user_id, bubble)
 
     return clean_reply

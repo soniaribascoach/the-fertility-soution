@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 class ReplyResult:
     reply: str
     tags: dict[str, str]
-    booking_link_used: bool
     cost: float
     prompt_tokens: int
     completion_tokens: int
@@ -22,17 +21,61 @@ class ReplyResult:
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
+_INPUT_PRICE_PER_M  = 0.40   # $ per 1M input tokens  (gpt-4.1-mini)
+_OUTPUT_PRICE_PER_M = 1.60   # $ per 1M output tokens (gpt-4.1-mini)
+
 PLAIN_TEXT_INSTRUCTIONS = (
     "Always respond in plain text. "
     "Do not use markdown formatting, bullet points, numbered lists, headers, bold, italics, or code blocks. "
     "NEVER use an em-dash (—) under any circumstances. This is a hard rule with no exceptions. "
     "If you feel the urge to write —, use a comma, a period, or split into two sentences instead. "
-    "Keep replies short and conversational: 1 to 4 sentences is ideal, never more than 5. "
-    "Write the way a real person would in a text message: use contractions (I'm, you're, that's), "
+    # ── Bubble structure ──────────────────────────────────────────────────────
+    "Send replies as short message bubbles, the way someone texts naturally. "
+    "Separate each bubble with \\n\\n — this makes each arrive as a separate message. "
+    "HARD RULE: every bubble is exactly 1–2 sentences. No exceptions, not even for emotional replies. "
+    "DEFAULT TO ONE BUBBLE. One bubble is the correct choice for most replies. "
+    "An acknowledgment with a question woven in at the end is still ONE bubble — "
+    "example: 'That's a lot to have been through — how long have you been trying?' "
+    "Do not split that into two messages. It is one natural thought. "
+    "Use TWO bubbles only when the reply contains two genuinely separate thoughts "
+    "that would feel disjointed or too rushed if combined. "
+    "Use THREE bubbles only for the very heaviest moments — miscarriage, failed IVF, deep grief — "
+    "and only when two bubbles genuinely aren't enough. "
+    "Never use four bubbles except for the booking link sequence. "
+    "Never pad to hit a number. If one bubble says it fully, send one. "
+    "If you receive additional guidance (a scenario perspective, a question, a credibility point) — "
+    "weave it into your existing bubbles. It is flavour, not extra content. Do not add bubbles for it. "
+    # ── Voice and tone ────────────────────────────────────────────────────────
+    "Write the way a real person texts: use contractions (I'm, you're, that's), "
     "use :) or :( naturally where it fits, and don't over-punctuate. "
-    "Ask at most one question per message. "
-    "Vary how you open each message — never start two replies the same way, and avoid repeating phrases like "
-    "'I hear you', 'I understand', or 'I appreciate you sharing that' more than once in a conversation."
+    "Do NOT use therapy language or scripted empathy phrases. "
+    "Never use the same phrase or expression twice across the conversation. "
+    "If you said 'I'm so sorry' once, find a completely different way to express empathy next time. "
+    "Vary your language turn by turn — same feeling, different words every time. "
+    "Do not project emotions or assume how someone feels beyond what they actually said. "
+    "If someone says their IVF failed, acknowledge the fact — not a wall of feelings they never mentioned. "
+    "Short and honest lands harder than long and elaborate. "
+    # ── Questions ─────────────────────────────────────────────────────────────
+    "Ask at most ONE question per reply. If you have nothing meaningful to ask, ask nothing. "
+    # ── Openers and repetition ────────────────────────────────────────────────
+    "Vary how you open each message — never start two replies the same way. "
+    "Never open a reply mid-conversation with 'Hi', 'Hey', 'Hello', 'I saw your message', "
+    "'I'm glad you reached out', or any greeting-style phrase. Respond directly to what was just said. "
+    # ── Mirroring ─────────────────────────────────────────────────────────────
+    "When reflecting what the user said, capture the feeling and meaning, not their exact words. "
+    "Paraphrase with warmth. Never repeat a user's phrase back verbatim. "
+    # ── Heavy emotional moments ───────────────────────────────────────────────
+    "For miscarriage, failed IVF, hopelessness, or deep grief — your ENTIRE reply is acknowledgment only. "
+    "No question. No advice. No pivot to services or next steps. Save any question for the next turn. "
+    "Keep it short. One or two sentences of genuine recognition. "
+    "Do not over-explain the acknowledgment. One honest sentence is often enough. "
+    # ── Memory ───────────────────────────────────────────────────────────────
+    "Before asking any question, check the conversation history. "
+    "Reference prior information naturally when relevant: 'Since you've been trying for two years...', "
+    "'Given your PCOS diagnosis...' — never re-ask something the person has already told you. "
+    # ── Authenticity ─────────────────────────────────────────────────────────
+    "Write like a real human who genuinely cares — not a polished AI assistant, not a sales agent. "
+    "Imperfect and direct beats smooth and scripted every time."
 )
 
 BOOKING_LINK_INSTRUCTIONS = (
@@ -47,11 +90,15 @@ BOOKING_LINK_INSTRUCTIONS = (
 def booking_fires_now_instruction(url: str) -> str:
     return (
         "OVERRIDE — the booking link must be included in your reply. "
-        "Do NOT say 'someone will be in touch' or imply a delay. "
-        f"End your message with the booking link embedded naturally as the final sentence. "
+        "Structure your reply as a natural 5-part sequence across short bubbles:\n"
+        "1. Acknowledge what they have shared — one warm sentence that reflects their specific journey.\n"
+        "2. Frame the next step naturally — e.g. 'The best next step from here is a call together.'\n"
+        "3. Explain the value of the call in one sentence — clarity and a real plan, not a sales pitch.\n"
+        "4. Ask for soft buy-in — e.g. 'Does that feel like a good next step for you?'\n"
+        f"5. Share the link naturally as the final line — e.g. 'You can grab a time here: {url}'\n"
         f"The URL is: {url}\n"
-        "Example closing: 'You can book your call here: {url}' — but write it in Sonia's voice, "
-        "not as a template. The link should feel like a natural continuation of what you just said."
+        "Write in Sonia's voice throughout — warm, personal, not scripted. "
+        "Do NOT say 'someone will reach out' or imply any delay."
     )
 
 TAGGING_INSTRUCTIONS = """
@@ -63,6 +110,15 @@ Dimensions:
 - urgency: urgency_low | urgency_medium | urgency_high. Mentions age or timeline pressure → urgency_high. No info → urgency_low.
 - readiness: readiness_ready = asking to book, has budget, ready to start. readiness_considering = asking questions, weighing options. readiness_exploring = just browsing or unsure.
 - fit: fit_high = serious, engaged, asking detailed questions. fit_medium = some engagement. fit_low = off-topic, venting only, or disengaged.
+
+Emotional urgency signals — these MUST produce urgency_high, never lower:
+- Any expression of hopelessness or desperation about conceiving: "I feel like it will never happen", "I give up", "I've tried everything and nothing works", "I feel so stuck", "I'm losing hope"
+- Statements of exhaustion after long treatment journeys
+- Doctor-framed urgency: "my doctor says IVF is my only option", "they recommended donor eggs" → urgency_high AND diagnosis_confirmed
+Rule: hopelessness and desperation INCREASE urgency. Emotional distress never lowers the urgency tag.
+
+Readiness signals:
+- "I'm ready to try something different", "I want to do whatever it takes", "I'm serious about this" → readiness_considering or readiness_ready depending on context
 """
 
 # JSON schema for structured output — guarantees reply + tags are always returned
@@ -110,6 +166,22 @@ _RESPONSE_SCHEMA = {
 }
 
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _cfg(cfg: dict, key: str) -> str:
+    return cfg.get(key, "").strip()
+
+
+def _compute_cost(usage) -> tuple[int, int, float]:
+    """Returns (prompt_tokens, completion_tokens, cost_usd)."""
+    if usage is None:
+        return 0, 0, 0.0
+    pt = usage.prompt_tokens
+    ct = usage.completion_tokens
+    cost = (pt / 1_000_000 * _INPUT_PRICE_PER_M) + (ct / 1_000_000 * _OUTPUT_PRICE_PER_M)
+    return pt, ct, cost
+
+
 # ── System Prompt Builder ──────────────────────────────────────────────────────
 
 def build_base_prompt(cfg: dict) -> str:
@@ -130,10 +202,13 @@ def build_base_prompt(cfg: dict) -> str:
         "never as an assistant."
     )
 
-    about    = cfg.get("prompt_about", "").strip()
-    services = cfg.get("prompt_services", "").strip()
-    tone     = cfg.get("prompt_tone", "").strip()
-    flow     = cfg.get("prompt_flow", "").strip()
+    about         = _cfg(cfg, "prompt_about")
+    services      = _cfg(cfg, "prompt_services")
+    tone          = _cfg(cfg, "prompt_tone")
+    flow          = _cfg(cfg, "prompt_flow")
+    hard_rules    = _cfg(cfg, "prompt_hard_rules")
+    scoring_rules = _cfg(cfg, "prompt_scoring_rules")
+
     if about or services or tone:
         if about:    parts.append(f"## About the Business\n{about}")
         if services: parts.append(f"## Service Offerings\n{services}")
@@ -146,7 +221,6 @@ def build_base_prompt(cfg: dict) -> str:
     if flow:
         parts.append(f"## Conversation Flow\n{flow}")
 
-    hard_rules = cfg.get("prompt_hard_rules", "").strip()
     if hard_rules:
         parts.append(f"## Non-Negotiable Rules\n{hard_rules}")
 
@@ -155,7 +229,6 @@ def build_base_prompt(cfg: dict) -> str:
 
     # Tagging instructions, optionally extended with business-defined signals
     tagging = TAGGING_INSTRUCTIONS.strip()
-    scoring_rules = cfg.get("prompt_scoring_rules", "").strip()
     if scoring_rules:
         tagging += (
             "\n\nAdditional tagging signals from the business — use these to inform your classification:\n"
@@ -176,10 +249,20 @@ def build_context_block(route: RouteContext) -> str:
     if route.booking_fires_now:
         parts.append(booking_fires_now_instruction(route.booking_url))
 
+    if route.known_facts:
+        parts.append(
+            f"What you already know about this person — do NOT re-ask these:\n{route.known_facts}"
+        )
+
     if route.opening_variant:
         parts.append(
             f"This is the lead's very first message. "
-            f"Your response MUST begin with this exact opening:\n\"{route.opening_variant}\""
+            f"If their message was a brief greeting or they haven't shared their situation yet, "
+            f"open with this line (you may adapt the wording slightly but keep the spirit):\n"
+            f"\"{route.opening_variant}\"\n"
+            f"If they have already shared something personal — a diagnosis, a situation, how long they've been trying — "
+            f"ignore this opener entirely and respond directly to what they said. "
+            f"Never use this opener AND respond to their content in the same reply. Pick one."
         )
 
     if route.matched_pattern:
@@ -196,7 +279,21 @@ def build_context_block(route: RouteContext) -> str:
             f"Use this approach (adapt naturally — do not copy verbatim):\n{text}"
         )
 
-    if route.question_for_dim:
+    if route.low_intent:
+        parts.append(
+            "The user's intent is vague — they are just browsing or not sure what this is about. "
+            "Gently ask what has brought them here personally before continuing. "
+            "Do NOT describe services, pitch the program, or ask qualifying questions. "
+            "Example: 'Of course — what's been going on for you lately?'"
+        )
+
+    if route.suppress_question:
+        parts.append(
+            "HEAVY EMOTIONAL MOMENT — do NOT ask any question in this reply, not even at the end. "
+            "Do not offer advice, suggestions, or next steps. "
+            "Your entire reply must be acknowledgment and emotional connection only."
+        )
+    elif route.question_for_dim:
         parts.append(
             f"Weave this question naturally into your response — ask only this one question, not multiple:\n"
             f"{route.question_for_dim}"
@@ -218,11 +315,6 @@ def build_context_block(route: RouteContext) -> str:
         return ""
 
     return "## Guidance for This Specific Reply\n\n" + "\n\n".join(parts)
-
-
-# Keep backward-compatible alias used by tests
-def build_system_prompt(cfg: dict) -> str:
-    return build_base_prompt(cfg)
 
 
 # ── Guardrail Checkers ─────────────────────────────────────────────────────────
@@ -286,6 +378,36 @@ def compute_score(tags: dict[str, str]) -> int:
     return round(score)
 
 
+# ── JSON Repair ───────────────────────────────────────────────────────────────
+
+def _repair_json_newlines(raw: str) -> str:
+    """
+    Replace bare newline/carriage-return characters inside JSON string values
+    with their escape sequences (\\n / \\r).  Structural whitespace outside
+    strings is left untouched.
+    """
+    result: list[str] = []
+    in_string = False
+    escape_next = False
+    for ch in raw:
+        if escape_next:
+            result.append(ch)
+            escape_next = False
+        elif ch == "\\" and in_string:
+            result.append(ch)
+            escape_next = True
+        elif ch == '"':
+            result.append(ch)
+            in_string = not in_string
+        elif ch == "\n" and in_string:
+            result.append("\\n")
+        elif ch == "\r" and in_string:
+            result.append("\\r")
+        else:
+            result.append(ch)
+    return "".join(result)
+
+
 # ── Main Entry Point ───────────────────────────────────────────────────────────
 
 async def generate_reply(
@@ -339,28 +461,27 @@ async def generate_reply(
     )
 
     raw = response.choices[0].message.content or "{}"
-    data = json.loads(raw)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        # Model emitted literal newlines inside the JSON string instead of \n escape sequences.
+        # Walk the raw string and escape any bare newlines that appear inside a quoted value.
+        data = json.loads(_repair_json_newlines(raw))
     clean_reply = data.get("reply", "").replace("—", ",")
     tags = data.get("tags", {})
 
-    usage = response.usage
-    prompt_tokens     = usage.prompt_tokens     if usage else 0
-    completion_tokens = usage.completion_tokens if usage else 0
-    total_tokens      = usage.total_tokens      if usage else 0
-    # gpt-4.1-mini pricing: $0.40/1M input, $1.60/1M output
-    total_cost = (prompt_tokens / 1_000_000 * 0.40) + (completion_tokens / 1_000_000 * 1.60)
+    prompt_tokens, completion_tokens, total_cost = _compute_cost(response.usage)
     model_used = response.model or "gpt-4.1-mini"
 
     logger.info(
-        "OpenAI — model: %s | tokens: %d in / %d out / %d total | cost: $%.5f | finish: %s",
-        model_used, prompt_tokens, completion_tokens, total_tokens, total_cost,
+        "OpenAI — model: %s | tokens: %d in / %d out | cost: $%.5f | finish: %s",
+        model_used, prompt_tokens, completion_tokens, total_cost,
         response.choices[0].finish_reason,
     )
 
     return ReplyResult(
         reply=clean_reply,
         tags=tags,
-        booking_link_used=False,
         cost=total_cost,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,

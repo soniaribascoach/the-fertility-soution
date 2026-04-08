@@ -106,8 +106,11 @@ async def simulate_contact(
 
     await sim_repo.increment_message_count(db, session_id)
 
+    bubbles = [b.strip() for b in result.reply.split("\n\n") if b.strip()]
+
     return {
         "reply": result.reply,
+        "bubbles": bubbles if bubbles else [result.reply],
         "tags": result.tags,
         "score": new_score,
         "cost": result.cost,

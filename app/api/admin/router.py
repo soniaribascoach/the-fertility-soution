@@ -22,6 +22,7 @@ from config import settings
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 templates.env.filters["fromjson"] = lambda s: _json.loads(s) if s else {}
+templates.env.filters["split_bubbles"] = lambda s: [b.strip() for b in s.split("\n\n") if b.strip()] or [s]
 
 CONFIG_KEYS = [
     "booking_link", "score_threshold", "prompt_scoring_rules",

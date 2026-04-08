@@ -29,6 +29,29 @@ _DEFAULT_TAGS = {
 # Priority order for qualification question selection
 _DIM_PRIORITY = ["ttc", "diagnosis", "urgency"]
 
+# Pattern labels that indicate a high-emotion turn — suppress qualification question
+_HIGH_EMOTION_KEYWORDS = {"miscarriage", "ivf", "hopeless", "grief", "amh"}
+
+# Direct terms to detect high-emotion content in the user message — deterministic, no classifier needed
+_HIGH_EMOTION_USER_TERMS = [
+    "miscarriage",
+    "ivf fail", "failed ivf", "ivf didn't work", "ivf did not work",
+    "iui fail", "failed iui",
+    "hopeless",
+    "never going to happen",
+    "give up", "giving up",
+    "devastated", "heartbroken",
+    "lost hope", "losing hope",
+    "tried everything",
+    "nothing works", "nothing is working",
+    "feel like it will never",
+    "feel like it's never",
+    "donor egg",
+    "recurrent loss",
+    "3 miscarriages", "4 miscarriages", "5 miscarriages",
+    "multiple miscarriages",
+]
+
 # Dimension → keywords to find the right question in prompt_qualification_questions
 _DIM_QUESTION_KEYWORDS = {
     "ttc":       ["long", "trying", "how long"],
@@ -48,6 +71,9 @@ class RouteContext:
     cta_line: str | None                    # one CTA line when score approaches threshold
     booking_fires_now: bool = False         # True when booking link should be embedded in this reply
     booking_url: str = ""                   # The URL to embed when booking_fires_now is True
+    known_facts: str | None = None          # derived from prior_tags — prevents re-asking known info
+    suppress_question: bool = False         # True for high-emotion turns (grief, IVF, miscarriage)
+    low_intent: bool = False               # True when user is vaguely browsing, not yet sharing anything personal
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -73,6 +99,33 @@ def _parse_labeled_list(raw: str) -> list[tuple[str, str]]:
             text = line
         pairs.append((label.strip(), text.strip()))
     return pairs
+
+
+def _derive_known_facts(prior_tags: dict) -> str | None:
+    """Convert non-default prior tags into plain English facts the AI should not re-ask."""
+    parts = []
+
+    ttc = prior_tags.get("ttc")
+    if ttc and ttc != _DEFAULT_TAGS["ttc"]:
+        label = {
+            "ttc_6-12mo": "6–12 months",
+            "ttc_1-2yr": "1–2 years",
+            "ttc_2yr+": "over 2 years",
+        }.get(ttc)
+        if label:
+            parts.append(f"how long they have been trying ({label}) — do not ask again")
+
+    diagnosis = prior_tags.get("diagnosis")
+    if diagnosis == "diagnosis_suspected":
+        parts.append("they have a suspected diagnosis — do not ask if they have been diagnosed")
+    elif diagnosis == "diagnosis_confirmed":
+        parts.append("they have a confirmed diagnosis — do not ask if they have been diagnosed")
+
+    urgency = prior_tags.get("urgency")
+    if urgency in ("urgency_medium", "urgency_high"):
+        parts.append("age or timeline pressure is already known — do not ask about this again")
+
+    return "; ".join(parts) if parts else None
 
 
 def _find_question_for_dim(dim: str, questions: list[str]) -> str | None:
@@ -104,10 +157,10 @@ async def _run_classifier(
     pattern_pairs: list[tuple[str, str]],
     objection_pairs: list[tuple[str, str]],
     openai_client: AsyncOpenAI,
-) -> tuple[tuple[str, str] | None, tuple[str, str] | None, bool]:
+) -> tuple[tuple[str, str] | None, tuple[str, str] | None, bool, bool]:
     """
     Single cheap LLM call that classifies the conversation's semantic context.
-    Returns (matched_pattern | None, matched_objection | None, authority_useful: bool).
+    Returns (matched_pattern | None, matched_objection | None, authority_useful: bool, low_intent: bool).
     """
     # Build recent conversation context (last 6 turns + current message)
     recent = []
@@ -135,8 +188,13 @@ async def _run_classifier(
         "e.g. the cost is too high, feeling overwhelmed by too much health information, "
         "or scepticism that coaching will work. "
         "Emotional distress about a diagnosis or test results is NOT an objection — return -1 for those.\n\n"
-        "Would including a credibility or authority proof point feel natural in the AI's next reply? (true/false)\n\n"
-        'Return only valid JSON: {"scenario": <integer>, "objection": <integer>, "authority_useful": <boolean>}'
+        "Should authority or credentials be mentioned? "
+        "Return true ONLY IF the user is explicitly questioning whether this approach works, "
+        "asking for proof or track record, or expressing direct scepticism about the program. "
+        "Return false for emotional sharing, general questions, or anything else. "
+        "When in doubt, return false.\n\n"
+        "Is the user's intent vague or exploratory — just browsing, asking what this is about, or not sharing anything personal yet? (true/false)\n\n"
+        'Return only valid JSON: {"scenario": <integer>, "objection": <integer>, "authority_useful": <boolean>, "low_intent": <boolean>}'
     )
 
     try:
@@ -151,21 +209,22 @@ async def _run_classifier(
         scenario_idx  = int(data.get("scenario", -1))
         objection_idx = int(data.get("objection", -1))
         authority_useful = bool(data.get("authority_useful", False))
+        low_intent = bool(data.get("low_intent", False))
 
         matched_pattern   = pattern_pairs[scenario_idx]   if 0 <= scenario_idx  < len(pattern_pairs)   else None
         matched_objection = objection_pairs[objection_idx] if 0 <= objection_idx < len(objection_pairs) else None
 
         logger.debug(
-            "Classifier → scenario=%d (%s), objection=%d (%s), authority=%s",
+            "Classifier → scenario=%d (%s), objection=%d (%s), authority=%s, low_intent=%s",
             scenario_idx,  matched_pattern[0]   if matched_pattern   else "none",
             objection_idx, matched_objection[0] if matched_objection else "none",
-            authority_useful,
+            authority_useful, low_intent,
         )
-        return matched_pattern, matched_objection, authority_useful
+        return matched_pattern, matched_objection, authority_useful, low_intent
 
     except Exception as exc:
         logger.warning("Classifier call failed (%s) — skipping semantic context injection", exc)
-        return None, None, False
+        return None, None, False, False
 
 
 # ── Public Entry Point ────────────────────────────────────────────────────────
@@ -189,12 +248,15 @@ async def build_route_context(
 
     # ── Part A: Deterministic ─────────────────────────────────────────────────
 
-    # Opening variant — only on the very first message
+    # Opening variant — only on the very first message (determined by database history)
     opening_variant: str | None = None
     if is_first:
         variants = _parse_list(cfg.get("prompt_opening_variants", ""))
         if variants:
             opening_variant = random.choice(variants)
+
+    # Known facts from prior tags — injected so the AI never re-asks them
+    known_facts = _derive_known_facts(prior_tags) if not is_first else None
 
     # Qualification question — one per turn, for the highest-priority unknown dimension
     question_for_dim = _select_question(
@@ -217,6 +279,15 @@ async def build_route_context(
     matched_pattern: tuple[str, str] | None   = None
     matched_objection: tuple[str, str] | None = None
     authority_phrase: str | None              = None
+    low_intent: bool                          = False
+
+    # Deterministic high-emotion detection — keyword check on the raw user message
+    msg_lower = user_message.lower()
+    suppress_question: bool = any(term in msg_lower for term in _HIGH_EMOTION_USER_TERMS)
+
+    # High-emotion first message: drop the opening variant — acknowledge the emotion directly
+    if suppress_question:
+        opening_variant = None
 
     if not is_first:
         pattern_pairs     = _parse_labeled_list(cfg.get("prompt_pattern_responses", ""))
@@ -224,7 +295,7 @@ async def build_route_context(
         authority_phrases = _parse_list(cfg.get("prompt_authority_proof", ""))
 
         if pattern_pairs or objection_pairs or authority_phrases:
-            matched_pattern, matched_objection, authority_useful = await _run_classifier(
+            matched_pattern, matched_objection, authority_useful, low_intent = await _run_classifier(
                 user_message=user_message,
                 history=history,
                 pattern_pairs=pattern_pairs,
@@ -233,6 +304,12 @@ async def build_route_context(
             )
             if authority_useful and authority_phrases:
                 authority_phrase = random.choice(authority_phrases)
+
+        # Also suppress if the classifier matched a high-emotion pattern label
+        if not suppress_question and matched_pattern:
+            label_lower = matched_pattern[0].lower()
+            if any(kw in label_lower for kw in _HIGH_EMOTION_KEYWORDS):
+                suppress_question = True
 
     # Also suppress qualification question on turn 1 — the opening variant
     # already ends with a question; stacking another creates the "multiple questions" problem.
@@ -254,4 +331,7 @@ async def build_route_context(
         cta_line=cta_line,
         booking_fires_now=booking_fires_now,
         booking_url=booking_url,
+        known_facts=known_facts,
+        suppress_question=suppress_question,
+        low_intent=low_intent,
     )

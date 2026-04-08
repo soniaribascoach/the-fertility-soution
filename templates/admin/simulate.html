@@ -129,11 +129,14 @@
       {% if msg.contact_tags %}
         {% set tags_dict = msg.contact_tags | fromjson %}
       {% endif %}
+      {% set bubbles = msg.content | replace(" [BOOKING_SENT]", "") | split_bubbles %}
+      {% for bubble in bubbles %}
       <div class="flex justify-start">
         <div class="max-w-[75%] flex flex-col gap-1.5">
           <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm">
-            {{ msg.content | replace(" [BOOKING_SENT]", "") }}
+            {{ bubble }}
           </div>
+          {% if loop.last %}
           <div class="flex flex-wrap items-center gap-1.5 px-1">
             {% if msg.lead_score is not none %}
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-bold
@@ -152,8 +155,10 @@
             </span>
             {% endif %}
           </div>
+          {% endif %}
         </div>
       </div>
+      {% endfor %}
       {% elif msg.role == "system" %}
       <div class="flex justify-center">
         <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border
