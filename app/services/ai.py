@@ -34,9 +34,12 @@ PLAIN_TEXT_INSTRUCTIONS = (
     "Separate each bubble with \\n\\n — this makes each arrive as a separate message. "
     "HARD RULE: every bubble is exactly 1–2 sentences. No exceptions, not even for emotional replies. "
     "DEFAULT TO ONE BUBBLE. One bubble is the correct choice for most replies. "
-    "An acknowledgment with a question woven in at the end is still ONE bubble — "
-    "example: 'That's a lot to have been through — how long have you been trying?' "
+    "An acknowledgment with a natural follow-up woven in at the end is still ONE bubble — "
+    "example: 'That's a lot to have been through, how long have you been trying?' "
     "Do not split that into two messages. It is one natural thought. "
+    "EXCEPTION: when a qualifying or direct question is the focus of its own bubble, "
+    "let the acknowledgment land fully first as a complete bubble, then send the question "
+    "as a second bubble. The acknowledgment must not feel interrupted. "
     "Use TWO bubbles only when the reply contains two genuinely separate thoughts "
     "that would feel disjointed or too rushed if combined. "
     "Use THREE bubbles only for the very heaviest moments — miscarriage, failed IVF, deep grief — "
@@ -295,7 +298,10 @@ def build_context_block(route: RouteContext) -> str:
         )
     elif route.question_for_dim:
         parts.append(
-            f"Weave this question naturally into your response — ask only this one question, not multiple:\n"
+            f"Ask this question as its own bubble — after the acknowledgment has landed fully. "
+            f"Preface it with a natural softener ('Just curious,' / 'I'm wondering,' / 'Out of curiosity,') "
+            f"but only if it hasn't already appeared earlier in this conversation. "
+            f"Ask only this one question, not multiple:\n"
             f"{route.question_for_dim}"
         )
 
