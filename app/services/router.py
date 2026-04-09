@@ -11,6 +11,7 @@ which injects targeted directives into the system prompt before generation.
 import json
 import logging
 import random
+import re
 from dataclasses import dataclass
 
 from openai import AsyncOpenAI
@@ -70,8 +71,9 @@ class RouteContext:
     authority_phrase: str | None            # one proof phrase when classifier says useful
     cta_line: str | None                    # one CTA line when score approaches threshold
     booking_fires_now: bool = False         # True when booking link should be embedded in this reply
+    booking_ask_confirmation: bool = False  # True when buy-in question should be asked (no link yet)
     booking_url: str = ""                   # The URL to embed when booking_fires_now is True
-    known_facts: str | None = None          # derived from prior_tags — prevents re-asking known info
+    known_facts: str | None = None          # derived from prior_tags + history — prevents re-asking known info
     suppress_question: bool = False         # True for high-emotion turns (grief, IVF, miscarriage)
     low_intent: bool = False               # True when user is vaguely browsing, not yet sharing anything personal
 
@@ -101,8 +103,11 @@ def _parse_labeled_list(raw: str) -> list[tuple[str, str]]:
     return pairs
 
 
-def _derive_known_facts(prior_tags: dict) -> str | None:
-    """Convert non-default prior tags into plain English facts the AI should not re-ask."""
+_AGE_PATTERN = re.compile(r"\b(?:i[' ]?m|i am)\s+(\d{2})\b", re.IGNORECASE)
+
+
+def _derive_known_facts(prior_tags: dict, history: list | None = None) -> str | None:
+    """Convert non-default prior tags + conversation history into plain English facts the AI should not re-ask."""
     parts = []
 
     ttc = prior_tags.get("ttc")
@@ -125,7 +130,45 @@ def _derive_known_facts(prior_tags: dict) -> str | None:
     if urgency in ("urgency_medium", "urgency_high"):
         parts.append("age or timeline pressure is already known — do not ask about this again")
 
+    # Scan user messages in history for explicit facts
+    if history:
+        user_texts = " ".join(
+            t.content for t in history if t.role == "user" and t.content
+        )
+        user_lower = user_texts.lower()
+
+        age_match = _AGE_PATTERN.search(user_texts)
+        if age_match:
+            parts.append(f"their age is {age_match.group(1)} — do not ask again")
+
+        if "amh" in user_lower:
+            parts.append("they have mentioned AMH — reference it naturally when relevant")
+
+        if "ivf" in user_lower:
+            parts.append("they have mentioned IVF — reference it naturally when relevant")
+
+        if "iui" in user_lower:
+            parts.append("they have mentioned IUI — reference it naturally when relevant")
+
     return "; ".join(parts) if parts else None
+
+
+_POSITIVE_BOOKING_TERMS = [
+    "yes", "yeah", "yep", "yup", "sure", "absolutely", "definitely",
+    "sounds good", "sounds great", "that sounds good", "that sounds great",
+    "let's do it", "lets do it", "let's go", "lets go",
+    "i'd love that", "id love that", "i would love that",
+    "that would be great", "that would be amazing",
+    "ok", "okay", "of course", "for sure", "great idea", "love that",
+    "i'm ready", "im ready", "i am ready", "ready",
+    "sign me up", "book", "schedule",
+]
+
+
+def _user_confirmed_booking(user_message: str) -> bool:
+    """Returns True if the user's message is a positive response to the buy-in question."""
+    msg = user_message.lower().strip()
+    return any(term in msg for term in _POSITIVE_BOOKING_TERMS)
 
 
 def _find_question_for_dim(dim: str, questions: list[str]) -> str | None:
@@ -238,13 +281,28 @@ async def build_route_context(
     threshold: int,
     openai_client: AsyncOpenAI,
     already_sent: bool = False,
+    already_asked: bool = False,
 ) -> RouteContext:
     """
     Builds a RouteContext that tells the prompt assembler exactly what to inject
     for this specific conversation turn.
+
+    Booking two-step:
+      Phase A — score crosses threshold, buy-in not yet asked → booking_ask_confirmation=True
+      Phase B — buy-in already asked, user confirmed positively → booking_fires_now=True
     """
     is_first = len(history) == 0
-    booking_fires_now = threshold > 0 and current_score >= threshold and not already_sent
+
+    # Determine booking phase
+    score_qualifies = threshold > 0 and current_score >= threshold
+    booking_fires_now = False
+    booking_ask_confirmation = False
+
+    if not already_sent:
+        if already_asked and _user_confirmed_booking(user_message):
+            booking_fires_now = True
+        elif score_qualifies and not already_asked:
+            booking_ask_confirmation = True
 
     # ── Part A: Deterministic ─────────────────────────────────────────────────
 
@@ -255,8 +313,8 @@ async def build_route_context(
         if variants:
             opening_variant = random.choice(variants)
 
-    # Known facts from prior tags — injected so the AI never re-asks them
-    known_facts = _derive_known_facts(prior_tags) if not is_first else None
+    # Known facts from prior tags + history — injected so the AI never re-asks them
+    known_facts = _derive_known_facts(prior_tags, history) if not is_first else None
 
     # Qualification question — one per turn, for the highest-priority unknown dimension
     question_for_dim = _select_question(
@@ -264,9 +322,9 @@ async def build_route_context(
         _parse_list(cfg.get("prompt_qualification_questions", "")),
     )
 
-    # CTA line — when score approaches booking threshold (but not the turn it actually fires)
+    # CTA line — when score approaches booking threshold (but not when ask/fire is happening)
     cta_line: str | None = None
-    if threshold > 0 and current_score >= int(threshold * 0.75) and not booking_fires_now:
+    if threshold > 0 and current_score >= int(threshold * 0.75) and not booking_fires_now and not booking_ask_confirmation:
         cta_options = _parse_list(cfg.get("prompt_cta_transitions", ""))
         if cta_options:
             cta_line = random.choice(cta_options)
@@ -317,9 +375,11 @@ async def build_route_context(
         question_for_dim = None
 
     booking_url = cfg.get("booking_link", "").strip() if booking_fires_now else ""
-    # Can't fire booking link without a URL configured — treat as not firing
-    if not booking_url:
+    # Can't fire booking link without a URL configured — treat as not firing, fall back to ask
+    if booking_fires_now and not booking_url:
         booking_fires_now = False
+        if not already_asked:
+            booking_ask_confirmation = True
 
     return RouteContext(
         is_first_message=is_first,
@@ -330,6 +390,7 @@ async def build_route_context(
         authority_phrase=authority_phrase,
         cta_line=cta_line,
         booking_fires_now=booking_fires_now,
+        booking_ask_confirmation=booking_ask_confirmation,
         booking_url=booking_url,
         known_facts=known_facts,
         suppress_question=suppress_question,

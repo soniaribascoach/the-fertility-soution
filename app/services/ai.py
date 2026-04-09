@@ -21,8 +21,8 @@ class ReplyResult:
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-_INPUT_PRICE_PER_M  = 0.40   # $ per 1M input tokens  (gpt-4.1-mini)
-_OUTPUT_PRICE_PER_M = 1.60   # $ per 1M output tokens (gpt-4.1-mini)
+_INPUT_PRICE_PER_M = 0.40  # $ per 1M input tokens  (gpt-4.1-mini)
+_OUTPUT_PRICE_PER_M = 1.60  # $ per 1M output tokens (gpt-4.1-mini)
 
 PLAIN_TEXT_INSTRUCTIONS = (
     "Always respond in plain text. "
@@ -78,31 +78,47 @@ PLAIN_TEXT_INSTRUCTIONS = (
     "'Given your PCOS diagnosis...' — never re-ask something the person has already told you. "
     # ── Authenticity ─────────────────────────────────────────────────────────
     "Write like a real human who genuinely cares — not a polished AI assistant, not a sales agent. "
-    "Imperfect and direct beats smooth and scripted every time."
+    "Imperfect and direct beats smooth and scripted every time. "
+    # ── Session language ──────────────────────────────────────────────────────
+    "Always refer to sessions as 'zoom sessions'. Never use the word 'call' when referring to a session or next step."
 )
 
 BOOKING_LINK_INSTRUCTIONS = (
     "Never include a booking link or URL in your replies. "
-    "If the user asks to schedule a call or book a session, respond with enthusiasm and warmth — "
+    "If the user asks to schedule a zoom session or book a session, respond with enthusiasm and warmth — "
     "tell them it sounds like a great next step, and keep the conversation going naturally. "
     "Do not promise that someone will reach out or that a link is coming. "
     "You do not control when the booking link is sent — that happens automatically. "
     "Your job is only to have a warm, natural conversation."
 )
 
+
+def booking_ask_confirmation_instruction() -> str:
+    return (
+        "OVERRIDE — do NOT send a booking link yet. "
+        "Your job is to plant the seed naturally across 2–3 short bubbles:\n"
+        "1. Briefly acknowledge what they've shared — one warm, specific sentence.\n"
+        "2. Suggest a zoom session would be the clearest next step — one sentence on the value (clarity, a real plan, not a sales pitch).\n"
+        "3. End with a soft open question: 'Does that feel like a good next step for you?' or something equally natural.\n"
+        "Do NOT include any URL. Do NOT say a link is coming or that someone will reach out. "
+        "Write in Sonia's voice — warm, grounded, not scripted."
+    )
+
+
 def booking_fires_now_instruction(url: str) -> str:
     return (
         "OVERRIDE — the booking link must be included in your reply. "
         "Structure your reply as a natural 5-part sequence across short bubbles:\n"
         "1. Acknowledge what they have shared — one warm sentence that reflects their specific journey.\n"
-        "2. Frame the next step naturally — e.g. 'The best next step from here is a call together.'\n"
-        "3. Explain the value of the call in one sentence — clarity and a real plan, not a sales pitch.\n"
+        "2. Frame the next step naturally — e.g. 'The best next step from here is a zoom session together.'\n"
+        "3. Explain the value of the zoom session in one sentence — clarity and a real plan, not a sales pitch.\n"
         "4. Ask for soft buy-in — e.g. 'Does that feel like a good next step for you?'\n"
         f"5. Share the link naturally as the final line — e.g. 'You can grab a time here: {url}'\n"
         f"The URL is: {url}\n"
         "Write in Sonia's voice throughout — warm, personal, not scripted. "
         "Do NOT say 'someone will reach out' or imply any delay."
     )
+
 
 TAGGING_INSTRUCTIONS = """
 Classify this conversation across 5 dimensions. Base your classification on the full conversation, not just the last message. If information is absent, use the most conservative tag.
@@ -200,16 +216,14 @@ def build_base_prompt(cfg: dict) -> str:
 
     # Persona header — must come first so the model adopts Sonia's identity immediately
     parts.append(
-        "You are Sonia Ribas, a warm, empathetic fertility coach with over 15 years of experience "
-        "and over 700 babies welcomed. You speak directly as Sonia in every message — never as an AI, "
-        "never as an assistant."
+        "You are Sonia Ribas, a fertility expert with 15+ years of experience supporting women through complex fertility journeys, including low AMH, unexplained infertility, recurrent miscarriage, and IVF failures. She has supported 700+ successful pregnancies. She is not a therapist — she is a calm, experienced expert who has seen hundreds of cases and understands patterns. You speak directly as Sonia in every message — never as an AI, never as an assistant."
     )
 
-    about         = _cfg(cfg, "prompt_about")
-    services      = _cfg(cfg, "prompt_services")
-    tone          = _cfg(cfg, "prompt_tone")
-    flow          = _cfg(cfg, "prompt_flow")
-    hard_rules    = _cfg(cfg, "prompt_hard_rules")
+    about = _cfg(cfg, "prompt_about")
+    services = _cfg(cfg, "prompt_services")
+    tone = _cfg(cfg, "prompt_tone")
+    flow = _cfg(cfg, "prompt_flow")
+    hard_rules = _cfg(cfg, "prompt_hard_rules")
     scoring_rules = _cfg(cfg, "prompt_scoring_rules")
 
     if about or services or tone:
@@ -234,8 +248,8 @@ def build_base_prompt(cfg: dict) -> str:
     tagging = TAGGING_INSTRUCTIONS.strip()
     if scoring_rules:
         tagging += (
-            "\n\nAdditional tagging signals from the business — use these to inform your classification:\n"
-            + scoring_rules
+                "\n\nAdditional tagging signals from the business — use these to inform your classification:\n"
+                + scoring_rules
         )
     parts.append(tagging)
 
@@ -251,6 +265,8 @@ def build_context_block(route: RouteContext) -> str:
 
     if route.booking_fires_now:
         parts.append(booking_fires_now_instruction(route.booking_url))
+    elif route.booking_ask_confirmation:
+        parts.append(booking_ask_confirmation_instruction())
 
     if route.known_facts:
         parts.append(
@@ -260,11 +276,13 @@ def build_context_block(route: RouteContext) -> str:
     if route.opening_variant:
         parts.append(
             f"This is the lead's very first message. "
+            f"Start with a brief, warm greeting — one natural sentence welcoming them (e.g. 'Hey, so glad you're here :)' or 'Hi! Really glad you reached out.'). "
+            f"A greeting is only appropriate on this first turn — never mid-conversation. "
             f"If their message was a brief greeting or they haven't shared their situation yet, "
-            f"open with this line (you may adapt the wording slightly but keep the spirit):\n"
+            f"follow the greeting with this line (you may adapt the wording slightly but keep the spirit):\n"
             f"\"{route.opening_variant}\"\n"
             f"If they have already shared something personal — a diagnosis, a situation, how long they've been trying — "
-            f"ignore this opener entirely and respond directly to what they said. "
+            f"keep the greeting brief and then respond directly to what they said. "
             f"Never use this opener AND respond to their content in the same reply. Pick one."
         )
 
@@ -272,7 +290,8 @@ def build_context_block(route: RouteContext) -> str:
         label, text = route.matched_pattern
         parts.append(
             f"This conversation is about: {label}. "
-            f"Ground your reply in this perspective (adapt naturally — do not copy verbatim):\n{text}"
+            f"Ground your reply in this perspective (adapt naturally — do not copy verbatim):\n{text}\n"
+            f"Do NOT mention a zoom session, booking, or next steps in this reply unless the booking sequence is already active above."
         )
 
     if route.matched_objection:
@@ -368,18 +387,18 @@ def compute_score(tags: dict[str, str]) -> int:
 
     score = (ttc/3 × 10) + (diag/2 × 15) + (urgency/2 × 20) + (readiness/2 × 40) + (fit/2 × 15)
     """
-    ttc_val       = _TTC_VAL.get(tags.get("ttc", "ttc_0-6mo"), 0)
-    diag_val      = _DIAG_VAL.get(tags.get("diagnosis", "diagnosis_none"), 0)
-    urgency_val   = _URGENCY_VAL.get(tags.get("urgency", "urgency_low"), 0)
+    ttc_val = _TTC_VAL.get(tags.get("ttc", "ttc_0-6mo"), 0)
+    diag_val = _DIAG_VAL.get(tags.get("diagnosis", "diagnosis_none"), 0)
+    urgency_val = _URGENCY_VAL.get(tags.get("urgency", "urgency_low"), 0)
     readiness_val = _READINESS_VAL.get(tags.get("readiness", "readiness_exploring"), 0)
-    fit_val       = _FIT_VAL.get(tags.get("fit", "fit_low"), 0)
+    fit_val = _FIT_VAL.get(tags.get("fit", "fit_low"), 0)
 
     score = (
-        (ttc_val / 3 * 10)
-        + (diag_val / 2 * 15)
-        + (urgency_val / 2 * 20)
-        + (readiness_val / 2 * 40)
-        + (fit_val / 2 * 15)
+            (ttc_val / 3 * 10)
+            + (diag_val / 2 * 15)
+            + (urgency_val / 2 * 20)
+            + (readiness_val / 2 * 40)
+            + (fit_val / 2 * 15)
     )
     return round(score)
 
@@ -417,12 +436,12 @@ def _repair_json_newlines(raw: str) -> str:
 # ── Main Entry Point ───────────────────────────────────────────────────────────
 
 async def generate_reply(
-    user_message: str,
-    history: list,  # list of Conversation ORM objects (or objects with .role / .content)
-    cfg: dict,
-    user_first_name: str | None,
-    openai_client: AsyncOpenAI,
-    route: RouteContext | None = None,
+        user_message: str,
+        history: list,  # list of Conversation ORM objects (or objects with .role / .content)
+        cfg: dict,
+        user_first_name: str | None,
+        openai_client: AsyncOpenAI,
+        route: RouteContext | None = None,
 ) -> ReplyResult:
     """
     Calls gpt-4.1-mini with structured output and returns a ReplyResult.

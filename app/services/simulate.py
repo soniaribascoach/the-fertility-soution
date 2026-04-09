@@ -3,6 +3,7 @@ from openai import AsyncOpenAI
 
 from app.repositories import conversation as conv_repo
 from app.repositories import simulation as sim_repo
+from app.repositories.conversation import has_sent_booking_ask
 from app.services.ai import (
     check_human_takeover_triggers,
     check_medical_blocklist,
@@ -62,7 +63,8 @@ async def simulate_contact(
     except (ValueError, TypeError):
         threshold = 70
 
-    already_sent = await conv_repo.has_received_booking_link(db, sim_user_id)
+    already_sent  = await conv_repo.has_received_booking_link(db, sim_user_id)
+    already_asked = await has_sent_booking_ask(db, sim_user_id)
 
     # Build route context
     route = await build_route_context(
@@ -74,6 +76,7 @@ async def simulate_contact(
         threshold=threshold,
         openai_client=openai_client,
         already_sent=already_sent,
+        already_asked=already_asked,
     )
 
     # Save user message
@@ -93,7 +96,13 @@ async def simulate_contact(
     booking_link_fired = route.booking_fires_now
     booking_url = cfg.get("booking_link", "") if booking_link_fired else ""
 
-    content_to_save = result.reply + " [BOOKING_SENT]" if booking_link_fired else result.reply
+    if booking_link_fired:
+        content_to_save = result.reply + " [BOOKING_SENT]"
+    elif route.booking_ask_confirmation:
+        content_to_save = result.reply + " [BOOKING_ASKED]"
+    else:
+        content_to_save = result.reply
+
     await conv_repo.save_message(
         db, sim_user_id, "assistant", content_to_save,
         lead_score=new_score,
@@ -120,5 +129,6 @@ async def simulate_contact(
         "blocked": False,
         "block_reason": "",
         "booking_link_fired": booking_link_fired,
+        "booking_ask_sent": route.booking_ask_confirmation,
         "booking_url": booking_url,
     }

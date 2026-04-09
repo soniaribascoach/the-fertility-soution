@@ -138,3 +138,20 @@ async def has_received_booking_link(
         .limit(1)
     )
     return result.scalar_one_or_none() is not None
+
+
+async def has_sent_booking_ask(
+    db: AsyncSession,
+    instagram_user_id: str,
+) -> bool:
+    """Returns True if the AI has already asked the buy-in question for this user."""
+    result = await db.execute(
+        select(Conversation)
+        .where(
+            Conversation.instagram_user_id == instagram_user_id,
+            Conversation.role == "assistant",
+            Conversation.content.contains("[BOOKING_ASKED]"),
+        )
+        .limit(1)
+    )
+    return result.scalar_one_or_none() is not None

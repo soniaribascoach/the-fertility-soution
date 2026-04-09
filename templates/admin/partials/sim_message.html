@@ -43,6 +43,10 @@
     <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs font-medium text-green-700">
       🔗 Booking link embedded in reply above — threshold reached
     </div>
+    {% elif result.booking_ask_sent %}
+    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs font-medium text-amber-700">
+      💬 Buy-in question sent — waiting for confirmation before link fires
+    </div>
     {% endif %}
     <div class="flex flex-wrap items-center gap-1.5 px-1">
       <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-bold

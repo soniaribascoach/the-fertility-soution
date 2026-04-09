@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories import conversation as conv_repo
+from app.repositories.conversation import has_sent_booking_ask
 from app.services.ai import (
     check_human_takeover_triggers,
     check_medical_blocklist,
@@ -65,7 +66,8 @@ async def handle_contact(
         threshold = 70
 
     # 3. Build route context (deterministic signals + LLM classifier)
-    already_sent = await conv_repo.has_received_booking_link(db, instagram_user_id)
+    already_sent  = await conv_repo.has_received_booking_link(db, instagram_user_id)
+    already_asked = await has_sent_booking_ask(db, instagram_user_id)
     route = await build_route_context(
         user_message=user_message,
         history=history,
@@ -75,6 +77,7 @@ async def handle_contact(
         threshold=threshold,
         openai_client=openai_client,
         already_sent=already_sent,
+        already_asked=already_asked,
     )
 
     # 4. Save user message
@@ -115,6 +118,16 @@ async def handle_contact(
         await conv_repo.save_message(
             db, instagram_user_id, "assistant",
             clean_reply + " [BOOKING_SENT]",
+            lead_score=new_score,
+            contact_tags=new_tags,
+            **ai_kwargs,
+        )
+    elif route.booking_ask_confirmation:
+        for bubble in bubbles:
+            await mc_svc.send_text_message(instagram_user_id, bubble)
+        await conv_repo.save_message(
+            db, instagram_user_id, "assistant",
+            clean_reply + " [BOOKING_ASKED]",
             lead_score=new_score,
             contact_tags=new_tags,
             **ai_kwargs,
