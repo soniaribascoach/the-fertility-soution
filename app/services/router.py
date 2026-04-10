@@ -76,6 +76,7 @@ class RouteContext:
     known_facts: str | None = None          # derived from prior_tags + history — prevents re-asking known info
     suppress_question: bool = False         # True for high-emotion turns (grief, IVF, miscarriage)
     low_intent: bool = False               # True when user is vaguely browsing, not yet sharing anything personal
+    lead_score: int = 0                    # current lead quality score (0–100) for score-aware responses
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -395,4 +396,5 @@ async def build_route_context(
         known_facts=known_facts,
         suppress_question=suppress_question,
         low_intent=low_intent,
+        lead_score=current_score,
     )

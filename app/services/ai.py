@@ -296,10 +296,28 @@ def build_context_block(route: RouteContext) -> str:
 
     if route.matched_objection:
         label, text = route.matched_objection
-        parts.append(
-            f"The user is expressing a concern ({label}). "
-            f"Use this approach (adapt naturally — do not copy verbatim):\n{text}"
-        )
+        if any(kw in label.lower() for kw in ("pricing", "price", "cost")):
+            score_note = (
+                f"This lead's quality score is {route.lead_score}/100. "
+                "For scores above 50, you may share the price range ($1,500–$14,000) and use a confident "
+                "transition to booking the zoom session. "
+                "For scores below 50, focus on the zoom session and personalization — only share numbers "
+                "if they press directly."
+            )
+            parts.append(
+                "The user is asking about pricing. "
+                "You MUST explain that we offer different programs depending on the level of support and "
+                "personalization someone needs, and that pricing is tied to that level of support. "
+                "Position the zoom session as where we understand their situation, determine if we can "
+                "help, and recommend the right level of support. "
+                f"{score_note}\n"
+                f"Additional tone guidance (adapt naturally — do not copy verbatim):\n{text}"
+            )
+        else:
+            parts.append(
+                f"The user is expressing a concern ({label}). "
+                f"Use this approach (adapt naturally — do not copy verbatim):\n{text}"
+            )
 
     if route.low_intent:
         parts.append(
