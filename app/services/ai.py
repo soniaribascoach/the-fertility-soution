@@ -21,8 +21,8 @@ class ReplyResult:
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-_INPUT_PRICE_PER_M = 0.20  # $ per 1M input tokens  (gpt-5.4-nano)
-_OUTPUT_PRICE_PER_M = 1.25  # $ per 1M output tokens (gpt-5.4-nano)
+_INPUT_PRICE_PER_M = 0.40  # $ per 1M input tokens  (gpt-4.1-mini)
+_OUTPUT_PRICE_PER_M = 1.60  # $ per 1M output tokens (gpt-4.1-mini)
 
 PLAIN_TEXT_INSTRUCTIONS = (
     "Always respond in plain text. "
@@ -509,7 +509,7 @@ async def generate_reply(
     logger.debug("Sending %d messages to OpenAI", len(messages))
 
     response = await openai_client.chat.completions.create(
-        model="gpt-5.4-nano",
+        model="gpt-4.1-mini",
         messages=messages,
         temperature=0.7,
         max_tokens=650,
