@@ -92,6 +92,7 @@ async def simulate_contact(
         user_first_name=first_name,
         openai_client=openai_client,
         route=route,
+        user_id=sim_user_id,
     )
     new_score = compute_score(result.tags)
 

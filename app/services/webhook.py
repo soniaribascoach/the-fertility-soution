@@ -93,6 +93,7 @@ async def handle_contact(
         user_first_name=first_name,
         openai_client=openai_client,
         route=route,
+        user_id=instagram_user_id,
     )
     clean_reply = result.reply
     new_tags    = result.tags

@@ -1,3 +1,4 @@
+import os
 import uuid
 import json as _json
 
@@ -270,6 +271,29 @@ async def simulate_sessions_list(request: Request, db: AsyncSession = Depends(ge
         request,
         "admin/sessions.html",
         {"sessions": sessions},
+    )
+
+
+@router.get("/admin/prompts", response_class=HTMLResponse)
+async def prompts_get(request: Request, tail: int = 100):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    log_path = os.path.normpath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "prompts.log")
+    )
+    content = ""
+    if os.path.exists(log_path):
+        with open(log_path, encoding="utf-8") as f:
+            raw = f.read()
+        # Split on turn dividers and return the last `tail` turns
+        turns = raw.split("\n" + "═" * 70)
+        turns = [t for t in turns if t.strip()]
+        displayed = turns[-tail:]
+        content = ("\n" + "═" * 70).join(displayed)
+    return templates.TemplateResponse(
+        request,
+        "admin/prompts.html",
+        {"content": content, "tail": tail, "log_path": log_path},
     )
 
 

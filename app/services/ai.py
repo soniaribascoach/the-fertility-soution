@@ -1,12 +1,40 @@
 import json
 import logging
+import os
 from dataclasses import dataclass
+from datetime import datetime
 
 from openai import AsyncOpenAI
 
 from app.services.router import RouteContext
 
 logger = logging.getLogger(__name__)
+
+# ── Prompt file logger ────────────────────────────────────────────────────────
+_PROMPT_LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "prompts.log")
+_PROMPT_LOG_PATH = os.path.normpath(_PROMPT_LOG_PATH)
+
+_prompt_file_handler = logging.FileHandler(_PROMPT_LOG_PATH, encoding="utf-8")
+_prompt_file_handler.setLevel(logging.DEBUG)
+_prompt_logger = logging.getLogger("prompt_trace")
+_prompt_logger.setLevel(logging.DEBUG)
+_prompt_logger.addHandler(_prompt_file_handler)
+_prompt_logger.propagate = False  # don't echo to console
+
+
+def _log_prompt(user_id: str | None, messages: list) -> None:
+    """Writes the full prompt snapshot to prompts.log in a readable format."""
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    uid = user_id or "unknown"
+    lines = [f"\n{'═' * 70}", f"TURN  {ts}  |  user={uid}", f"{'═' * 70}"]
+    for i, msg in enumerate(messages):
+        role = msg["role"].upper()
+        content = msg["content"]
+        lines.append(f"\n[{role}]")
+        lines.append(content)
+        if i < len(messages) - 1:
+            lines.append(f"{'─' * 40}")
+    _prompt_logger.debug("\n".join(lines))
 
 
 @dataclass
@@ -473,6 +501,7 @@ async def generate_reply(
         user_first_name: str | None,
         openai_client: AsyncOpenAI,
         route: RouteContext | None = None,
+        user_id: str | None = None,
 ) -> ReplyResult:
     """
     Calls gpt-4.1-mini with structured output and returns a ReplyResult.
@@ -507,6 +536,7 @@ async def generate_reply(
     messages.append({"role": "user", "content": user_message})
 
     logger.debug("Sending %d messages to OpenAI", len(messages))
+    _log_prompt(user_id, messages)
 
     response = await openai_client.chat.completions.create(
         model="gpt-4.1-mini",
