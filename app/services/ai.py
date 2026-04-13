@@ -345,9 +345,16 @@ def build_context_block(route: RouteContext, cfg: dict | None = None) -> str:
 
     if route.suppress_question:
         parts.append(
-            "HEAVY EMOTIONAL MOMENT — do NOT ask any question in this reply, not even at the end. "
-            "Do not offer advice, suggestions, or next steps. "
-            "Your entire reply must be acknowledgment and emotional connection only."
+            "HEAVY EMOTIONAL MOMENT — write exactly two separate paragraphs (separated by a blank line).\n"
+            "Paragraph 1: Pure emotional acknowledgment only. Sit with what they shared. "
+            "No advice, no next steps, no questions. Make them feel truly heard.\n"
+            "Paragraph 2: A single soft, open invitation that gently moves the conversation forward — "
+            "NOT a qualifying question, NOT a pitch. Something like: "
+            "'I'd love to hear more about where you're at.' or "
+            "'Tell me a little more about what this journey has been like for you.' or "
+            "'What has this experience been like for you?' "
+            "Keep it warm and unhurried — it should feel like a natural pause, not a prompt.\n"
+            "The two paragraphs will be sent as separate messages, so each must stand alone."
         )
     elif route.question_for_dim:
         parts.append(

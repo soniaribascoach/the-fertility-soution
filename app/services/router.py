@@ -314,6 +314,10 @@ async def build_route_context(
     if not already_sent:
         if already_asked and _user_confirmed_booking(user_message):
             booking_fires_now = True
+        elif price_already_deflected and _user_confirmed_booking(user_message):
+            # The pricing redirect already asked "Would you like to book?" —
+            # treat a positive reply as confirmation and fire the link directly.
+            booking_fires_now = True
         elif score_qualifies and not already_asked:
             booking_ask_confirmation = True
 
