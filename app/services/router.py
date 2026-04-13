@@ -306,12 +306,18 @@ async def build_route_context(
     """
     is_first = len(history) == 0
 
-    # Determine booking phase
+    # ── Deterministic checks on raw message (before booking phase) ───────────
+    msg_lower = user_message.lower()
+
+    # High-emotion detection — keyword check, no classifier needed
+    suppress_question: bool = any(term in msg_lower for term in _HIGH_EMOTION_USER_TERMS)
+
+    # Determine booking phase — never fire on a heavy emotional turn
     score_qualifies = threshold > 0 and current_score >= threshold
     booking_fires_now = False
     booking_ask_confirmation = False
 
-    if not already_sent:
+    if not already_sent and not suppress_question:
         if already_asked and _user_confirmed_booking(user_message):
             booking_fires_now = True
         elif price_already_deflected and _user_confirmed_booking(user_message):
@@ -356,13 +362,10 @@ async def build_route_context(
     authority_phrase: str | None              = None
     low_intent: bool                          = False
 
-    # Deterministic high-emotion detection — keyword check on the raw user message
-    msg_lower = user_message.lower()
-    suppress_question: bool = any(term in msg_lower for term in _HIGH_EMOTION_USER_TERMS)
-
     # High-emotion first message: drop the opening variant — acknowledge the emotion directly
     if suppress_question:
         opening_variant = None
+        cta_line = None  # never push CTA on a heavy emotional turn
 
     if not is_first:
         pattern_pairs     = _parse_labeled_list(cfg.get("prompt_pattern_responses", ""))
