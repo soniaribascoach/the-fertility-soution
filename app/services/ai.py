@@ -21,8 +21,8 @@ class ReplyResult:
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-_INPUT_PRICE_PER_M = 0.40  # $ per 1M input tokens  (gpt-4.1-mini)
-_OUTPUT_PRICE_PER_M = 1.60  # $ per 1M output tokens (gpt-4.1-mini)
+_INPUT_PRICE_PER_M = 0.20  # $ per 1M input tokens  (gpt-5.4-nano)
+_OUTPUT_PRICE_PER_M = 1.25  # $ per 1M output tokens (gpt-5.4-nano)
 
 PLAIN_TEXT_INSTRUCTIONS = (
     "Always respond in plain text. "
@@ -30,24 +30,15 @@ PLAIN_TEXT_INSTRUCTIONS = (
     "NEVER use an em-dash (—) under any circumstances. This is a hard rule with no exceptions. "
     "If you feel the urge to write —, use a comma, a period, or split into two sentences instead. "
     # ── Bubble structure ──────────────────────────────────────────────────────
-    "Send replies as short message bubbles, the way someone texts naturally. "
-    "Separate each bubble with \\n\\n — this makes each arrive as a separate message. "
-    "HARD RULE: every bubble is exactly 1–2 sentences. No exceptions, not even for emotional replies. "
-    "DEFAULT TO ONE BUBBLE. One bubble is the correct choice for most replies. "
-    "An acknowledgment with a natural follow-up woven in at the end is still ONE bubble — "
-    "example: 'That's a lot to have been through, how long have you been trying?' "
-    "Do not split that into two messages. It is one natural thought. "
-    "EXCEPTION: when a qualifying or direct question is the focus of its own bubble, "
-    "let the acknowledgment land fully first as a complete bubble, then send the question "
-    "as a second bubble. The acknowledgment must not feel interrupted. "
-    "Use TWO bubbles only when the reply contains two genuinely separate thoughts "
-    "that would feel disjointed or too rushed if combined. "
-    "Use THREE bubbles only for the very heaviest moments — miscarriage, failed IVF, deep grief — "
-    "and only when two bubbles genuinely aren't enough. "
-    "Never use four bubbles except for the booking link sequence. "
-    "Never pad to hit a number. If one bubble says it fully, send one. "
-    "If you receive additional guidance (a scenario perspective, a question, a credibility point) — "
-    "weave it into your existing bubbles. It is flavour, not extra content. Do not add bubbles for it. "
+    "Default to ONE bubble — one short message, 1–2 sentences. This is the right choice most of the time. "
+    "Weave acknowledgment and follow-up into a single natural sentence. "
+    "Example: 'That's a lot to have been through, how long have you been trying?' — ONE message, not two. "
+    "Occasionally (not every turn) you may send TWO bubbles when it genuinely adds rhythm — "
+    "e.g. a heavy acknowledgment that needs to land before a question follows. "
+    "THREE bubbles is the absolute maximum and should be rare. Never exceed three. "
+    "If you receive additional guidance (scenario, question, credibility point), weave it into your existing bubbles — "
+    "it is flavour, not extra content. Do not add a bubble for it. "
+    "When an explicit OVERRIDE instruction appears, follow its bubble count exactly. "
     # ── Voice and tone ────────────────────────────────────────────────────────
     "Write the way a real person texts: use contractions (I'm, you're, that's), "
     "use :) or :( naturally where it fits, and don't over-punctuate. "
@@ -108,12 +99,11 @@ def booking_ask_confirmation_instruction() -> str:
 def booking_fires_now_instruction(url: str) -> str:
     return (
         "OVERRIDE — the booking link must be included in your reply. "
-        "Structure your reply as a natural 5-part sequence across short bubbles:\n"
-        "1. Acknowledge what they have shared — one warm sentence that reflects their specific journey.\n"
-        "2. Frame the next step naturally — e.g. 'The best next step from here is a zoom session together.'\n"
-        "3. Explain the value of the zoom session in one sentence — clarity and a real plan, not a sales pitch.\n"
-        "4. Ask for soft buy-in — e.g. 'Does that feel like a good next step for you?'\n"
-        f"5. Share the link naturally as the final line — e.g. 'You can grab a time here: {url}'\n"
+        "Structure your reply across exactly 3 short bubbles:\n"
+        "1. Warm acknowledgment + frame the zoom session as the natural next step — one or two sentences.\n"
+        "2. One sentence on the value — clarity and a real plan, not a sales pitch. "
+        "End with a soft buy-in: 'Does that feel like a good next step for you?'\n"
+        f"3. Share the link naturally — e.g. 'You can grab a time here: {url}'\n"
         f"The URL is: {url}\n"
         "Write in Sonia's voice throughout — warm, personal, not scripted. "
         "Do NOT say 'someone will reach out' or imply any delay."
@@ -519,7 +509,7 @@ async def generate_reply(
     logger.debug("Sending %d messages to OpenAI", len(messages))
 
     response = await openai_client.chat.completions.create(
-        model="gpt-4.1-mini",
+        model="gpt-5.4-nano",
         messages=messages,
         temperature=0.7,
         max_tokens=650,
