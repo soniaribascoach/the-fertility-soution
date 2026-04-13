@@ -27,6 +27,7 @@ templates.env.filters["split_bubbles"] = lambda s: [b.strip() for b in s.split("
 CONFIG_KEYS = [
     "booking_link", "score_threshold", "prompt_scoring_rules",
     "prompt_about", "prompt_services", "prompt_tone", "prompt_flow",
+    "prompt_pricing",
     "prompt_hard_rules", "prompt_opening_variants", "prompt_qualification_questions",
     "prompt_pattern_responses", "prompt_objection_handling", "prompt_authority_proof",
     "prompt_cta_transitions",

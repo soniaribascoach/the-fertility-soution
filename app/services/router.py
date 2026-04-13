@@ -37,6 +37,7 @@ _HIGH_EMOTION_KEYWORDS = {"miscarriage", "ivf", "hopeless", "grief", "amh"}
 _HIGH_EMOTION_USER_TERMS = [
     "miscarriage",
     "ivf fail", "failed ivf", "ivf didn't work", "ivf did not work",
+    "ivf twice", "ivf three", "ivf rounds", "ivf cycles",
     "iui fail", "failed iui",
     "hopeless",
     "never going to happen",
@@ -51,6 +52,14 @@ _HIGH_EMOTION_USER_TERMS = [
     "recurrent loss",
     "3 miscarriages", "4 miscarriages", "5 miscarriages",
     "multiple miscarriages",
+]
+
+# Deterministic pricing intent keywords — detected on every turn without needing the classifier
+_PRICING_TERMS = [
+    "how much", "what does it cost", "what's the cost", "what is the cost",
+    "price", "pricing", "how much does", "how much is", "cost of the program",
+    "cost of this", "afford", "investment", "fee", "fees", "charge", "charges",
+    "what do you charge", "how much do you charge",
 ]
 
 # Dimension → keywords to find the right question in prompt_qualification_questions
@@ -77,6 +86,8 @@ class RouteContext:
     suppress_question: bool = False         # True for high-emotion turns (grief, IVF, miscarriage)
     low_intent: bool = False               # True when user is vaguely browsing, not yet sharing anything personal
     lead_score: int = 0                    # current lead quality score (0–100) for score-aware responses
+    price_already_deflected: bool = False  # True if AI has already deflected a pricing question once
+    mark_price_deflected: bool = False     # True when webhook should save [PRICE_DEFLECTED] marker
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -283,6 +294,7 @@ async def build_route_context(
     openai_client: AsyncOpenAI,
     already_sent: bool = False,
     already_asked: bool = False,
+    price_already_deflected: bool = False,
 ) -> RouteContext:
     """
     Builds a RouteContext that tells the prompt assembler exactly what to inject
@@ -382,6 +394,24 @@ async def build_route_context(
         if not already_asked:
             booking_ask_confirmation = True
 
+    # Deterministic pricing intent check — works on all turns including turn 1
+    # where the LLM classifier is skipped. If pricing is detected and the classifier
+    # didn't already set matched_objection to a pricing entry, synthesise one so
+    # build_context_block() fires the pricing branch.
+    _pricing_detected = any(term in msg_lower for term in _PRICING_TERMS)
+    if _pricing_detected and matched_objection is None:
+        matched_objection = ("Cost objection", "")
+    _is_pricing = _pricing_detected or (
+        matched_objection is not None and any(
+            kw in matched_objection[0].lower() for kw in ("pricing", "price", "cost")
+        )
+    )
+    mark_price_deflected = _is_pricing and not price_already_deflected
+
+    # Pricing redirect IS the complete response — never stack a qualification question on top
+    if _is_pricing:
+        question_for_dim = None
+
     return RouteContext(
         is_first_message=is_first,
         opening_variant=opening_variant,
@@ -397,4 +427,6 @@ async def build_route_context(
         suppress_question=suppress_question,
         low_intent=low_intent,
         lead_score=current_score,
+        price_already_deflected=price_already_deflected,
+        mark_price_deflected=mark_price_deflected,
     )

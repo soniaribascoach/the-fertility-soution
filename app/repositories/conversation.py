@@ -155,3 +155,20 @@ async def has_sent_booking_ask(
         .limit(1)
     )
     return result.scalar_one_or_none() is not None
+
+
+async def has_price_been_deflected(
+    db: AsyncSession,
+    instagram_user_id: str,
+) -> bool:
+    """Returns True if the AI has already deflected a pricing question for this user."""
+    result = await db.execute(
+        select(Conversation)
+        .where(
+            Conversation.instagram_user_id == instagram_user_id,
+            Conversation.role == "assistant",
+            Conversation.content.contains("[PRICE_DEFLECTED]"),
+        )
+        .limit(1)
+    )
+    return result.scalar_one_or_none() is not None

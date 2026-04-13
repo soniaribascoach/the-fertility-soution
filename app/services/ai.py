@@ -256,7 +256,7 @@ def build_base_prompt(cfg: dict) -> str:
     return "\n\n".join(parts)
 
 
-def build_context_block(route: RouteContext) -> str:
+def build_context_block(route: RouteContext, cfg: dict | None = None) -> str:
     """
     Builds a targeted directive block for this specific conversation turn.
     Only the signals that are active are included — typical output is 0–5 lines.
@@ -297,22 +297,38 @@ def build_context_block(route: RouteContext) -> str:
     if route.matched_objection:
         label, text = route.matched_objection
         if any(kw in label.lower() for kw in ("pricing", "price", "cost")):
-            score_note = (
-                f"This lead's quality score is {route.lead_score}/100. "
-                "For scores above 50, you may share the price range ($1,500–$14,000) and use a confident "
-                "transition to booking the zoom session. "
-                "For scores below 50, focus on the zoom session and personalization — only share numbers "
-                "if they press directly."
+            pricing_guidance = (cfg or {}).get("prompt_pricing", "").strip()
+            base = pricing_guidance or (
+                "Acknowledge the question warmly. Explain we offer different programs based on the "
+                "level of support needed. Position the discovery call as the place to understand "
+                "their situation and find the right fit. Do not share a price range."
             )
-            parts.append(
-                "The user is asking about pricing. "
-                "You MUST explain that we offer different programs depending on the level of support and "
-                "personalization someone needs, and that pricing is tied to that level of support. "
-                "Position the zoom session as where we understand their situation, determine if we can "
-                "help, and recommend the right level of support. "
-                f"{score_note}\n"
-                f"Additional tone guidance (adapt naturally — do not copy verbatim):\n{text}"
-            )
+            if not route.price_already_deflected:
+                situational = (
+                    "This is the FIRST time they are asking about price. "
+                    "Do NOT share any price range. Redirect to the discovery call. "
+                    "Focus on personalization and fit. "
+                    "End your reply with a soft, natural question asking whether they'd like to set that up — "
+                    "for example: 'Would that feel like a good next step for you?' or 'Does that sound like something you'd want to explore?'"
+                )
+            elif route.lead_score > 50:
+                situational = (
+                    "The user is asking about price a second time — they are insisting. "
+                    "Their intent score is high. You may now share the price range as described above. "
+                    "Follow immediately with the call value prop. "
+                    "End with a soft question asking if they'd like to book — "
+                    "for example: 'Would you like to set up that call?' or 'Does that feel like a good next step?'"
+                )
+            else:
+                situational = (
+                    "The user is asking about price again. Their intent is still developing. "
+                    "Continue to redirect to the call — do not share the range yet. "
+                    "End with a soft question asking whether they'd like to explore further — "
+                    "for example: 'Would it help to have a conversation about what that could look like for you?'"
+                )
+            parts.append(f"{base}\n\n{situational}")
+            if text:
+                parts.append(f"Additional tone guidance (adapt naturally — do not copy verbatim):\n{text}")
         else:
             parts.append(
                 f"The user is expressing a concern ({label}). "
@@ -472,7 +488,7 @@ async def generate_reply(
     """
     system_prompt = build_base_prompt(cfg)
     if route is not None:
-        context_block = build_context_block(route)
+        context_block = build_context_block(route, cfg)
         if context_block:
             system_prompt = system_prompt + "\n\n" + context_block
 

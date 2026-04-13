@@ -3,7 +3,7 @@ from openai import AsyncOpenAI
 
 from app.repositories import conversation as conv_repo
 from app.repositories import simulation as sim_repo
-from app.repositories.conversation import has_sent_booking_ask
+from app.repositories.conversation import has_sent_booking_ask, has_price_been_deflected
 from app.services.ai import (
     check_human_takeover_triggers,
     check_medical_blocklist,
@@ -63,8 +63,9 @@ async def simulate_contact(
     except (ValueError, TypeError):
         threshold = 70
 
-    already_sent  = await conv_repo.has_received_booking_link(db, sim_user_id)
-    already_asked = await has_sent_booking_ask(db, sim_user_id)
+    already_sent    = await conv_repo.has_received_booking_link(db, sim_user_id)
+    already_asked   = await has_sent_booking_ask(db, sim_user_id)
+    price_deflected = await has_price_been_deflected(db, sim_user_id)
 
     # Build route context
     route = await build_route_context(
@@ -77,6 +78,7 @@ async def simulate_contact(
         openai_client=openai_client,
         already_sent=already_sent,
         already_asked=already_asked,
+        price_already_deflected=price_deflected,
     )
 
     # Save user message
@@ -100,6 +102,8 @@ async def simulate_contact(
         content_to_save = result.reply + " [BOOKING_SENT]"
     elif route.booking_ask_confirmation:
         content_to_save = result.reply + " [BOOKING_ASKED]"
+    elif route.mark_price_deflected:
+        content_to_save = result.reply + " [PRICE_DEFLECTED]"
     else:
         content_to_save = result.reply
 
@@ -131,4 +135,6 @@ async def simulate_contact(
         "booking_link_fired": booking_link_fired,
         "booking_ask_sent": route.booking_ask_confirmation,
         "booking_url": booking_url,
+        "price_deflected_now": route.mark_price_deflected,
+        "price_was_already_deflected": price_deflected,
     }

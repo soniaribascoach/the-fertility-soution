@@ -109,10 +109,16 @@
       <textarea name="prompt_tone" rows="12" class="{{ textarea_cls }} min-h-[100px]">{{ cfg.prompt_tone or '' }}</textarea>
     </div>
 
-    <div>
+    <div class="mb-7">
       <h3 class="text-base font-semibold text-slate-800 mb-1.5">Conversation Flow</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Describe how the AI should sequence its responses. Use plain language or simple if/then rules.</p>
       <textarea name="prompt_flow" rows="12" class="{{ textarea_cls }}">{{ cfg.prompt_flow or '' }}</textarea>
+    </div>
+
+    <div>
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Pricing Handling</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">How the AI handles pricing questions. On the first ask it always deflects to the discovery call. On a second insistent ask it uses this guidance to decide whether to share a price range — include the range in this text so it's configurable.</p>
+      <textarea name="prompt_pricing" rows="12" class="{{ textarea_cls }}">{{ cfg.prompt_pricing or '' }}</textarea>
     </div>
   </section>
 
