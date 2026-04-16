@@ -1,9 +1,3 @@
-Hi Asjad,
-
-Thank you again for rolling out v5. I can clearly see the improvements, especially in structure and consistency.
-
-I’ve now tested it across multiple real-life scenarios, and I want to share a comprehensive round of feedback plus a proposed system upgrade so we can get this to launch level in as few iterations as possible.
-
 🔧 1. Core Issue: Too Reflective, Not Directive Enough
 The AI is strong in empathy, but it still leans too heavily into reflective, therapist-style responses.
 
@@ -172,9 +166,6 @@ trust
 clarity
 authority
 and natural conversion
-We are very close. I would estimate this is around 80–85% there, and with these adjustments we should be in a strong position for launch.
 
-Let me know what’s feasible to implement from this and how you would approach it technically.
 
-Thanks again for the work on this.
 

@@ -55,6 +55,11 @@
                    {% else %}bg-slate-100 text-slate-500{% endif %}">
         Score {{ result.score }}
       </span>
+      {% if result.goal %}
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-medium bg-sky-50 text-sky-600 border border-sky-100">
+        goal:{{ result.goal }}
+      </span>
+      {% endif %}
       {% for dim, val in result.tags.items() %}
       <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-medium bg-violet-50 text-violet-600 border border-violet-100">
         {{ val }}

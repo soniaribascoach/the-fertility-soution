@@ -12,7 +12,10 @@
       "Bash(alembic heads:*)",
       "Bash(alembic history:*)",
       "Bash(git stash:*)",
-      "Bash(alembic upgrade:*)"
+      "Bash(alembic upgrade:*)",
+      "Bash(psql:*)",
+      "Bash(grep -r \"DATABASE_URL\\\\|database_url\\\\|postgresql\\\\|sqlite\" .env* config*)",
+      "Bash(grep -E \"\\\\.py$|main|run\")"
     ]
   }
 }

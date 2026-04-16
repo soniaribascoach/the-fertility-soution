@@ -148,6 +148,7 @@ async def config_save(
     prompt_objection_handling: str = Form(""),
     prompt_authority_proof: str = Form(""),
     prompt_cta_transitions: str = Form(""),
+    prompt_pricing: str = Form(""),
     medical_blocklist: str = Form(""),
     medical_deflection: str = Form(""),
     human_takeover_triggers: str = Form(""),
@@ -163,6 +164,7 @@ async def config_save(
     await set_config(db, "prompt_services", prompt_services)
     await set_config(db, "prompt_tone", prompt_tone)
     await set_config(db, "prompt_flow", prompt_flow)
+    await set_config(db, "prompt_pricing", prompt_pricing)
     await set_config(db, "prompt_hard_rules", prompt_hard_rules)
     await set_config(db, "prompt_opening_variants", prompt_opening_variants)
     await set_config(db, "prompt_qualification_questions", prompt_qualification_questions)

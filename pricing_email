@@ -1,0 +1,114 @@
+Hi Asjed,
+
+
+
+I just realized that we have never actually discussed how the AI should handle pricing, and this is one of the most frequently asked questions we get, so this is an important gap we need to close.
+
+
+
+I want to refine how the AI handles pricing conversations because this is one of the most sensitive and high impact parts of the funnel. Right now, we are not fully set up to manage it in a way that reflects the true positioning of the brand.
+
+
+
+We are not a low ticket or information based offer. This is a high touch, high value, premium coaching experience with different levels of support, and the way pricing is communicated needs to reinforce that from the very first interaction.
+
+
+
+At the same time, we do not want the AI to feel evasive or create friction by avoiding the question.
+
+
+
+So the goal is to strike the right balance between transparency, qualification, and positioning.
+
+
+
+Here is the behavior we want to train into the AI:
+
+
+
+When someone asks about price, the AI should first acknowledge the question naturally and positively.
+
+
+
+Then it should explain that we offer different programs depending on the level of support and personalization someone needs, and that pricing is tied to that level of support.
+
+
+
+It should position the call as the place where we:
+
+
+
+understand their situation
+determine if we can actually help them
+recommend the right level of support
+
+
+
+
+This is key. The call is not just about selling. It is about fit and personalization.
+
+
+
+If the person insists on a number or asks for a range, the AI can share a broad range, for example that our programs range from $1,500 to $14,000 depending on the level of support.
+
+
+
+This should always be followed immediately by context, along the lines of:
+
+we first need to understand your situation and what level of support you actually need before recommending anything, and to make sure we are the right fit for you.
+
+
+
+The tone here is important. It should feel open, grounded, and confident, not defensive or vague.
+
+
+
+We also want the AI to subtly set expectations that this is a premium level of support. Without sounding pushy, it should be clear that this is a serious investment for people who are ready to take action and want guidance at a high level.
+
+
+
+A few guardrails to include:
+
+
+
+Do not give a fixed price early in the conversation
+Do not over explain or justify pricing
+Do not sound like we are avoiding the question
+Always bring the conversation back to the value of the call and personalization
+
+
+
+
+From a structure standpoint, I suggest implementing this as a dedicated pricing intent, and also layering it into objection handling since pricing questions will show up in both contexts.
+
+
+
+If possible, it would be great to adapt responses based on lead quality or score:
+
+
+
+lower intent leads get more emphasis on the call and less on numbers
+higher intent leads can receive the range with a stronger transition to booking
+
+
+
+
+The goal is to:
+
+
+
+avoid early price anchoring
+maintain premium positioning
+qualify effectively
+increase booked calls without losing trust
+
+
+
+
+Let me know how you would structure this within the current system and what you need from me in terms of example responses or tone calibration.
+
+
+
+Thank you,
+
+Sonia

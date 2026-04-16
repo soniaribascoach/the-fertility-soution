@@ -10,6 +10,7 @@ from app.services.ai import (
     compute_score,
     generate_reply,
 )
+from app.services.orchestrator import build_turn_directive
 from app.services.router import build_route_context
 
 
@@ -24,7 +25,7 @@ async def simulate_contact(
     """
     Runs the full AI pipeline for a simulated conversation.
     Uses sim_{session_id} as instagram_user_id to isolate from real users.
-    Never calls ManyChat or sends booking links.
+    Never calls ManyChat or sends booking links. No bubble delays.
     """
     sim_user_id = f"sim_{session_id}"
 
@@ -54,7 +55,7 @@ async def simulate_contact(
         }
 
     # Load history + prior state
-    history = await conv_repo.get_history(db, sim_user_id)
+    history     = await conv_repo.get_history(db, sim_user_id)
     prior_tags  = await conv_repo.get_latest_tags(db, sim_user_id)
     prior_score = await conv_repo.get_latest_score(db, sim_user_id)
 
@@ -67,7 +68,7 @@ async def simulate_contact(
     already_asked   = await has_sent_booking_ask(db, sim_user_id)
     price_deflected = await has_price_been_deflected(db, sim_user_id)
 
-    # Build route context
+    # Build route context + turn directive
     route = await build_route_context(
         user_message=message,
         history=history,
@@ -81,35 +82,40 @@ async def simulate_contact(
         price_already_deflected=price_deflected,
     )
 
+    turn_number = sum(1 for t in history if t.role == "assistant")
+    directive = build_turn_directive(route, cfg, turn_number)
+
     # Save user message
     await conv_repo.save_message(db, sim_user_id, "user", message)
 
-    # Generate AI reply with targeted context
+    # Generate AI reply
     result = await generate_reply(
         user_message=message,
         history=history,
         cfg=cfg,
         user_first_name=first_name,
         openai_client=openai_client,
-        route=route,
+        directive=directive,
+        prior_tags=prior_tags,
         user_id=sim_user_id,
     )
     new_score = compute_score(result.tags)
+    # Score floor — never let the score decrease across turns
+    new_score = max(new_score, prior_score or 0)
 
-    booking_link_fired = route.booking_fires_now
-    booking_url = cfg.get("booking_link", "") if booking_link_fired else ""
-
-    if booking_link_fired:
-        content_to_save = result.reply + " [BOOKING_SENT]"
-    elif route.booking_ask_confirmation:
-        content_to_save = result.reply + " [BOOKING_ASKED]"
-    elif route.mark_price_deflected:
-        content_to_save = result.reply + " [PRICE_DEFLECTED]"
+    if directive.booking_fires_now:
+        flag = " [BOOKING_SENT]"
+    elif directive.booking_ask_confirmation:
+        flag = " [BOOKING_ASKED]"
+    elif directive.mark_price_deflected:
+        flag = " [PRICE_DEFLECTED]"
+    elif directive.goal in ("empathize", "empathize_qualify"):
+        flag = " [EMPATHIZE]"
     else:
-        content_to_save = result.reply
+        flag = ""
 
     await conv_repo.save_message(
-        db, sim_user_id, "assistant", content_to_save,
+        db, sim_user_id, "assistant", result.reply + flag,
         lead_score=new_score,
         contact_tags=result.tags,
         token_cost=result.cost,
@@ -131,11 +137,12 @@ async def simulate_contact(
         "prompt_tokens": result.prompt_tokens,
         "completion_tokens": result.completion_tokens,
         "model": result.model,
+        "goal": directive.goal,
         "blocked": False,
         "block_reason": "",
-        "booking_link_fired": booking_link_fired,
-        "booking_ask_sent": route.booking_ask_confirmation,
-        "booking_url": booking_url,
-        "price_deflected_now": route.mark_price_deflected,
+        "booking_link_fired": directive.booking_fires_now,
+        "booking_ask_sent": directive.booking_ask_confirmation,
+        "booking_url": cfg.get("booking_link", "") if directive.booking_fires_now else "",
+        "price_deflected_now": directive.mark_price_deflected,
         "price_was_already_deflected": price_deflected,
     }

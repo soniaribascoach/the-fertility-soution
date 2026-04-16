@@ -3,10 +3,13 @@ Context Router for the AI pipeline.
 
 Two-stage process:
   Part A — deterministic signals: first message, tag gaps, CTA proximity
-  Part B — LLM classifier (single cheap call): scenario, objection, authority timing
+  Part B — LLM classifier (single cheap call): scenario, objection, emotion,
+            booking_intent, pricing_asked, dims_answered
 
-The resulting RouteContext is passed to build_context_block() in ai.py,
-which injects targeted directives into the system prompt before generation.
+booking_intent, pricing_asked and dims_answered are intentionally owned by the
+classifier rather than hardcoded regex/keyword lists. The classifier has full
+conversation context and handles ambiguity far better than pattern matching
+(e.g. "as soon as possible" as a booking signal, "fee" vs "feel", etc.).
 """
 import json
 import logging
@@ -30,44 +33,67 @@ _DEFAULT_TAGS = {
 # Priority order for qualification question selection
 _DIM_PRIORITY = ["ttc", "diagnosis", "urgency"]
 
-# Pattern labels that indicate a high-emotion turn — suppress qualification question
-_HIGH_EMOTION_KEYWORDS = {"miscarriage", "ivf", "hopeless", "grief", "amh"}
-
-# Direct terms to detect high-emotion content in the user message — deterministic, no classifier needed
-_HIGH_EMOTION_USER_TERMS = [
-    "miscarriage",
-    "ivf fail", "failed ivf", "ivf didn't work", "ivf did not work",
-    "ivf twice", "ivf three", "ivf rounds", "ivf cycles",
-    "iui fail", "failed iui",
-    "hopeless",
-    "never going to happen",
-    "give up", "giving up",
-    "devastated", "heartbroken",
-    "lost hope", "losing hope",
-    "tried everything",
-    "nothing works", "nothing is working",
-    "feel like it will never",
-    "feel like it's never",
-    "donor egg",
-    "recurrent loss",
-    "3 miscarriages", "4 miscarriages", "5 miscarriages",
-    "multiple miscarriages",
-]
-
-# Deterministic pricing intent keywords — detected on every turn without needing the classifier
-_PRICING_TERMS = [
-    "how much", "what does it cost", "what's the cost", "what is the cost",
-    "price", "pricing", "how much does", "how much is", "cost of the program",
-    "cost of this", "afford", "investment", "fee", "fees", "charge", "charges",
-    "what do you charge", "how much do you charge",
-]
-
 # Dimension → keywords to find the right question in prompt_qualification_questions
 _DIM_QUESTION_KEYWORDS = {
     "ttc":       ["long", "trying", "how long"],
     "diagnosis": ["diagnosis", "diagnosed"],
     "urgency":   ["age", "old", "timeline", "time"],
 }
+
+# Signals that a first message already contains personal context — skip generic opener.
+# Used only on turn 0 (classifier is skipped then).
+_CONTEXT_SIGNAL_RE = re.compile(
+    r"\b(amh|ivf|iui|trying|tried|doctor|diagnosis|diagnosed|pregnant|fertility|"
+    r"hormone|fsh|lh|pcos|endometriosis|miscarriage|period|cycle|clomid|letrozole|"
+    r"inositol|supplement|specialist|clinic)\b",
+    re.IGNORECASE,
+)
+_FIRST_MSG_CONTEXT_WORD_THRESHOLD = 15
+
+
+def _first_message_has_context(msg: str) -> bool:
+    """Return True if the first user message already contains personal context.
+    Used to decide between `open` (generic opener) and `open_context` (respond directly)."""
+    if len(msg.split()) >= _FIRST_MSG_CONTEXT_WORD_THRESHOLD:
+        return True
+    return bool(_CONTEXT_SIGNAL_RE.search(msg))
+
+
+# Truly unambiguous grief terms for first-turn deterministic fallback.
+# The classifier handles emotion detection for all subsequent turns — keep this minimal.
+_FIRST_TURN_GRIEF_TERMS = [
+    "miscarriage", "recurrent loss", "multiple miscarriages",
+    "hopeless", "give up", "giving up",
+    "devastated", "heartbroken",
+    "lost hope", "losing hope",
+    "failed ivf", "ivf fail", "ivf didn't work",
+    "failed iui", "iui fail",
+]
+
+# ── Booking state helpers ────────────────────────────────────────────────────
+# After BOOKING_ASKED, fire on scheduling language immediately.
+_SCHEDULING_INTENT_RE = re.compile(
+    r"\b(when are you|what time|what days|send me|send the link|how do i book|"
+    r"where do i|what'?s the link|how do i sign|i already told|already told you)\b"
+    r"|when (are|is) (you|it) (available|free|open)",
+    re.IGNORECASE,
+)
+
+# Explicit rejection — the ONLY reason NOT to fire after already_asked.
+_BOOKING_REJECTION_RE = re.compile(
+    r"\b(not (ready|sure|interested|now)|maybe later|not yet|actually no|"
+    r"changed my mind|never mind|no thanks|don'?t think so|not for me)\b",
+    re.IGNORECASE,
+)
+
+# Pricing regex — used ONLY as turn-0 fallback (classifier handles turns 1+)
+_PRICING_RE = re.compile(
+    r"\b(how much|price|pricing|cost|afford|investment|fee|fees|charge|charges)\b"
+    r"|what does it cost|what'?s the cost|what is the cost"
+    r"|how much does|how much is|cost of the program|cost of this"
+    r"|what do you charge|how much do you charge",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -79,30 +105,27 @@ class RouteContext:
     question_for_dim: str | None            # one qualification question based on tag gaps
     authority_phrase: str | None            # one proof phrase when classifier says useful
     cta_line: str | None                    # one CTA line when score approaches threshold
-    booking_fires_now: bool = False         # True when booking link should be embedded in this reply
-    booking_ask_confirmation: bool = False  # True when buy-in question should be asked (no link yet)
-    booking_url: str = ""                   # The URL to embed when booking_fires_now is True
-    known_facts: str | None = None          # derived from prior_tags + history — prevents re-asking known info
-    suppress_question: bool = False         # True for high-emotion turns (grief, IVF, miscarriage)
-    low_intent: bool = False               # True when user is vaguely browsing, not yet sharing anything personal
-    lead_score: int = 0                    # current lead quality score (0–100) for score-aware responses
-    price_already_deflected: bool = False  # True if AI has already deflected a pricing question once
-    mark_price_deflected: bool = False     # True when webhook should save [PRICE_DEFLECTED] marker
+    booking_fires_now: bool = False
+    booking_ask_confirmation: bool = False
+    booking_url: str = ""
+    known_facts: str | None = None
+    suppress_question: bool = False
+    low_intent: bool = False
+    lead_score: int = 0
+    price_already_deflected: bool = False
+    mark_price_deflected: bool = False
+    emotion: str = "neutral"
+    prior_empathize: bool = False       # True when the last AI turn was empathize/empathize_qualify
+    empathize_streak: int = 0           # Count of consecutive empathize turns at end of history
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _parse_list(raw: str) -> list[str]:
-    """Split newline-delimited config value into non-empty lines."""
     return [line.strip() for line in raw.splitlines() if line.strip()]
 
 
 def _parse_labeled_list(raw: str) -> list[tuple[str, str]]:
-    """
-    Parse lines formatted as 'Label: full response text'.
-    Falls back to using the first 3 words as the label if no colon separator.
-    Returns list of (label, full_text) pairs.
-    """
     pairs = []
     for line in _parse_list(raw):
         if ": " in line:
@@ -118,8 +141,41 @@ def _parse_labeled_list(raw: str) -> list[tuple[str, str]]:
 _AGE_PATTERN = re.compile(r"\b(?:i[' ]?m|i am)\s+(\d{2})\b", re.IGNORECASE)
 
 
+def _pick_authority_phrase(phrases: list[str], history: list) -> str | None:
+    """Select an authority phrase not already used in this conversation.
+    Shuffles the pool each call to vary selection order. Returns None when all are exhausted."""
+    history_text = " ".join(
+        (m.content or "") for m in history if m.role == "assistant"
+    ).lower()
+    # Shuffle so we don't always try phrases in the same order
+    candidates = list(phrases)
+    random.shuffle(candidates)
+    for phrase in candidates:
+        # Match on the first 40 chars — distinctive enough to detect re-use
+        key = phrase.lower()[:40]
+        if key not in history_text:
+            return phrase
+    return None  # all phrases already used — omit authority this turn
+
+
+def _count_prior_empathize(history: list) -> int:
+    """Count consecutive [EMPATHIZE]-flagged assistant turns at the end of history.
+
+    Returns 0 if the last assistant message was not an empathize turn, 1 if it was,
+    2+ if two or more consecutive empathize responses were given back-to-back.
+    """
+    count = 0
+    for turn in reversed(history):
+        if turn.role == "assistant" and turn.content:
+            if "[EMPATHIZE]" in turn.content:
+                count += 1
+            else:
+                break  # streak ended
+    return count
+
+
 def _derive_known_facts(prior_tags: dict, history: list | None = None) -> str | None:
-    """Convert non-default prior tags + conversation history into plain English facts the AI should not re-ask."""
+    """Build a plain-English summary of what's already known so the writer doesn't re-ask."""
     parts = []
 
     ttc = prior_tags.get("ttc")
@@ -142,61 +198,54 @@ def _derive_known_facts(prior_tags: dict, history: list | None = None) -> str | 
     if urgency in ("urgency_medium", "urgency_high"):
         parts.append("age or timeline pressure is already known — do not ask about this again")
 
-    # Scan user messages in history for explicit facts
     if history:
-        user_texts = " ".join(
-            t.content for t in history if t.role == "user" and t.content
-        )
+        user_texts = " ".join(t.content for t in history if t.role == "user" and t.content)
         user_lower = user_texts.lower()
 
         age_match = _AGE_PATTERN.search(user_texts)
         if age_match:
             parts.append(f"their age is {age_match.group(1)} — do not ask again")
 
-        if "amh" in user_lower:
-            parts.append("they have mentioned AMH — reference it naturally when relevant")
-
-        if "ivf" in user_lower:
-            parts.append("they have mentioned IVF — reference it naturally when relevant")
-
-        if "iui" in user_lower:
-            parts.append("they have mentioned IUI — reference it naturally when relevant")
+        if "amh" in user_lower or "fsh" in user_lower or "antral" in user_lower:
+            parts.append(
+                "they have already shared bloodwork/test results — "
+                "do NOT ask about hormone tests, blood tests, ultrasounds, or 'what testing have you had done'"
+            )
+        if "ivf" in user_lower or "iui" in user_lower:
+            parts.append(
+                "they have been through fertility treatment — "
+                "do NOT ask whether they have seen a doctor, had testing done, or been to a clinic"
+            )
 
     return "; ".join(parts) if parts else None
-
-
-_POSITIVE_BOOKING_TERMS = [
-    "yes", "yeah", "yep", "yup", "sure", "absolutely", "definitely",
-    "sounds good", "sounds great", "that sounds good", "that sounds great",
-    "let's do it", "lets do it", "let's go", "lets go",
-    "i'd love that", "id love that", "i would love that",
-    "that would be great", "that would be amazing",
-    "ok", "okay", "of course", "for sure", "great idea", "love that",
-    "i'm ready", "im ready", "i am ready", "ready",
-    "sign me up", "book", "schedule",
-]
-
-
-def _user_confirmed_booking(user_message: str) -> bool:
-    """Returns True if the user's message is a positive response to the buy-in question."""
-    msg = user_message.lower().strip()
-    return any(term in msg for term in _POSITIVE_BOOKING_TERMS)
 
 
 def _find_question_for_dim(dim: str, questions: list[str]) -> str | None:
     keywords = _DIM_QUESTION_KEYWORDS.get(dim, [])
     for q in questions:
-        q_lower = q.lower()
-        if any(kw in q_lower for kw in keywords):
+        if any(kw in q.lower() for kw in keywords):
             return q
     return questions[0] if questions else None
 
 
-def _select_question(prior_tags: dict, questions: list[str]) -> str | None:
-    """Return a question for the highest-priority dimension that's still at its default value."""
+def _select_question(
+    prior_tags: dict,
+    questions: list[str],
+    dims_answered: list[str] | None = None,
+) -> str | None:
+    """Select the highest-priority unknown dimension question.
+
+    Uses dims_answered from the classifier to skip dimensions the user already
+    stated, even when the tagger still shows the default value (e.g. ttc_0-6mo
+    for "only been trying 4 months" — which is both the real value AND the default).
+    This ensures we always ask about the next genuinely unknown dimension.
+    """
     if not questions:
         return None
+    skip = set(dims_answered or [])
     for dim in _DIM_PRIORITY:
+        if dim in skip:
+            continue
         if prior_tags.get(dim, _DEFAULT_TAGS[dim]) == _DEFAULT_TAGS[dim]:
             q = _find_question_for_dim(dim, questions)
             if q:
@@ -212,12 +261,22 @@ async def _run_classifier(
     pattern_pairs: list[tuple[str, str]],
     objection_pairs: list[tuple[str, str]],
     openai_client: AsyncOpenAI,
-) -> tuple[tuple[str, str] | None, tuple[str, str] | None, bool, bool]:
+) -> tuple[
+    tuple[str, str] | None,  # matched_pattern
+    tuple[str, str] | None,  # matched_objection
+    bool,                     # authority_useful
+    bool,                     # low_intent
+    str,                      # emotion
+    bool,                     # booking_intent
+    bool,                     # pricing_asked
+    list[str],                # dims_answered
+]:
     """
-    Single cheap LLM call that classifies the conversation's semantic context.
-    Returns (matched_pattern | None, matched_objection | None, authority_useful: bool, low_intent: bool).
+    Single LLM call classifying the full semantic context of the conversation.
+
+    Returns 8 values. booking_intent, pricing_asked, and dims_answered replace the
+    fragile keyword lists and regex that previously lived in build_route_context.
     """
-    # Build recent conversation context (last 6 turns + current message)
     recent = []
     for turn in history[-6:]:
         if turn.role in ("user", "assistant") and turn.content:
@@ -235,21 +294,47 @@ async def _run_classifier(
     )
 
     classifier_prompt = (
-        "You are a conversation classifier. Analyze the following conversation and return a JSON object.\n\n"
+        "You are a conversation classifier. Analyze the conversation and return JSON.\n\n"
         f"Conversation:\n{convo}\n\n"
-        f"Available scenarios (return the index, or -1 if none clearly applies):\n{scenario_list}\n\n"
-        f"Available objections (return the index, or -1 if none clearly applies):\n{objection_list}\n\n"
-        "IMPORTANT — objections are ONLY about the coaching program or service itself: "
-        "e.g. the cost is too high, feeling overwhelmed by too much health information, "
-        "or scepticism that coaching will work. "
-        "Emotional distress about a diagnosis or test results is NOT an objection — return -1 for those.\n\n"
-        "Should authority or credentials be mentioned? "
-        "Return true ONLY IF the user is explicitly questioning whether this approach works, "
-        "asking for proof or track record, or expressing direct scepticism about the program. "
-        "Return false for emotional sharing, general questions, or anything else. "
-        "When in doubt, return false.\n\n"
-        "Is the user's intent vague or exploratory — just browsing, asking what this is about, or not sharing anything personal yet? (true/false)\n\n"
-        'Return only valid JSON: {"scenario": <integer>, "objection": <integer>, "authority_useful": <boolean>, "low_intent": <boolean>}'
+        f"Scenarios (return the best matching index, or -1 only if the user's situation genuinely doesn't relate to any — lean toward matching):\n{scenario_list}\n\n"
+        f"Objections (return index or -1 if none clearly applies):\n{objection_list}\n"
+        "Objections are ONLY about the coaching program itself (cost, scepticism, information overload). "
+        "Emotional distress about a medical situation is NOT an objection.\n\n"
+        "Classify each field:\n"
+        "scenario: integer\n"
+        "objection: integer\n"
+        "authority_useful: true when it would feel natural for an expert to reference their track record — "
+        "when sharing an insight, reframe, or perspective on her situation. "
+        "Also true if the user questions whether the approach works or asks for proof. "
+        "False for pure acknowledgment turns (grief, loss, devastation) and generic greetings.\n"
+        "low_intent: true ONLY if there are ≤2 prior exchanges AND the user clearly has not shared anything "
+        "personal yet. ALWAYS false if there are 3 or more prior exchanges.\n"
+        "emotion: classify based on the user's CURRENT message (the last USER line) only — "
+        "not the overall conversation context.\n"
+        '  "grief" = the current message explicitly expresses grief/loss/hopelessness/devastation '
+        '(e.g. "I feel like I\'ll never have a baby", "I\'m devastated", "we just lost another one")\n'
+        '  "mild_distress" = the current message expresses worry, frustration, or overwhelm\n'
+        '  "neutral" = the current message is informational, factual, a short reply, or conversational '
+        '(e.g. "my AMH is 0.92", "thats what im not sure about", "no", "yes", "not really")\n'
+        "Even if the overall conversation is heavy, if the current message is informational "
+        'or a short reply, classify as "neutral".\n'
+        "booking_intent: true if the user's latest message is a clear affirmative response to a direct "
+        "invitation — yes, sure, ok, sounds good, absolutely, as soon as possible, right away, "
+        "I'd love that, definitely, sign me up. "
+        "Also true for scheduling language after the user has already been invited to book: "
+        "'when are you available', 'what time works', 'send me the link', 'how do I book', "
+        "or any implicit continuation that assumes the booking is happening. "
+        "False for mid-conversation acknowledgments not responding to a direct invitation.\n"
+        "pricing_asked: true if the user asks about price, cost, fees, investment, or affordability\n"
+        "dims_answered: which qualification dimensions the user has explicitly stated anywhere in "
+        "this conversation. Subset of [\"ttc\", \"diagnosis\", \"urgency\"].\n"
+        "  ttc = user mentioned a specific duration trying to conceive (e.g. '4 months', '2 years')\n"
+        "  diagnosis = user mentioned a specific condition or test result "
+        "(AMH value, FSH, PCOS, endometriosis, thyroid, etc.)\n"
+        "  urgency = user mentioned their age or expressed explicit time pressure\n\n"
+        'Return only valid JSON: {"scenario": <int>, "objection": <int>, "authority_useful": <bool>, '
+        '"low_intent": <bool>, "emotion": <str>, "booking_intent": <bool>, '
+        '"pricing_asked": <bool>, "dims_answered": <list[str]>}'
     )
 
     try:
@@ -257,29 +342,43 @@ async def _run_classifier(
             model="gpt-4.1-mini",
             messages=[{"role": "user", "content": classifier_prompt}],
             temperature=0,
-            max_tokens=60,
+            max_tokens=120,
             response_format={"type": "json_object"},
         )
         data = json.loads(response.choices[0].message.content or "{}")
-        scenario_idx  = int(data.get("scenario", -1))
-        objection_idx = int(data.get("objection", -1))
+
+        scenario_idx     = int(data.get("scenario", -1))
+        objection_idx    = int(data.get("objection", -1))
         authority_useful = bool(data.get("authority_useful", False))
-        low_intent = bool(data.get("low_intent", False))
+        low_intent       = bool(data.get("low_intent", False))
+        emotion          = data.get("emotion", "neutral")
+        booking_intent   = bool(data.get("booking_intent", False))
+        pricing_asked    = bool(data.get("pricing_asked", False))
+        dims_answered    = [
+            d for d in data.get("dims_answered", [])
+            if d in ("ttc", "diagnosis", "urgency")
+        ]
+
+        if emotion not in ("neutral", "mild_distress", "grief"):
+            emotion = "neutral"
 
         matched_pattern   = pattern_pairs[scenario_idx]   if 0 <= scenario_idx  < len(pattern_pairs)   else None
         matched_objection = objection_pairs[objection_idx] if 0 <= objection_idx < len(objection_pairs) else None
 
         logger.debug(
-            "Classifier → scenario=%d (%s), objection=%d (%s), authority=%s, low_intent=%s",
-            scenario_idx,  matched_pattern[0]   if matched_pattern   else "none",
-            objection_idx, matched_objection[0] if matched_objection else "none",
-            authority_useful, low_intent,
+            "Classifier → scenario=%s, objection=%s, emotion=%s, booking=%s, pricing=%s, dims=%s",
+            matched_pattern[0] if matched_pattern else "none",
+            matched_objection[0] if matched_objection else "none",
+            emotion, booking_intent, pricing_asked, dims_answered,
         )
-        return matched_pattern, matched_objection, authority_useful, low_intent
+        return (
+            matched_pattern, matched_objection, authority_useful,
+            low_intent, emotion, booking_intent, pricing_asked, dims_answered,
+        )
 
     except Exception as exc:
-        logger.warning("Classifier call failed (%s) — skipping semantic context injection", exc)
-        return None, None, False, False
+        logger.warning("Classifier call failed (%s) — using safe defaults", exc)
+        return None, None, False, False, "neutral", False, False, []
 
 
 # ── Public Entry Point ────────────────────────────────────────────────────────
@@ -296,129 +395,146 @@ async def build_route_context(
     already_asked: bool = False,
     price_already_deflected: bool = False,
 ) -> RouteContext:
-    """
-    Builds a RouteContext that tells the prompt assembler exactly what to inject
-    for this specific conversation turn.
-
-    Booking two-step:
-      Phase A — score crosses threshold, buy-in not yet asked → booking_ask_confirmation=True
-      Phase B — buy-in already asked, user confirmed positively → booking_fires_now=True
-    """
     is_first = len(history) == 0
-
-    # ── Deterministic checks on raw message (before booking phase) ───────────
     msg_lower = user_message.lower()
 
-    # High-emotion detection — keyword check, no classifier needed
-    suppress_question: bool = any(term in msg_lower for term in _HIGH_EMOTION_USER_TERMS)
+    # ── Turn-0 deterministic fallbacks ───────────────────────────────────────
+    # Classifier is skipped on the first message — these only need to cover that case.
+    suppress_question: bool = any(term in msg_lower for term in _FIRST_TURN_GRIEF_TERMS)
+    pricing_asked_t0: bool  = bool(_PRICING_RE.search(msg_lower)) if is_first else False
 
-    # Determine booking phase — never fire on a heavy emotional turn
-    score_qualifies = threshold > 0 and current_score >= threshold
-    booking_fires_now = False
-    booking_ask_confirmation = False
-
-    if not already_sent and not suppress_question:
-        if already_asked and _user_confirmed_booking(user_message):
-            booking_fires_now = True
-        elif price_already_deflected and score_qualifies and _user_confirmed_booking(user_message):
-            # The pricing redirect already asked "Would you like to book?" —
-            # treat a positive reply as confirmation and fire the link directly,
-            # but only if the lead score has reached the threshold.
-            booking_fires_now = True
-        elif score_qualifies and not already_asked:
-            booking_ask_confirmation = True
-
-    # ── Part A: Deterministic ─────────────────────────────────────────────────
-
-    # Opening variant — only on the very first message (determined by database history)
-    opening_variant: str | None = None
-    if is_first:
-        variants = _parse_list(cfg.get("prompt_opening_variants", ""))
-        if variants:
-            opening_variant = random.choice(variants)
-
-    # Known facts from prior tags + history — injected so the AI never re-asks them
-    known_facts = _derive_known_facts(prior_tags, history) if not is_first else None
-
-    # Qualification question — one per turn, for the highest-priority unknown dimension
-    question_for_dim = _select_question(
-        prior_tags,
-        _parse_list(cfg.get("prompt_qualification_questions", "")),
-    )
-
-    # CTA line — when score approaches booking threshold (but not when ask/fire is happening)
-    cta_line: str | None = None
-    if threshold > 0 and current_score >= int(threshold * 0.75) and not booking_fires_now and not booking_ask_confirmation:
-        cta_options = _parse_list(cfg.get("prompt_cta_transitions", ""))
-        if cta_options:
-            cta_line = random.choice(cta_options)
-
-    # ── Part B: LLM Classifier ────────────────────────────────────────────────
-    # Skip entirely on turn 1 — the opening variant is the only injection needed.
-    # Running the classifier on a single opening message produces false positives
-    # (e.g. "I'm devastated" wrongly triggers the overwhelm objection handler).
-
+    # ── Classifier (all turns after turn 0) ──────────────────────────────────
     matched_pattern: tuple[str, str] | None   = None
     matched_objection: tuple[str, str] | None = None
     authority_phrase: str | None              = None
     low_intent: bool                          = False
-
-    # High-emotion first message: drop the opening variant — acknowledge the emotion directly
-    if suppress_question:
-        opening_variant = None
-        cta_line = None  # never push CTA on a heavy emotional turn
+    emotion: str                              = "grief" if suppress_question else "neutral"
+    booking_intent: bool                      = False
+    pricing_asked: bool                       = pricing_asked_t0
+    dims_answered: list[str]                  = []
 
     if not is_first:
         pattern_pairs     = _parse_labeled_list(cfg.get("prompt_pattern_responses", ""))
         objection_pairs   = _parse_labeled_list(cfg.get("prompt_objection_handling", ""))
         authority_phrases = _parse_list(cfg.get("prompt_authority_proof", ""))
 
-        if pattern_pairs or objection_pairs or authority_phrases:
-            matched_pattern, matched_objection, authority_useful, low_intent = await _run_classifier(
-                user_message=user_message,
-                history=history,
-                pattern_pairs=pattern_pairs,
-                objection_pairs=objection_pairs,
-                openai_client=openai_client,
-            )
-            if authority_useful and authority_phrases:
-                authority_phrase = random.choice(authority_phrases)
+        (
+            matched_pattern, matched_objection, authority_useful,
+            low_intent, emotion, booking_intent, pricing_asked, dims_answered,
+        ) = await _run_classifier(
+            user_message=user_message,
+            history=history,
+            pattern_pairs=pattern_pairs,
+            objection_pairs=objection_pairs,
+            openai_client=openai_client,
+        )
 
-        # Also suppress if the classifier matched a high-emotion pattern label
-        if not suppress_question and matched_pattern:
-            label_lower = matched_pattern[0].lower()
-            if any(kw in label_lower for kw in _HIGH_EMOTION_KEYWORDS):
-                suppress_question = True
+        # Pattern match always warrants an authority reference — Sonia is sharing
+        # expert knowledge she has seen many times; proof phrases land naturally there.
+        if (authority_useful or matched_pattern is not None) and authority_phrases:
+            authority_phrase = _pick_authority_phrase(authority_phrases, history)
 
-    # Also suppress qualification question on turn 1 — the opening variant
-    # already ends with a question; stacking another creates the "multiple questions" problem.
+        # Classifier is authoritative on grief — suppress questions on those turns
+        if emotion == "grief":
+            suppress_question = True
+
+        # Low-intent only fires on very early turns — mid-conversation it's almost always wrong
+        if low_intent and len(history) >= 4:
+            low_intent = False
+
+    # ── Opening variant (turn 0 only) ─────────────────────────────────────────
+    opening_variant: str | None = None
     if is_first:
+        variants = _parse_list(cfg.get("prompt_opening_variants", ""))
+        if variants:
+            opening_variant = random.choice(variants)
+        # User already shared rich context → skip the generic opener, respond directly
+        if opening_variant and _first_message_has_context(user_message):
+            opening_variant = None
+    if suppress_question:
+        opening_variant = None  # never use a generic opener on a grief turn
+
+    # ── Known facts ───────────────────────────────────────────────────────────
+    known_facts = _derive_known_facts(prior_tags, history) if not is_first else None
+
+    # ── Qualification question ────────────────────────────────────────────────
+    # dims_answered (from classifier) skips dimensions the user already stated,
+    # so we always ask about the next genuinely unknown dimension.
+    question_for_dim: str | None = None
+    if not is_first and not suppress_question:
+        question_for_dim = _select_question(
+            prior_tags,
+            _parse_list(cfg.get("prompt_qualification_questions", "")),
+            dims_answered=dims_answered,
+        )
+
+    # ── Pricing detection ─────────────────────────────────────────────────────
+    if pricing_asked and matched_objection is None:
+        matched_objection = ("Cost objection", "")
+    _is_pricing = pricing_asked or (
+        matched_objection is not None
+        and any(kw in matched_objection[0].lower() for kw in ("pricing", "price", "cost"))
+    )
+    mark_price_deflected = pricing_asked and not price_already_deflected
+    if _is_pricing:
         question_for_dim = None
 
+    # ── Booking phase ─────────────────────────────────────────────────────────
+    score_qualifies     = threshold > 0 and current_score >= threshold
+    # Soft trigger: 80% of threshold after 5+ assistant turns.
+    # Raised from 3 to prevent booking firing after just 3 turns on high-signal first messages
+    # (e.g. a user who mentions AMH + age 38 + IVF in turn 1 can hit threshold immediately).
+    assistant_turns     = sum(1 for t in history if t.role == "assistant")
+    score_soft          = (
+        threshold > 0
+        and current_score >= int(threshold * 0.80)
+        and assistant_turns >= 5
+    )
+
+    booking_fires_now        = False
+    booking_ask_confirmation = False
+
+    if not already_sent and not suppress_question:
+        if already_asked and booking_intent:
+            booking_fires_now = True
+        elif already_asked and not _BOOKING_REJECTION_RE.search(user_message):
+            # User was already invited to book and hasn't explicitly rejected.
+            # Fire on scheduling language OR short replies (≤5 words) — they've already said yes once.
+            if _SCHEDULING_INTENT_RE.search(user_message) or len(user_message.split()) <= 5:
+                booking_fires_now = True
+        elif booking_intent and pricing_asked and not already_asked:
+            # User said "yes" AND asked about price in the same message.
+            # Booking intent takes priority — don't abandon the conversion to deflect pricing.
+            # confirm_booking goal will handle both; pricing context is addressed in the brief.
+            booking_ask_confirmation = True
+        elif price_already_deflected and score_qualifies and booking_intent:
+            booking_fires_now = True
+        elif (score_qualifies or score_soft) and not already_asked and assistant_turns >= 5:
+            # Turn gate: minimum 5 AI turns before any booking invitation.
+            # Prevents premature booking asks on high-signal first messages.
+            logger.info(
+                "Booking ask triggered — assistant_turns=%d, score=%d, threshold=%d",
+                assistant_turns, current_score, threshold,
+            )
+            booking_ask_confirmation = True
+
+    # ── CTA line ──────────────────────────────────────────────────────────────
+    cta_line: str | None = None
+    if not suppress_question and not booking_fires_now and not booking_ask_confirmation:
+        if threshold > 0 and current_score >= int(threshold * 0.75):
+            cta_options = _parse_list(cfg.get("prompt_cta_transitions", ""))
+            if cta_options:
+                cta_line = random.choice(cta_options)
+
+    # ── Booking URL validation ────────────────────────────────────────────────
     booking_url = cfg.get("booking_link", "").strip() if booking_fires_now else ""
-    # Can't fire booking link without a URL configured — treat as not firing, fall back to ask
     if booking_fires_now and not booking_url:
         booking_fires_now = False
         if not already_asked:
             booking_ask_confirmation = True
 
-    # Deterministic pricing intent check — works on all turns including turn 1
-    # where the LLM classifier is skipped. If pricing is detected and the classifier
-    # didn't already set matched_objection to a pricing entry, synthesise one so
-    # build_context_block() fires the pricing branch.
-    _pricing_detected = any(term in msg_lower for term in _PRICING_TERMS)
-    if _pricing_detected and matched_objection is None:
-        matched_objection = ("Cost objection", "")
-    _is_pricing = _pricing_detected or (
-        matched_objection is not None and any(
-            kw in matched_objection[0].lower() for kw in ("pricing", "price", "cost")
-        )
-    )
-    mark_price_deflected = _is_pricing and not price_already_deflected
-
-    # Pricing redirect IS the complete response — never stack a qualification question on top
-    if _is_pricing:
-        question_for_dim = None
+    empathize_streak = _count_prior_empathize(history) if not is_first else 0
+    prior_empathize = empathize_streak > 0
 
     return RouteContext(
         is_first_message=is_first,
@@ -437,4 +553,7 @@ async def build_route_context(
         lead_score=current_score,
         price_already_deflected=price_already_deflected,
         mark_price_deflected=mark_price_deflected,
+        emotion=emotion,
+        prior_empathize=prior_empathize,
+        empathize_streak=empathize_streak,
     )
