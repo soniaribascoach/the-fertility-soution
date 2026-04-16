@@ -1,5 +1,3 @@
-import os
-import uuid
 import json as _json
 
 from fastapi import APIRouter, Request, Depends, Form
@@ -10,8 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.repositories.config import get_all_config, set_config
 from app.repositories import conversation as conversation_repo
-from app.repositories import simulation as sim_repo
-from app.services.simulate import simulate_contact
 from app.api.admin.auth import (
     is_authenticated,
     check_rate_limit,
@@ -100,17 +96,18 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
     for key in CONFIG_KEYS:
         cfg.setdefault(key, "")
 
-    def _split(key): return [t for t in cfg.get(key, "").split("\n") if t.strip()]
+    def _split(key):
+        return [t for t in cfg.get(key, "").split("\n") if t.strip()]
 
-    blocklist_items             = _split("medical_blocklist")
-    takeover_items              = _split("human_takeover_triggers")
-    hard_rule_items             = _split("prompt_hard_rules")
-    opening_variant_items       = _split("prompt_opening_variants")
+    blocklist_items = _split("medical_blocklist")
+    takeover_items = _split("human_takeover_triggers")
+    hard_rule_items = _split("prompt_hard_rules")
+    opening_variant_items = _split("prompt_opening_variants")
     qualification_question_items = _split("prompt_qualification_questions")
-    pattern_response_items      = _split("prompt_pattern_responses")
-    objection_handling_items    = _split("prompt_objection_handling")
-    authority_proof_items       = _split("prompt_authority_proof")
-    cta_transition_items        = _split("prompt_cta_transitions")
+    pattern_response_items = _split("prompt_pattern_responses")
+    objection_handling_items = _split("prompt_objection_handling")
+    authority_proof_items = _split("prompt_authority_proof")
+    cta_transition_items = _split("prompt_cta_transitions")
 
     return templates.TemplateResponse(
         request,
@@ -133,25 +130,25 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
 
 @router.post("/admin/config/save")
 async def config_save(
-    request: Request,
-    booking_link: str = Form(""),
-    score_threshold: str = Form(""),
-    prompt_scoring_rules: str = Form(""),
-    prompt_about: str = Form(""),
-    prompt_services: str = Form(""),
-    prompt_tone: str = Form(""),
-    prompt_flow: str = Form(""),
-    prompt_hard_rules: str = Form(""),
-    prompt_opening_variants: str = Form(""),
-    prompt_qualification_questions: str = Form(""),
-    prompt_pattern_responses: str = Form(""),
-    prompt_objection_handling: str = Form(""),
-    prompt_authority_proof: str = Form(""),
-    prompt_cta_transitions: str = Form(""),
-    medical_blocklist: str = Form(""),
-    medical_deflection: str = Form(""),
-    human_takeover_triggers: str = Form(""),
-    db: AsyncSession = Depends(get_db),
+        request: Request,
+        booking_link: str = Form(""),
+        score_threshold: str = Form(""),
+        prompt_scoring_rules: str = Form(""),
+        prompt_about: str = Form(""),
+        prompt_services: str = Form(""),
+        prompt_tone: str = Form(""),
+        prompt_flow: str = Form(""),
+        prompt_hard_rules: str = Form(""),
+        prompt_opening_variants: str = Form(""),
+        prompt_qualification_questions: str = Form(""),
+        prompt_pattern_responses: str = Form(""),
+        prompt_objection_handling: str = Form(""),
+        prompt_authority_proof: str = Form(""),
+        prompt_cta_transitions: str = Form(""),
+        medical_blocklist: str = Form(""),
+        medical_deflection: str = Form(""),
+        human_takeover_triggers: str = Form(""),
+        db: AsyncSession = Depends(get_db),
 ):
     if not is_authenticated(request):
         return RedirectResponse("/admin/login", status_code=302)
@@ -175,174 +172,3 @@ async def config_save(
     await set_config(db, "human_takeover_triggers", human_takeover_triggers)
 
     return RedirectResponse("/admin/config?saved=true", status_code=302)
-
-
-# ── Simulation ─────────────────────────────────────────────────────────────────
-
-@router.get("/admin/simulate", response_class=HTMLResponse)
-async def simulate_get(request: Request, db: AsyncSession = Depends(get_db)):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-    session_id = str(uuid.uuid4())
-    await sim_repo.get_or_create_session(db, session_id)
-    return templates.TemplateResponse(
-        request,
-        "admin/simulate.html",
-        {"session_id": session_id, "messages": [], "score": 0, "tags": {}, "replay_mode": False, "session": None},
-    )
-
-
-@router.post("/admin/simulate/send", response_class=HTMLResponse)
-async def simulate_send(
-    request: Request,
-    session_id: str = Form(...),
-    message: str = Form(...),
-    first_name: str = Form(""),
-    db: AsyncSession = Depends(get_db),
-):
-    if not is_authenticated(request):
-        return HTMLResponse("Unauthorized", status_code=401)
-
-    cfg = await get_all_config(db)
-    openai_client = request.app.state.openai_client
-
-    await sim_repo.get_or_create_session(db, session_id)
-
-    result = await simulate_contact(
-        db=db,
-        openai_client=openai_client,
-        session_id=session_id,
-        message=message.strip(),
-        first_name=first_name.strip() or None,
-        cfg=cfg,
-    )
-
-    sim_user_id = f"sim_{session_id}"
-    current_score = await conversation_repo.get_latest_score(db, sim_user_id)
-    current_tags  = await conversation_repo.get_latest_tags(db, sim_user_id)
-
-    try:
-        threshold = int(cfg.get("score_threshold", "70"))
-    except (ValueError, TypeError):
-        threshold = 70
-
-    return templates.TemplateResponse(
-        request,
-        "admin/partials/sim_message.html",
-        {
-            "user_message": message.strip(),
-            "result": result,
-            "current_score": current_score,
-            "current_tags": current_tags,
-            "threshold": threshold,
-        },
-    )
-
-
-@router.post("/admin/simulate/session/save", response_class=HTMLResponse)
-async def simulate_session_save(
-    request: Request,
-    session_id: str = Form(...),
-    name: str = Form(""),
-    note: str = Form(""),
-    first_name: str = Form(""),
-    db: AsyncSession = Depends(get_db),
-):
-    if not is_authenticated(request):
-        return HTMLResponse("Unauthorized", status_code=401)
-
-    await sim_repo.update_session_meta(
-        db, session_id,
-        name=name.strip() or None,
-        note=note.strip() or None,
-        first_name=first_name.strip() or None,
-    )
-    return HTMLResponse(
-        '<span class="text-green-600 text-xs font-medium animate-slideDown">Saved ✓</span>'
-    )
-
-
-@router.get("/admin/simulate/sessions", response_class=HTMLResponse)
-async def simulate_sessions_list(request: Request, db: AsyncSession = Depends(get_db)):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-    sessions = await sim_repo.get_all_sessions(db)
-    return templates.TemplateResponse(
-        request,
-        "admin/sessions.html",
-        {"sessions": sessions},
-    )
-
-
-@router.get("/admin/prompts", response_class=HTMLResponse)
-async def prompts_get(request: Request, tail: int = 100):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-    log_path = os.path.normpath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "..", "prompts.log")
-    )
-    content = ""
-    if os.path.exists(log_path):
-        with open(log_path, encoding="utf-8") as f:
-            raw = f.read()
-        # Split on turn dividers and return the last `tail` turns
-        turns = raw.split("\n" + "═" * 70)
-        turns = [t for t in turns if t.strip()]
-        displayed = turns[-tail:]
-        content = ("\n" + "═" * 70).join(displayed)
-    return templates.TemplateResponse(
-        request,
-        "admin/prompts.html",
-        {"content": content, "tail": tail, "log_path": log_path},
-    )
-
-
-@router.post("/admin/simulate/session/{session_id}/delete")
-async def simulate_session_delete(
-    session_id: str,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-    await sim_repo.delete_session(db, session_id)
-    return RedirectResponse("/admin/simulate/sessions", status_code=303)
-
-
-@router.get("/admin/simulate/session/{session_id}", response_class=HTMLResponse)
-async def simulate_session_replay(
-    session_id: str,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-
-    session = await sim_repo.get_session(db, session_id)
-    if not session:
-        return RedirectResponse("/admin/simulate/sessions", status_code=302)
-
-    sim_user_id = f"sim_{session_id}"
-    history = await conversation_repo.get_history(db, sim_user_id, limit=100)
-    current_score = await conversation_repo.get_latest_score(db, sim_user_id)
-    current_tags  = await conversation_repo.get_latest_tags(db, sim_user_id)
-
-    cfg = await get_all_config(db)
-    try:
-        threshold = int(cfg.get("score_threshold", "70"))
-    except (ValueError, TypeError):
-        threshold = 70
-
-    return templates.TemplateResponse(
-        request,
-        "admin/simulate.html",
-        {
-            "session_id": session_id,
-            "session": session,
-            "messages": history,
-            "score": current_score,
-            "tags": current_tags,
-            "threshold": threshold,
-            "replay_mode": True,
-        },
-    )
