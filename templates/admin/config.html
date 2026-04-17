@@ -64,25 +64,12 @@
     <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Lead Qualification</h2>
 
     <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Score Threshold</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Each AI reply adds or subtracts up to 20 points based on lead engagement. When the cumulative score hits this number, the booking link is sent exactly once. Recommended: 60–75.</p>
-      <input type="number" name="score_threshold" value="{{ cfg.score_threshold or '' }}" min="0" max="100" placeholder="70"
-        class="border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 max-w-[140px]">
-    </div>
-
-    <div class="mb-7">
       <h3 class="text-base font-semibold text-slate-800 mb-1.5">Booking Link</h3>
       <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Sent automatically once when a lead's score reaches the threshold. Include UTM params if you're tracking conversions.</p>
       <input type="url" name="booking_link" value="{{ cfg.booking_link or '' }}" placeholder="https://calendly.com/your-link"
         class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
     </div>
 
-    <div>
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Lead Scoring Rules</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Define what signals increase or decrease the lead score. The AI uses this guidance when classifying each conversation turn.</p>
-      <textarea name="prompt_scoring_rules" rows="8"
-        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.prompt_scoring_rules or '' }}</textarea>
-    </div>
   </section>
 
   <!-- ── AI Behaviour ──────────────────────────────────────────────────── -->
@@ -103,40 +90,11 @@
       <textarea name="prompt_services" rows="12" class="{{ textarea_cls }}">{{ cfg.prompt_services or '' }}</textarea>
     </div>
 
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Conversation & Tone Examples</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Provide example phrases or tone guidelines. Helps the AI match your brand voice and communication style.</p>
-      <textarea name="prompt_tone" rows="12" class="{{ textarea_cls }} min-h-[100px]">{{ cfg.prompt_tone or '' }}</textarea>
-    </div>
-
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Conversation Flow</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Describe how the AI should sequence its responses. Use plain language or simple if/then rules.</p>
-      <textarea name="prompt_flow" rows="12" class="{{ textarea_cls }}">{{ cfg.prompt_flow or '' }}</textarea>
-    </div>
-
-    <div>
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Pricing Handling</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">How the AI handles pricing questions. On the first ask it always deflects to the discovery call. On a second insistent ask it uses this guidance to decide whether to share a price range — include the range in this text so it's configurable.</p>
-      <textarea name="prompt_pricing" rows="12" class="{{ textarea_cls }}">{{ cfg.prompt_pricing or '' }}</textarea>
-    </div>
   </section>
 
   <!-- ── Advanced AI Coaching ─────────────────────────────────────────── -->
   <section data-panel="coaching" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
     <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Advanced AI Coaching</h2>
-
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Opening Message Variants</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Multiple variations of how the AI can open a conversation. The AI will choose naturally based on context.</p>
-      {{ dynamic_list('opening-variants-list', 'prompt_opening_variants', opening_variant_items, 'Type an opening message variant…', 'Add Variant') }}
-    </div>
-
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Qualification Questions Bank</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Questions the AI uses to qualify leads naturally rather than in a fixed sequence.</p>
-      {{ dynamic_list('qualification-list', 'prompt_qualification_questions', qualification_question_items, 'e.g. How long have you been trying to conceive?', 'Add Question') }}
-    </div>
 
     <div class="mb-7">
       <h3 class="text-base font-semibold text-slate-800 mb-1.5">Pattern Recognition Responses</h3>
@@ -150,17 +108,6 @@
       {{ dynamic_list('objection-handling-list', 'prompt_objection_handling', objection_handling_items, 'e.g. Cost objection: I completely understand — let\'s talk about what\'s included…', 'Add Objection') }}
     </div>
 
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Authority / Proof Injection</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Phrases that establish credibility. The AI will weave these in naturally at the right moments.</p>
-      {{ dynamic_list('authority-proof-list', 'prompt_authority_proof', authority_proof_items, 'e.g. Sonia has helped over 500 women get pregnant naturally…', 'Add Proof Point') }}
-    </div>
-
-    <div>
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">CTA Transition Lines</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Short phrases that naturally lead into booking a call, so the link never feels abrupt.</p>
-      {{ dynamic_list('cta-transitions-list', 'prompt_cta_transitions', cta_transition_items, 'e.g. The next step is a quick chat with Sonia…', 'Add CTA Line') }}
-    </div>
   </section>
 
   <!-- ── Safety Guardrails ─────────────────────────────────────────────── -->
@@ -272,12 +219,8 @@ document.querySelectorAll('.dynamic-row textarea').forEach(ta => {
 // ── Sync hidden textareas on submit ──────────────────────────────────────────
 const DYNAMIC_LISTS = {
   'hard-rules-list':         'prompt_hard_rules_hidden',
-  'opening-variants-list':   'prompt_opening_variants_hidden',
-  'qualification-list':      'prompt_qualification_questions_hidden',
   'pattern-responses-list':  'prompt_pattern_responses_hidden',
   'objection-handling-list': 'prompt_objection_handling_hidden',
-  'authority-proof-list':    'prompt_authority_proof_hidden',
-  'cta-transitions-list':    'prompt_cta_transitions_hidden',
   'blocklist-list':          'medical_blocklist_hidden',
   'takeover-list':           'human_takeover_triggers_hidden',
 };

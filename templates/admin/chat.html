@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --brand: #7c3aed;
+    --brand-mid: #9333ea;
+    --brand-light: #c084fc;
+    --brand-faint: rgba(124,58,237,0.07);
+    --brand-glow: rgba(124,58,237,0.22);
+    --ink: #18181b;
+    --ink-soft: #52525b;
+    --ink-muted: #a1a1aa;
+    --surface: #ffffff;
+    --bg: #faf9ff;
+    --border: rgba(0,0,0,0.07);
+  }
+
+  .sonia-grad { background: linear-gradient(135deg, var(--brand) 0%, var(--brand-mid) 55%, var(--brand-light) 100%); }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .msg-in { animation: msgIn 0.32s cubic-bezier(0.16,1,0.3,1) both; }
+
+  @keyframes pulse-dot {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30%            { transform: translateY(-4px); opacity: 1; }
+  }
+  .t1 { animation: pulse-dot 1.4s ease-in-out infinite 0s; }
+  .t2 { animation: pulse-dot 1.4s ease-in-out infinite 0.18s; }
+  .t3 { animation: pulse-dot 1.4s ease-in-out infinite 0.36s; }
+
+  #send-btn:not(:disabled) { box-shadow: 0 3px 12px var(--brand-glow); }
+  #send-btn:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 5px 18px var(--brand-glow); }
+  #send-btn:not(:disabled):active { transform: translateY(0); }
+  #send-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
+
+  .chip-btn:hover {
+    border-color: rgba(124,58,237,0.3);
+    background: white;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(124,58,237,0.12);
+  }
+  .chip-btn:active { transform: translateY(0); }
+
+  #chat-input::placeholder { color: var(--ink-muted); }
+
+  .input-wrap:focus-within {
+    border-color: rgba(124,58,237,0.35) !important;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.07);
+  }
+
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.15); border-radius: 4px; }
+
+  .user-bubble {
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-mid) 100%);
+    color: white;
+    border-radius: 20px 20px 4px 20px;
+    box-shadow: 0 4px 16px rgba(124,58,237,0.28);
+  }
+  .ai-bubble {
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 4px 20px 20px 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+  }
+</style>
+
+<div class="flex flex-col" style="height: calc(100vh - 130px); min-height: 520px;">
+  <div class="flex flex-col h-full rounded-2xl overflow-hidden"
+       style="border: 1px solid var(--border); box-shadow: 0 8px 40px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);">
+
+    <!-- ── Header ───────────────────────────────────────────────────────── -->
+    <div class="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
+         style="background: var(--surface); border-bottom: 1px solid var(--border);">
+      <div class="flex items-center gap-3.5">
+        <div class="relative flex-shrink-0">
+          <div class="sonia-grad w-10 h-10 rounded-2xl flex items-center justify-center"
+               style="box-shadow: 0 4px 14px var(--brand-glow);">
+            <span style="font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:600; font-style:italic; color:white; line-height:1;">S</span>
+          </div>
+          <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white"
+                style="box-shadow: 0 0 6px rgba(52,211,153,0.5);"></span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span style="font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600; color:var(--ink); letter-spacing:0.01em;">Sonia Ribas</span>
+            <span style="font-family:'DM Sans',sans-serif; font-size:9px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--brand); background:var(--brand-faint); border:1px solid rgba(124,58,237,0.18); padding:2px 7px; border-radius:5px;">AI Coach</span>
+          </div>
+          <div style="font-family:'DM Sans',sans-serif; font-size:11px; color:var(--ink-muted); display:flex; align-items:center; gap:5px; margin-top:2px;">
+            <span style="width:6px; height:6px; border-radius:50%; background:#34d399; box-shadow:0 0 5px rgba(52,211,153,0.6); display:inline-block; flex-shrink:0;"></span>
+            The Fertility Solution &nbsp;·&nbsp; Ready to help
+          </div>
+        </div>
+      </div>
+      <button onclick="clearChat()"
+        style="font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500; color:var(--ink-muted); padding:6px 13px; border-radius:9px; border:1px solid transparent; background:transparent; cursor:pointer; transition:all 0.15s;"
+        onmouseover="this.style.color='#52525b'; this.style.background='#f4f4f5'; this.style.borderColor='#e4e4e7';"
+        onmouseout="this.style.color='var(--ink-muted)'; this.style.background='transparent'; this.style.borderColor='transparent';">
+        Clear
+      </button>
+    </div>
+
+    <!-- ── Messages ─────────────────────────────────────────────────────── -->
+    <div id="messages"
+         class="flex-1 overflow-y-auto flex flex-col gap-5 px-5 py-6"
+         style="background: linear-gradient(160deg, #fdfcff 0%, #faf8ff 50%, #fefcf9 100%); scroll-behavior:smooth;">
+
+      <!-- Empty state -->
+      <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-center py-6 select-none">
+
+        <div class="mb-1" style="font-family:'Cormorant Garamond',serif; font-size:clamp(30px,5vw,44px); font-weight:400; font-style:italic; color:var(--ink); line-height:1.15; letter-spacing:-0.01em;">
+          The Fertility
+        </div>
+        <div class="mb-3" style="font-family:'Cormorant Garamond',serif; font-size:clamp(30px,5vw,44px); font-weight:600; color:var(--brand); line-height:1.15; letter-spacing:-0.01em;">
+          Solution
+        </div>
+        <div style="width:36px; height:2px; background:linear-gradient(90deg,var(--brand),var(--brand-light)); border-radius:2px; margin-bottom:18px;"></div>
+
+        <p style="font-family:'DM Sans',sans-serif; font-size:13.5px; color:var(--ink-soft); max-width:270px; line-height:1.65; margin-bottom:28px; font-weight:300;">
+          Ask Sonia anything about your fertility journey — she's here to listen and guide.
+        </p>
+
+        <div class="flex flex-col gap-2.5 w-full" style="max-width:300px;">
+
+          <button type="button" onclick="useChip(this)" class="chip-btn"
+            style="display:flex; align-items:center; gap:11px; padding:11px 15px; background:#faf9ff; border:1px solid rgba(124,58,237,0.15); border-radius:14px; text-align:left; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+            <span style="width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(192,132,252,0.12)); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1l1.3 3.9H12L8.8 7.2l1.2 3.8-3.5-2.5L3 11l1.2-3.8L1 5h4.2L6.5 1z" fill="#7c3aed" opacity="0.75"/></svg>
+            </span>
+            <span style="font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:#3f3f46;">What are my next steps?</span>
+          </button>
+
+          <button type="button" onclick="useChip(this)" class="chip-btn"
+            style="display:flex; align-items:center; gap:11px; padding:11px 15px; background:#faf9ff; border:1px solid rgba(124,58,237,0.15); border-radius:14px; text-align:left; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+            <span style="width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(192,132,252,0.12)); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#7c3aed" stroke-width="1.25" opacity="0.8"/><path d="M6.5 3.5v3l1.8 1.8" stroke="#7c3aed" stroke-width="1.25" stroke-linecap="round" opacity="0.8"/></svg>
+            </span>
+            <span style="font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:#3f3f46;">How does IVF work?</span>
+          </button>
+
+          <button type="button" onclick="useChip(this)" class="chip-btn"
+            style="display:flex; align-items:center; gap:11px; padding:11px 15px; background:#faf9ff; border:1px solid rgba(124,58,237,0.15); border-radius:14px; text-align:left; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+            <span style="width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(192,132,252,0.12)); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#7c3aed" stroke-width="1.25" opacity="0.8"/><path d="M6.5 5.5v3M6.5 3.8v.4" stroke="#7c3aed" stroke-width="1.25" stroke-linecap="round" opacity="0.8"/></svg>
+            </span>
+            <span style="font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:#3f3f46;">What should I expect?</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Typing indicator -->
+      <div id="typing-indicator" class="hidden items-end gap-2.5">
+        <div class="sonia-grad w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center"
+             style="box-shadow:0 2px 10px var(--brand-glow);">
+          <span style="font-family:'Cormorant Garamond',serif; font-size:13px; font-weight:600; font-style:italic; color:white;">S</span>
+        </div>
+        <div class="ai-bubble" style="padding:13px 17px;">
+          <div style="display:flex; align-items:center; gap:5px;">
+            <span class="t1" style="width:6px; height:6px; border-radius:50%; background:var(--brand-light); display:inline-block;"></span>
+            <span class="t2" style="width:6px; height:6px; border-radius:50%; background:var(--brand-light); display:inline-block;"></span>
+            <span class="t3" style="width:6px; height:6px; border-radius:50%; background:var(--brand-light); display:inline-block;"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Input ─────────────────────────────────────────────────────────── -->
+    <div class="flex-shrink-0" style="background:var(--surface); border-top:1px solid var(--border); padding:14px 18px 18px;">
+      <div class="input-wrap flex items-end gap-3"
+           style="background:#f8f6ff; border:1.5px solid rgba(124,58,237,0.18); border-radius:18px; padding:10px 10px 10px 17px; transition:all 0.2s;">
+        <textarea
+          id="chat-input"
+          rows="1"
+          placeholder="Message Sonia…"
+          style="flex:1; background:transparent; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--ink); resize:none; outline:none; line-height:1.6; max-height:120px; min-height:22px; border:none;"
+        ></textarea>
+        <button id="send-btn" type="button" onclick="sendMessage()"
+          disabled
+          class="sonia-grad flex-shrink-0 flex items-center justify-center"
+          style="width:36px; height:36px; border-radius:11px; border:none; cursor:pointer; transition:all 0.2s; margin-bottom:1px;"
+          aria-label="Send">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 12V4M3 8l4-4 4 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <p style="font-family:'DM Sans',sans-serif; font-size:10px; color:var(--ink-muted); text-align:center; margin-top:8px; letter-spacing:0.01em;">
+        <kbd style="font-family:monospace; background:#f4f4f5; border:1px solid #e4e4e7; border-radius:4px; padding:1px 5px; font-size:9px;">Enter</kbd>
+        &nbsp;to send &nbsp;·&nbsp;
+        <kbd style="font-family:monospace; background:#f4f4f5; border:1px solid #e4e4e7; border-radius:4px; padding:1px 5px; font-size:9px;">Shift+Enter</kbd>
+        &nbsp;for new line
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const input    = document.getElementById('chat-input');
+  const sendBtn  = document.getElementById('send-btn');
+  const messages = document.getElementById('messages');
+  const typingEl = document.getElementById('typing-indicator');
+  const emptyEl  = document.getElementById('empty-state');
+
+  const conversationHistory = [];
+
+  function now() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function useChip(btn) {
+    const text = btn.querySelector('span:last-child')?.textContent?.trim() || btn.textContent.trim();
+    input.value = text;
+    autoResize();
+    updateSendBtn();
+    input.focus();
+  }
+
+  function autoResize() {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  }
+
+  function updateSendBtn() {
+    sendBtn.disabled = input.value.trim().length === 0;
+  }
+
+  function scrollToBottom() {
+    messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
+  }
+
+  function appendMessage(role, text) {
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex items-end gap-2.5 msg-in';
+    if (role === 'user') wrapper.style.flexDirection = 'row-reverse';
+
+    if (role === 'ai') {
+      const avatar = document.createElement('div');
+      avatar.className = 'sonia-grad flex-shrink-0 flex items-center justify-center';
+      avatar.style.cssText = 'width:32px; height:32px; border-radius:12px; box-shadow:0 2px 10px rgba(124,58,237,0.25); margin-bottom:2px;';
+      avatar.innerHTML = '<span style="font-family:\'Cormorant Garamond\',serif; font-size:13px; font-weight:600; font-style:italic; color:white;">S</span>';
+      wrapper.appendChild(avatar);
+    }
+
+    const col = document.createElement('div');
+    col.style.cssText = 'display:flex; flex-direction:column; gap:4px; max-width:76%;';
+    col.style.alignItems = role === 'user' ? 'flex-end' : 'flex-start';
+
+    const bubble = document.createElement('div');
+    bubble.className = role === 'user' ? 'user-bubble' : 'ai-bubble';
+    bubble.style.cssText = 'padding:11px 16px; font-family:\'DM Sans\',sans-serif; font-size:13.5px; line-height:1.65; word-break:break-word; white-space:pre-wrap;';
+    bubble.textContent = text;
+
+    const ts = document.createElement('span');
+    ts.style.cssText = 'font-family:\'DM Sans\',sans-serif; font-size:10px; color:#a1a1aa; padding:0 4px;';
+    ts.textContent = now();
+
+    col.appendChild(bubble);
+    col.appendChild(ts);
+    wrapper.appendChild(col);
+
+    messages.insertBefore(wrapper, typingEl);
+    scrollToBottom();
+  }
+
+  function showTyping() {
+    typingEl.classList.remove('hidden');
+    typingEl.classList.add('flex');
+    scrollToBottom();
+  }
+
+  function hideTyping() {
+    typingEl.classList.add('hidden');
+    typingEl.classList.remove('flex');
+  }
+
+  async function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+    appendMessage('user', text);
+    conversationHistory.push({ role: 'user', content: text });
+    input.value = '';
+    autoResize();
+    updateSendBtn();
+    showTyping();
+    try {
+      const res = await fetch('/admin/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: conversationHistory }),
+      });
+      const data = await res.json();
+      hideTyping();
+      if (data.reply) {
+        conversationHistory.push({ role: 'assistant', content: data.reply });
+        appendMessage('ai', data.reply);
+      } else {
+        appendMessage('ai', 'Something went wrong. Please try again.');
+      }
+    } catch {
+      hideTyping();
+      appendMessage('ai', 'Network error. Please check your connection.');
+    }
+  }
+
+  function clearChat() {
+    const toRemove = [];
+    for (const el of messages.children) {
+      if (el !== emptyEl && el !== typingEl) toRemove.push(el);
+    }
+    toRemove.forEach(el => el.remove());
+    conversationHistory.length = 0;
+    emptyEl.style.display = '';
+  }
+
+  input.addEventListener('input', () => { autoResize(); updateSendBtn(); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!sendBtn.disabled) sendMessage();
+    }
+  });
+</script>
+
+{% endblock %}

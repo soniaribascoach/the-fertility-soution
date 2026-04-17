@@ -17,6 +17,7 @@ from app.api import health
 from app.api.admin import router as admin_router
 from app.db.database import engine, Base
 from app.models import simulation
+from app.services.few_shots import load_few_shots
 from config import settings
 
 
@@ -24,6 +25,7 @@ from config import settings
 async def lifespan(app: FastAPI):
     http_client = httpx.AsyncClient(timeout=10.0)
     app.state.openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
+    app.state.few_shot_messages = load_few_shots("few_shots")
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)  # dev only; use alembic in prod

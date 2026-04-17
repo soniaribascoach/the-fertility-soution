@@ -1,13 +1,14 @@
 import json as _json
 
 from fastapi import APIRouter, Request, Depends, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from openai import AsyncOpenAI
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.repositories.config import get_all_config, set_config
-from app.repositories import conversation as conversation_repo
+from app.services.prompt_builder import build_system_prompt
 from app.api.admin.auth import (
     is_authenticated,
     check_rate_limit,
@@ -38,6 +39,11 @@ async def admin_root(request: Request):
     if is_authenticated(request):
         return RedirectResponse("/admin/config", status_code=302)
     return RedirectResponse("/admin/login", status_code=302)
+
+
+@router.get("/admin/dashboard")
+async def dashboard_redirect(request: Request):
+    return RedirectResponse("/admin/config", status_code=302)
 
 
 @router.get("/admin/login", response_class=HTMLResponse)
@@ -79,13 +85,6 @@ async def logout(request: Request):
     return RedirectResponse("/admin/login", status_code=302)
 
 
-@router.get("/admin/dashboard", response_class=HTMLResponse)
-async def dashboard_get(request: Request, db: AsyncSession = Depends(get_db)):
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-    stats = await conversation_repo.get_stats(db)
-    return templates.TemplateResponse(request, "admin/dashboard.html", {"stats": stats})
-
 
 @router.get("/admin/config", response_class=HTMLResponse)
 async def config_get(request: Request, saved: str = None, db: AsyncSession = Depends(get_db)):
@@ -126,6 +125,47 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
             "saved": saved == "true",
         },
     )
+
+
+@router.get("/admin/chat", response_class=HTMLResponse)
+async def chat_get(request: Request):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    return templates.TemplateResponse(request, "admin/chat.html", {})
+
+
+@router.post("/admin/chat")
+async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    body = await request.json()
+    messages = body.get("messages", [])
+
+    cfg = await get_all_config(db)
+
+    blocklist = [p.strip().lower() for p in cfg.get("medical_blocklist", "").split("\n") if p.strip()]
+    last_user_msg = next((m["content"] for m in reversed(messages) if m.get("role") == "user"), "").lower()
+    if blocklist and any(phrase in last_user_msg for phrase in blocklist):
+        deflection = cfg.get("medical_deflection", "").strip()
+        if deflection:
+            return JSONResponse({"reply": deflection})
+
+    system_prompt = await build_system_prompt(db, cfg)
+    few_shots: list[dict] = getattr(request.app.state, "few_shot_messages", [])
+
+    client: AsyncOpenAI = request.app.state.openai_client
+    response = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            *few_shots,
+            *messages,
+        ],
+        max_tokens=500,
+        temperature=0.7,
+    )
+    return JSONResponse({"reply": response.choices[0].message.content})
 
 
 @router.post("/admin/config/save")
