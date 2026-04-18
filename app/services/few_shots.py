@@ -24,7 +24,7 @@ def parse_few_shot(text: str, label: str) -> list[dict]:
 
 def load_few_shots(directory: str) -> list[dict]:
     """Load all scenario files and return a flat list of message pairs."""
-    skip = {"about.md"}
+    skip = {"about.md", "price_objection"}
     all_messages: list[dict] = []
 
     scenario_files = sorted(

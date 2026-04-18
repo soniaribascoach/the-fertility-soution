@@ -4,7 +4,6 @@ from app.repositories.config import get_all_config
 PLACEHOLDERS = {
     "{{PATTERNS}}": "prompt_pattern_responses",
     "{{OBJECTIONS}}": "prompt_objection_handling",
-    "{{PRICING}}": "prompt_pricing",
     "{{BOOKING_LINK}}": "booking_link",
     "{{HANDOVER_TRIGGERS}}": "human_takeover_triggers",
     "{{HARD_RULES}}": "prompt_hard_rules",
@@ -106,10 +105,22 @@ No manufactured scarcity. If they say yes, I send the link and close warm. The l
 I never send the link before someone is ready. A link sent too early breaks trust.
 """
 
-_PRICING = """
-WHEN SOMEONE ASKS ABOUT PRICING OR COST
+_PRICING_FIRST_ASK = """
+PRICING — FIRST ASK
 
-{{PRICING}}
+The user has just asked about price. Do NOT give any number — no range, no figure,
+nothing. Acknowledge the question warmly, explain that programs are personalised to
+each person's situation and level of support, and redirect toward understanding their
+situation. Do this no matter how directly they ask.
+"""
+
+_PRICING_SECOND_ASK = """
+PRICING — SECOND ASK
+
+The user is asking about price again after you already deflected once. You may now say:
+"Programs typically range from $1,500 to $10,000 depending on the level of support."
+Then immediately redirect back to fit: what matters most is making sure this is the
+right support for your body and your situation. Never let price be the last thing said.
 """
 
 _HARD_RULES = """
@@ -152,12 +163,16 @@ Plain text only, always.
 
 _BASE_PROMPT = "\n".join([
     _IDENTITY, _CONVERSATION_FLOW, _DIAGNOSIS_AND_LOSS,
-    _PATTERNS, _OBJECTIONS, _BOOKING, _PRICING, _HARD_RULES,
+    _PATTERNS, _OBJECTIONS, _BOOKING, _HARD_RULES,
     _HANDOVER, _WRITING_STYLE,
 ]).strip()
 
 
-async def build_system_prompt(db: AsyncSession, cfg: dict | None = None) -> str:
+async def build_system_prompt(
+    db: AsyncSession,
+    cfg: dict | None = None,
+    price_ask_count: int = 0,
+) -> str:
     if cfg is None:
         cfg = await get_all_config(db)
 
@@ -165,5 +180,10 @@ async def build_system_prompt(db: AsyncSession, cfg: dict | None = None) -> str:
     for placeholder, config_key in PLACEHOLDERS.items():
         value = cfg.get(config_key, "").strip()
         prompt = prompt.replace(placeholder, value if value else "")
+
+    if price_ask_count == 1:
+        prompt += "\n\n" + _PRICING_FIRST_ASK.strip()
+    elif price_ask_count >= 2:
+        prompt += "\n\n" + _PRICING_SECOND_ASK.strip()
 
     return prompt

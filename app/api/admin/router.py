@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.repositories.config import get_all_config, set_config
 from app.services.prompt_builder import build_system_prompt
+from app.services.pricing_classifier import classify_price_asks
 from app.api.admin.auth import (
     is_authenticated,
     check_rate_limit,
@@ -25,7 +26,6 @@ templates.env.filters["split_bubbles"] = lambda s: [b.strip() for b in s.split("
 CONFIG_KEYS = [
     "booking_link", "score_threshold", "prompt_scoring_rules",
     "prompt_about", "prompt_services", "prompt_tone", "prompt_flow",
-    "prompt_pricing",
     "prompt_hard_rules", "prompt_opening_variants", "prompt_qualification_questions",
     "prompt_pattern_responses", "prompt_objection_handling", "prompt_authority_proof",
     "prompt_cta_transitions",
@@ -151,10 +151,10 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
         if deflection:
             return JSONResponse({"reply": deflection})
 
-    system_prompt = await build_system_prompt(db, cfg)
-    few_shots: list[dict] = getattr(request.app.state, "few_shot_messages", [])
-
     client: AsyncOpenAI = request.app.state.openai_client
+    price_ask_count = classify_price_asks(messages)
+    system_prompt = await build_system_prompt(db, cfg, price_ask_count=price_ask_count)
+    few_shots: list[dict] = getattr(request.app.state, "few_shot_messages", [])
     response = await client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -163,7 +163,7 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
             *messages,
         ],
         max_tokens=500,
-        temperature=0.7,
+        temperature=0.6,
     )
     return JSONResponse({"reply": response.choices[0].message.content})
 
