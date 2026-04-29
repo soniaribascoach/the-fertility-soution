@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Conversations</h1>
+    <p class="mt-1 text-sm text-slate-500">All users who have messaged via Instagram DM.</p>
+  </div>
+  {% if users %}
+  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700 border border-violet-200">
+    {{ users | length }} user{{ 's' if users | length != 1 }}
+  </span>
+  {% endif %}
+</div>
+
+{% if users %}
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-slate-100 bg-slate-50">
+        <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Instagram User ID</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Messages</th>
+        <th class="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Active</th>
+        <th class="px-5 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for user in users %}
+      <tr class="hover:bg-slate-50 transition-colors">
+        <td class="px-5 py-3.5 font-mono text-slate-700 text-xs">{{ user.ig_user_id }}</td>
+        <td class="px-5 py-3.5 text-slate-600">{{ user.message_count }}</td>
+        <td class="px-5 py-3.5 text-slate-500 text-xs">
+          {{ user.last_active.strftime('%d %b %Y, %H:%M') if user.last_active else '—' }}
+        </td>
+        <td class="px-5 py-3.5 text-right">
+          <form method="post" action="/admin/chats/reset/{{ user.ig_user_id }}"
+                onsubmit="return confirm('Reset all conversation data for {{ user.ig_user_id }}? This cannot be undone.')">
+            <button type="submit"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-300 rounded-lg hover:bg-red-50 hover:border-red-400 transition-all">
+              Reset chat
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="bg-white border border-slate-200 rounded-xl p-12 text-center shadow-sm">
+  <div class="text-3xl mb-3">💬</div>
+  <p class="text-slate-500 text-sm">No conversations yet.</p>
+  <p class="text-slate-400 text-xs mt-1">Messages from Instagram DMs will appear here.</p>
+</div>
+{% endif %}
+
+{% endblock %}

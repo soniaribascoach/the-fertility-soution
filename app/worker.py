@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from app.db.database import AsyncSessionLocal
-from app.repositories.conversation import get_history, save_message
+from app.repositories.conversation import get_history, get_last_assistant_time, save_message
 from app.repositories.pending_message import (
     get_locked_batch,
     get_users_ready_to_process,
@@ -12,6 +12,7 @@ from app.repositories.pending_message import (
 )
 from app.repositories.user_state import is_ai_paused, pause_ai
 from app.services.ai_pipeline import generate_reply
+from app.services.message_splitter import split_reply
 from app.services.output_parser import parse_ai_output
 from app.services.typing_delay import calculate_delay
 from config import settings
@@ -58,15 +59,19 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             if not rows:
                 return
 
+            # Duplicate guard: skip if an assistant reply was already sent after these messages
+            last_user_msg_time = max(r.received_at for r in rows)
+            last_reply_time = await get_last_assistant_time(db, ig_user_id)
+            if last_reply_time and last_reply_time > last_user_msg_time:
+                logger.info("Reply already sent for user %s — skipping duplicate", ig_user_id)
+                await mark_batch_processed(db, ig_user_id)
+                return
+
             manychat_contact_id = rows[-1].manychat_contact_id
-            combined_input = "\n".join(r.content for r in rows)
 
             history = await get_history(db, ig_user_id, limit=20)
             history_dicts = [{"role": r.role, "content": r.content} for r in history]
 
-            # Append the batched input as the final user turn if not already in history
-            # (it was saved to conversations in the webhook handler)
-            # history already contains the user messages; use it as-is
             raw_text, usage = await generate_reply(
                 db=db,
                 openai_client=app_state.openai_client,
@@ -96,11 +101,13 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             )
 
             if parsed.clean_text:
-                delay = calculate_delay(parsed.clean_text, settings.max_typing_delay)
+                chunks = split_reply(parsed.clean_text)
+                delay = calculate_delay(chunks[0], settings.max_typing_delay)
                 await asyncio.sleep(delay)
-                await app_state.manychat_client.send_message(
-                    manychat_contact_id, parsed.clean_text
-                )
+                for i, chunk in enumerate(chunks):
+                    if i > 0:
+                        await asyncio.sleep(calculate_delay(chunk, settings.max_typing_delay))
+                    await app_state.manychat_client.send_message(manychat_contact_id, chunk)
 
             await mark_batch_processed(db, ig_user_id)
             logger.info("Processed conversation for user %s", ig_user_id)

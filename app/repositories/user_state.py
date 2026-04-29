@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from app.models.user_state import UserState
 
@@ -37,4 +37,11 @@ async def resume_ai(db: AsyncSession, ig_user_id: str) -> None:
     state.is_ai_paused = False
     state.paused_at = None
     state.pause_reason = None
+    await db.commit()
+
+
+async def delete_user_state(db: AsyncSession, ig_user_id: str) -> None:
+    await db.execute(
+        delete(UserState).where(UserState.instagram_user_id == ig_user_id)
+    )
     await db.commit()

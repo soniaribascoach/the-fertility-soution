@@ -7,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.repositories.config import get_all_config, set_config
+from app.repositories.conversation import get_all_users, delete_user_history
+from app.repositories.pending_message import delete_user_messages
+from app.repositories.user_state import delete_user_state
 from app.services.ai_pipeline import generate_reply
 from app.api.admin.auth import (
     is_authenticated,
@@ -190,3 +193,21 @@ async def config_save(
     await set_config(db, "human_takeover_triggers", human_takeover_triggers)
 
     return RedirectResponse("/admin/config?saved=true", status_code=302)
+
+
+@router.get("/admin/chats", response_class=HTMLResponse)
+async def chats_get(request: Request, db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    users = await get_all_users(db)
+    return templates.TemplateResponse(request, "admin/chats.html", {"users": users})
+
+
+@router.post("/admin/chats/reset/{ig_user_id}")
+async def chats_reset(request: Request, ig_user_id: str, db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    await delete_user_history(db, ig_user_id)
+    await delete_user_messages(db, ig_user_id)
+    await delete_user_state(db, ig_user_id)
+    return RedirectResponse("/admin/chats", status_code=302)

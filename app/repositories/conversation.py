@@ -1,7 +1,8 @@
 import json
+from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc, func, delete
 from app.models.conversation import Conversation
 
 
@@ -172,3 +173,45 @@ async def has_price_been_deflected(
         .limit(1)
     )
     return result.scalar_one_or_none() is not None
+
+
+async def get_last_assistant_time(
+    db: AsyncSession,
+    instagram_user_id: str,
+) -> datetime | None:
+    result = await db.execute(
+        select(func.max(Conversation.created_at))
+        .where(
+            Conversation.instagram_user_id == instagram_user_id,
+            Conversation.role == "assistant",
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_all_users(db: AsyncSession) -> list[dict]:
+    result = await db.execute(
+        select(
+            Conversation.instagram_user_id,
+            func.count(Conversation.id).label("message_count"),
+            func.max(Conversation.created_at).label("last_active"),
+        )
+        .group_by(Conversation.instagram_user_id)
+        .order_by(desc(func.max(Conversation.created_at)))
+    )
+    return [
+        {
+            "ig_user_id": row.instagram_user_id,
+            "message_count": row.message_count,
+            "last_active": row.last_active,
+        }
+        for row in result.all()
+    ]
+
+
+async def delete_user_history(db: AsyncSession, instagram_user_id: str) -> int:
+    result = await db.execute(
+        delete(Conversation).where(Conversation.instagram_user_id == instagram_user_id)
+    )
+    await db.commit()
+    return result.rowcount

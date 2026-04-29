@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, func, text
+from sqlalchemy import select, update, func, text, delete
 
 from app.models.pending_message import PendingMessage
 
@@ -116,5 +116,12 @@ async def release_stale_locks(
             < func.now() - text(f"interval '{stale_after_minutes} minutes'"),
         )
         .values(locked_at=None)
+    )
+    await db.commit()
+
+
+async def delete_user_messages(db: AsyncSession, ig_user_id: str) -> None:
+    await db.execute(
+        delete(PendingMessage).where(PendingMessage.instagram_user_id == ig_user_id)
     )
     await db.commit()
