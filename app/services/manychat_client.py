@@ -21,12 +21,12 @@ class ManyChatClient:
             "data": {
                 "version": "v2",
                 "content": {
+                    "type": "instagram",
                     "messages": [{"type": "text", "text": text}],
                     "actions": [],
                     "quick_replies": [],
                 },
             },
-            "message_tag": "ACCOUNT_UPDATE",
         }
         headers = {"Authorization": f"Bearer {self._token}"}
 
@@ -37,7 +37,20 @@ class ManyChatClient:
                 )
                 response.raise_for_status()
                 return
-            except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+            except httpx.HTTPStatusError as exc:
+                body = exc.response.text
+                if delay is None:
+                    logger.error(
+                        "ManyChat send_message failed after %d attempts for subscriber %s: %s | payload: %s | response: %s",
+                        attempt - 1, subscriber_id, exc, payload, body,
+                    )
+                    return
+                logger.warning(
+                    "ManyChat send_message attempt %d failed (%s) | response: %s, retrying in %ds",
+                    attempt, exc, body, delay,
+                )
+                await asyncio.sleep(delay)
+            except httpx.RequestError as exc:
                 if delay is None:
                     logger.error(
                         "ManyChat send_message failed after %d attempts for subscriber %s: %s",

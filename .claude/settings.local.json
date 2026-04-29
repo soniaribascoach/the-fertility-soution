@@ -12,7 +12,12 @@
       "Bash(alembic heads:*)",
       "Bash(alembic history:*)",
       "Bash(git stash:*)",
-      "Bash(alembic upgrade:*)"
+      "Bash(alembic upgrade:*)",
+      "WebFetch(domain:api.manychat.com)",
+      "WebSearch",
+      "WebFetch(domain:manychat.github.io)",
+      "WebFetch(domain:community.manychat.com)",
+      "WebFetch(domain:help.manychat.com)"
     ]
   }
 }
