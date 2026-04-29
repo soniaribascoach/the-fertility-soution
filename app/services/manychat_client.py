@@ -21,7 +21,9 @@ class ManyChatClient:
             "data": {
                 "version": "v2",
                 "content": {
-                    "messages": [{"type": "text", "text": text}]
+                    "messages": [{"type": "text", "text": text}],
+                    "actions": [],
+                    "quick_replies": [],
                 },
             },
             "message_tag": "ACCOUNT_UPDATE",
