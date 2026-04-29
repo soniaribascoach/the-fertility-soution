@@ -2,14 +2,12 @@ import json as _json
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from openai import AsyncOpenAI
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.repositories.config import get_all_config, set_config
-from app.services.prompt_builder import build_system_prompt
-from app.services.pricing_classifier import classify_price_asks
+from app.services.ai_pipeline import generate_reply
 from app.api.admin.auth import (
     is_authenticated,
     check_rate_limit,
@@ -142,30 +140,10 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
     body = await request.json()
     messages = body.get("messages", [])
 
-    cfg = await get_all_config(db)
-
-    blocklist = [p.strip().lower() for p in cfg.get("medical_blocklist", "").split("\n") if p.strip()]
-    last_user_msg = next((m["content"] for m in reversed(messages) if m.get("role") == "user"), "").lower()
-    if blocklist and any(phrase in last_user_msg for phrase in blocklist):
-        deflection = cfg.get("medical_deflection", "").strip()
-        if deflection:
-            return JSONResponse({"reply": deflection})
-
-    client: AsyncOpenAI = request.app.state.openai_client
-    price_ask_count = classify_price_asks(messages)
-    system_prompt = await build_system_prompt(db, cfg, price_ask_count=price_ask_count)
-    few_shots: list[dict] = getattr(request.app.state, "few_shot_messages", [])
-    response = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            *few_shots,
-            *messages,
-        ],
-        max_tokens=500,
-        temperature=0.6,
-    )
-    return JSONResponse({"reply": response.choices[0].message.content})
+    client = request.app.state.openai_client
+    few_shots = getattr(request.app.state, "few_shot_messages", [])
+    raw_text, _ = await generate_reply(db, client, few_shots, "admin_sandbox", messages)
+    return JSONResponse({"reply": raw_text})
 
 
 @router.post("/admin/config/save")

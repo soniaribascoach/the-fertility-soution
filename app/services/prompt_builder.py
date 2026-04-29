@@ -131,7 +131,7 @@ _PRICING_SECOND_ASK = """
 PRICING — SECOND ASK
 
 The user is asking about price again after you already deflected once. You may now say:
-"Programs typically range from $1,500 to $10,000 depending on the level of support."
+"Programs typically range from $1,500 to $14,000 depending on the level of support."
 Then immediately redirect back to fit: what matters most is making sure this is the
 right support for your body and your situation. Never let price be the last thing said.
 """
