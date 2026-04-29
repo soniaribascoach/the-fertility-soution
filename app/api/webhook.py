@@ -40,8 +40,8 @@ async def receive_webhook(
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     payload = await request.json()
-    manychat_contact_id: str = payload.get("id", "")
-    ig_user_id: str = payload.get("ig_id", "")
+    manychat_contact_id: str = str(payload.get("id", ""))
+    ig_user_id: str = str(payload.get("ig_id", ""))
     text: str = (payload.get("last_input_text") or "").strip()
 
     if not text:
