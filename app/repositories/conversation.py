@@ -215,3 +215,9 @@ async def delete_user_history(db: AsyncSession, instagram_user_id: str) -> int:
     )
     await db.commit()
     return result.rowcount
+
+
+async def delete_all_conversations(db: AsyncSession) -> int:
+    result = await db.execute(delete(Conversation))
+    await db.commit()
+    return result.rowcount

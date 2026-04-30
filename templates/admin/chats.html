@@ -6,11 +6,20 @@
     <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Conversations</h1>
     <p class="mt-1 text-sm text-slate-500">All users who have messaged via Instagram DM.</p>
   </div>
-  {% if users %}
-  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700 border border-violet-200">
-    {{ users | length }} user{{ 's' if users | length != 1 }}
-  </span>
-  {% endif %}
+  <div class="flex items-center gap-3">
+    {% if users %}
+    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700 border border-violet-200">
+      {{ users | length }} user{{ 's' if users | length != 1 }}
+    </span>
+    <form method="post" action="/admin/chats/reset-all"
+          onsubmit="return confirm('Delete ALL conversations, pending messages, and user states? This cannot be undone.')">
+      <button type="submit"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-300 rounded-lg hover:bg-red-50 hover:border-red-400 transition-all">
+        Reset all
+      </button>
+    </form>
+    {% endif %}
+  </div>
 </div>
 
 {% if users %}

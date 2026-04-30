@@ -125,3 +125,8 @@ async def delete_user_messages(db: AsyncSession, ig_user_id: str) -> None:
         delete(PendingMessage).where(PendingMessage.instagram_user_id == ig_user_id)
     )
     await db.commit()
+
+
+async def delete_all_pending_messages(db: AsyncSession) -> None:
+    await db.execute(delete(PendingMessage))
+    await db.commit()

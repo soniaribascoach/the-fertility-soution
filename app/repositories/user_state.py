@@ -45,3 +45,8 @@ async def delete_user_state(db: AsyncSession, ig_user_id: str) -> None:
         delete(UserState).where(UserState.instagram_user_id == ig_user_id)
     )
     await db.commit()
+
+
+async def delete_all_user_states(db: AsyncSession) -> None:
+    await db.execute(delete(UserState))
+    await db.commit()
