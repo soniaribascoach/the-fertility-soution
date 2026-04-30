@@ -7,11 +7,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
 from openai import AsyncOpenAI
+from sqladmin import Admin
 
 from app.api import health
 from app.api.admin import router as admin_router
 from app.api.webhook import router as webhook_router
-from app.db.database import engine, Base
+from app.api.admin.sqladmin_auth import AdminAuth
+from app.admin.views import (
+    ConversationAdmin,
+    UserStateAdmin,
+    PendingMessageAdmin,
+    EventAdmin,
+    AppConfigAdmin,
+)
+from app.db.database import engine, Base, AsyncSessionLocal
 from app.models import simulation  # noqa: F401
 from app.services.few_shots import load_few_shots
 from app.services.manychat_client import ManyChatClient
@@ -51,6 +60,22 @@ app = FastAPI(title="Fertility DM Backend", lifespan=lifespan)
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+authentication_backend = AdminAuth(secret_key=settings.secret_key)
+sqladmin = Admin(
+    app,
+    session_maker=AsyncSessionLocal,
+    base_url="/sqladmin",
+    title="Fertility Bot Admin",
+    authentication_backend=authentication_backend,
+    templates_dir="templates",
+)
+sqladmin.add_view(ConversationAdmin)
+sqladmin.add_view(UserStateAdmin)
+sqladmin.add_view(PendingMessageAdmin)
+sqladmin.add_view(EventAdmin)
+sqladmin.add_view(AppConfigAdmin)
+
 app.include_router(health.router, tags=["Health"])
 app.include_router(admin_router.router, tags=["Admin"])
 app.include_router(webhook_router, tags=["Webhook"])

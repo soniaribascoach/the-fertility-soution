@@ -15,3 +15,4 @@ openai>=1.30.0
 pytest>=8.0
 pytest-asyncio>=0.24
 deepeval>=2.0
+sqladmin[full]

@@ -17,7 +17,12 @@
       "WebSearch",
       "WebFetch(domain:manychat.github.io)",
       "WebFetch(domain:community.manychat.com)",
-      "WebFetch(domain:help.manychat.com)"
+      "WebFetch(domain:help.manychat.com)",
+      "Bash(pip show *)",
+      "Bash(/Users/kai/Work/the-fertility-soution/.venv/bin/pip show *)",
+      "Bash(/Users/kai/Work/the-fertility-soution/.venv/bin/pip install *)",
+      "Bash(/Users/kai/Work/the-fertility-soution/.venv/bin/pip download *)",
+      "Bash(pip install *)"
     ]
   }
 }

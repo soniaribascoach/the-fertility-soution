@@ -60,7 +60,7 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
                 return
 
             # Duplicate guard: skip if an assistant reply was already sent after these messages
-            last_user_msg_time = max(r.received_at for r in rows)
+            last_user_msg_time = max(r.received_at for r in rows).replace(tzinfo=None)
             last_reply_time = await get_last_assistant_time(db, ig_user_id)
             if last_reply_time and last_reply_time > last_user_msg_time:
                 logger.info("Reply already sent for user %s — skipping duplicate", ig_user_id)
