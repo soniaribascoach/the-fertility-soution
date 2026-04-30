@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     manychat_webhook_secret: str = ""
     worker_poll_interval: int = 3
     debounce_seconds: int = 120
+    debounce_extra_seconds: int = 60
     max_typing_delay: float = 45.0
 
     @property

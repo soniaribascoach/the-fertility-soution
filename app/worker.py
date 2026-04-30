@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 
 from app.db.database import AsyncSessionLocal
 from app.repositories.conversation import get_history, get_last_assistant_time, save_message
@@ -48,6 +49,9 @@ async def _poll_once(app_state) -> None:
 
 async def _handle_conversation(ig_user_id: str, app_state) -> None:
     try:
+        if settings.debounce_extra_seconds > 0:
+            await asyncio.sleep(random.uniform(0, settings.debounce_extra_seconds))
+
         async with AsyncSessionLocal() as db:
             if await is_ai_paused(db, ig_user_id):
                 logger.info("AI paused for user %s — skipping", ig_user_id)
@@ -87,6 +91,7 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
                 logger.info("Human handover triggered for user %s", ig_user_id)
                 await pause_ai(db, ig_user_id, "human_handover")
                 await mark_batch_processed(db, ig_user_id)
+                await app_state.manychat_client.add_tag(manychat_contact_id, 86596410)
                 return
 
             await save_message(
