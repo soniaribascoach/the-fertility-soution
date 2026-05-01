@@ -3,6 +3,7 @@ import logging
 import random
 
 from app.db.database import AsyncSessionLocal
+from app.repositories.config import get_all_config
 from app.repositories.conversation import get_history, get_last_assistant_time, save_message
 from app.repositories.pending_message import (
     get_locked_batch,
@@ -73,6 +74,26 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
 
             manychat_contact_id = rows[-1].manychat_contact_id
 
+            batch_texts = [r.content.lower() for r in rows]
+            cfg = await get_all_config(db)
+
+            blocklist = [p.strip().lower() for p in cfg.get("medical_blocklist", "").split("\n") if p.strip()]
+            if blocklist and any(any(phrase in txt for phrase in blocklist) for txt in batch_texts):
+                deflection = cfg.get("medical_deflection", "").strip()
+                logger.info("Medical blocklist triggered (batch) for user %s", ig_user_id)
+                if deflection:
+                    await app_state.manychat_client.send_message(manychat_contact_id, deflection)
+                await mark_batch_processed(db, ig_user_id)
+                return
+
+            handover_triggers = [t.strip().lower() for t in cfg.get("human_takeover_triggers", "").split("\n") if t.strip()]
+            if handover_triggers and any(any(trigger in txt for trigger in handover_triggers) for txt in batch_texts):
+                logger.info("Human handover triggered (batch) for user %s", ig_user_id)
+                await pause_ai(db, ig_user_id, "human_handover")
+                await mark_batch_processed(db, ig_user_id)
+                await app_state.manychat_client.add_tag(manychat_contact_id, 86596410)
+                return
+
             history = await get_history(db, ig_user_id, limit=20)
             history_dicts = [{"role": r.role, "content": r.content} for r in history]
 
@@ -82,7 +103,7 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
                 few_shot_messages=app_state.few_shot_messages,
                 ig_user_id=ig_user_id,
                 messages=history_dicts,
-                cfg=None,
+                cfg=cfg,
             )
 
             parsed = parse_ai_output(raw_text)
