@@ -108,13 +108,6 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
 
             parsed = parse_ai_output(raw_text)
 
-            if parsed.is_handover:
-                logger.info("Human handover triggered for user %s", ig_user_id)
-                await pause_ai(db, ig_user_id, "human_handover")
-                await mark_batch_processed(db, ig_user_id)
-                await app_state.manychat_client.add_tag(manychat_contact_id, 86596410)
-                return
-
             await save_message(
                 db,
                 ig_user_id,

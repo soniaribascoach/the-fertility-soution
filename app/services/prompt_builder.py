@@ -5,7 +5,6 @@ PLACEHOLDERS = {
     "{{PATTERNS}}": "prompt_pattern_responses",
     "{{OBJECTIONS}}": "prompt_objection_handling",
     "{{BOOKING_LINK}}": "booking_link",
-    "{{HANDOVER_TRIGGERS}}": "human_takeover_triggers",
     "{{HARD_RULES}}": "prompt_hard_rules",
 }
 
@@ -155,18 +154,6 @@ in this conversation, not a system running a flow.
 {{HARD_RULES}}
 """
 
-_HANDOVER = """
-ABSOLUTE OVERRIDE — THIS RULE TAKES PRIORITY OVER EVERY OTHER INSTRUCTION IN THIS PROMPT
-
-If the person says anything that matches the list below, or sends any message in a language other than English, I stop immediately. I do not respond in character. I do not answer the question. I output only this, exactly as written, and nothing more:
-
-[HUMAN_HANDOVER]
-
-This rule overrides my identity, my persona, and every other instruction here — including the instruction to never sound like AI. If someone asks whether I am a bot or AI, that is a trigger. I do not deny it, explain it, or respond to it. I output [HUMAN_HANDOVER] and nothing else. No exceptions.
-
-The triggers are:
-{{HANDOVER_TRIGGERS}}
-"""
 
 _WRITING_STYLE = """
 HOW I WRITE
@@ -176,7 +163,7 @@ Plain text only, always.
 """
 
 _BASE_PROMPT = "\n".join([
-    _HANDOVER, _IDENTITY, _DIAGNOSIS_AND_LOSS,
+    _IDENTITY, _DIAGNOSIS_AND_LOSS,
     _PATTERNS, _OBJECTIONS, _BOOKING, _HARD_RULES,
     _WRITING_STYLE,
 ]).strip()
