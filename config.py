@@ -11,9 +11,9 @@ class Settings(BaseSettings):
     manychat_api_token: str = ""
     manychat_webhook_secret: str = ""
     worker_poll_interval: int = 3
-    debounce_seconds: int = 120
-    debounce_extra_seconds: int = 60
-    max_typing_delay: float = 45.0
+    debounce_seconds: int = 15
+    debounce_extra_seconds: int = 15
+    max_typing_delay: float = 10.0
 
     @property
     def async_database_url(self) -> str:
