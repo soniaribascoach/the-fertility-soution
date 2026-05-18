@@ -100,7 +100,7 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             raw_text, usage = await generate_reply(
                 db=db,
                 openai_client=app_state.openai_client,
-                few_shot_messages=app_state.few_shot_messages,
+                few_shot_scenarios=app_state.few_shot_scenarios,
                 ig_user_id=ig_user_id,
                 messages=history_dicts,
                 cfg=cfg,

@@ -17,7 +17,7 @@ _COMPLETION_TOKEN_COST = 0.0000006
 async def generate_reply(
     db: AsyncSession,
     openai_client: AsyncOpenAI,
-    few_shot_messages: list[dict],
+    few_shot_scenarios: dict[str, list[dict]],
     ig_user_id: str,
     messages: list[dict],
     cfg: dict | None = None,
@@ -37,6 +37,9 @@ async def generate_reply(
 
     price_ask_count = classify_price_asks(messages)
     system_prompt = await build_system_prompt(db, cfg, price_ask_count=price_ask_count)
+
+    # Send all scenarios every request. select_few_shots() is ready to use when needed.
+    few_shot_messages = [msg for msgs in few_shot_scenarios.values() for msg in msgs]
 
     response = await openai_client.chat.completions.create(
         model=_MODEL,

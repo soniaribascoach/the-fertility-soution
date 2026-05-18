@@ -23,7 +23,8 @@
       "Bash(/Users/kai/Work/the-fertility-soution/.venv/bin/pip install *)",
       "Bash(/Users/kai/Work/the-fertility-soution/.venv/bin/pip download *)",
       "Bash(pip install *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(file *)"
     ]
   }
 }
