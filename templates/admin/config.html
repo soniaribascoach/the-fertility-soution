@@ -128,7 +128,7 @@
 
     <div class="mb-7">
       <h3 class="text-base font-semibold text-slate-800 mb-1.5">Human Takeover Triggers</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">One keyword or phrase per line. If detected, the AI stops, a warm handover message is sent, and the contact is tagged <strong>needs_human_review</strong> in ManyChat.</p>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">One keyword or phrase per line. If any phrase is detected in an incoming message, the AI immediately stops, the conversation is paused, and the contact is tagged in ManyChat for your VA team to take over manually.</p>
       {{ dynamic_list('takeover-list', 'human_takeover_triggers', takeover_items, 'e.g. I want to speak to someone', 'Add Trigger') }}
     </div>
 
