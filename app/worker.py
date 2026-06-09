@@ -83,7 +83,9 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
                 logger.info("Medical blocklist triggered (batch) for user %s", ig_user_id)
                 if deflection:
                     await app_state.manychat_client.send_message(manychat_contact_id, deflection)
+                await pause_ai(db, ig_user_id, "medical_deflection")
                 await mark_batch_processed(db, ig_user_id)
+                await app_state.manychat_client.add_tag(manychat_contact_id, 86596410)
                 return
 
             handover_triggers = [t.strip().lower() for t in cfg.get("human_takeover_triggers", "").split("\n") if t.strip()]
