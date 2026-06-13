@@ -35,13 +35,15 @@ CONFIG_KEYS = [
 @router.get("/admin")
 async def admin_root(request: Request):
     if is_authenticated(request):
-        return RedirectResponse("/admin/config", status_code=302)
+        return RedirectResponse("/admin/dashboard", status_code=302)
     return RedirectResponse("/admin/login", status_code=302)
 
 
-@router.get("/admin/dashboard")
-async def dashboard_redirect(request: Request):
-    return RedirectResponse("/admin/config", status_code=302)
+@router.get("/admin/dashboard", response_class=HTMLResponse)
+async def dashboard_get(request: Request):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    return templates.TemplateResponse(request, "admin/dashboard.html", {})
 
 
 @router.get("/admin/login", response_class=HTMLResponse)

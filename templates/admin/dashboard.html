@@ -1,0 +1,628 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- ── Page Header ──────────────────────────────────────────────────────── -->
+<div class="flex items-start justify-between mb-8">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Overview</h1>
+    <p class="mt-1 text-sm text-slate-500">Good morning — here's what's happening with your AI funnel</p>
+  </div>
+  <div class="text-right">
+    <div id="dash-date" class="text-sm font-semibold text-slate-700"></div>
+    <div class="text-xs text-slate-400 mt-0.5">Today</div>
+  </div>
+</div>
+
+<!-- ── KPI Cards ────────────────────────────────────────────────────────── -->
+<div class="grid grid-cols-4 gap-5 mb-7">
+
+  <!-- Total Leads -->
+  <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all">
+    <div class="flex items-start justify-between mb-4">
+      <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Leads</span>
+      <div class="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" class="text-violet-600">
+          <path d="M7.5 1a3 3 0 100 6 3 3 0 000-6zM2 13.5a5.5 5.5 0 0111 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="text-3xl font-bold text-slate-900 mb-2">284</div>
+    <div class="flex items-center gap-1.5">
+      <span class="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+        <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M4.5 7V2M2 4.5l2.5-2.5L7 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        +12%
+      </span>
+      <span class="text-xs text-slate-400">vs last month</span>
+    </div>
+  </div>
+
+  <!-- Hot Leads -->
+  <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all">
+    <div class="flex items-start justify-between mb-4">
+      <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Hot Leads</span>
+      <div class="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" class="text-rose-500">
+          <path d="M8.5 1C8.5 1 9.5 3.5 8 5.5C6.5 7.5 4 7 4 7C4 7 4.5 9 6.5 10.5C8.5 12 11 12 11 14C11 14 12 11 10.5 8.5C9 6 9.5 4 9.5 3C9.5 2 8.5 1 8.5 1Z" fill="currentColor" opacity="0.25"/>
+          <path d="M6 14C6 14 4 12 4 10C4 8 5.5 7 5.5 7C5.5 7 5 9 6.5 10C8 11 8.5 12 8.5 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8.5 1C8.5 1 10 4 9 6.5C8 9 5 9 5 11C5 13 7 14 7 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="text-3xl font-bold text-slate-900 mb-2">47</div>
+    <div class="flex items-center gap-1.5">
+      <span class="inline-flex items-center bg-rose-50 text-rose-600 text-xs font-semibold px-2 py-0.5 rounded-full">Score ≥ 80</span>
+      <span class="text-xs text-slate-400">ready to book</span>
+    </div>
+  </div>
+
+  <!-- Booking Conversion -->
+  <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all">
+    <div class="flex items-start justify-between mb-4">
+      <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Booking Conversion</span>
+      <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" class="text-emerald-600">
+          <rect x="2" y="2" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 7.5l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="text-3xl font-bold text-slate-900 mb-2">23%</div>
+    <div class="flex items-center gap-1.5">
+      <span class="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+        <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M4.5 7V2M2 4.5l2.5-2.5L7 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        +3.1%
+      </span>
+      <span class="text-xs text-slate-400">vs last month</span>
+    </div>
+  </div>
+
+  <!-- AI Uptime -->
+  <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all">
+    <div class="flex items-start justify-between mb-4">
+      <span class="text-xs font-bold uppercase tracking-wider text-slate-400">AI Uptime</span>
+      <div class="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" class="text-sky-600">
+          <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M7.5 4v3.5l2 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="text-3xl font-bold text-slate-900 mb-2">99.1%</div>
+    <div class="flex items-center gap-1.5">
+      <span class="relative flex h-1.5 w-1.5">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
+        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+      </span>
+      <span class="text-xs text-slate-400">Last 30 days</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Lead Pipeline ─────────────────────────────────────────────────────── -->
+<div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-7">
+  <div class="flex items-center justify-between mb-5">
+    <div>
+      <h2 class="text-sm font-bold text-slate-900">Lead Pipeline</h2>
+      <p class="text-xs text-slate-400 mt-0.5">202 total leads scored this month</p>
+    </div>
+    <a href="/admin/config#qualification" class="text-xs text-violet-600 font-medium hover:text-violet-700 transition-colors">Configure scoring →</a>
+  </div>
+
+  <div class="grid grid-cols-3 gap-4 mb-5">
+    <!-- Hot -->
+    <div class="border border-slate-200 border-l-4 border-l-rose-400 rounded-xl p-4">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600">Hot</span>
+        <span class="text-xs text-slate-400">Score 80–100</span>
+      </div>
+      <div class="text-2xl font-bold text-slate-900">47</div>
+      <div class="text-xs text-slate-400 mt-0.5">leads</div>
+    </div>
+    <!-- Warm -->
+    <div class="border border-slate-200 border-l-4 border-l-amber-400 rounded-xl p-4">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-600">Warm</span>
+        <span class="text-xs text-slate-400">Score 50–79</span>
+      </div>
+      <div class="text-2xl font-bold text-slate-900">89</div>
+      <div class="text-xs text-slate-400 mt-0.5">leads</div>
+    </div>
+    <!-- Nurturing -->
+    <div class="border border-slate-200 border-l-4 border-l-sky-400 rounded-xl p-4">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-sky-50 text-sky-600">Nurturing</span>
+        <span class="text-xs text-slate-400">Score 0–49</span>
+      </div>
+      <div class="text-2xl font-bold text-slate-900">66</div>
+      <div class="text-xs text-slate-400 mt-0.5">leads</div>
+    </div>
+  </div>
+
+  <!-- Stacked progress bar -->
+  <div class="flex rounded-full overflow-hidden h-2 gap-px">
+    <div class="bg-rose-400 rounded-l-full" style="width: 23%"></div>
+    <div class="bg-amber-400" style="width: 44%"></div>
+    <div class="bg-sky-400 rounded-r-full" style="width: 33%"></div>
+  </div>
+  <div class="flex gap-5 mt-2.5">
+    <span class="flex items-center gap-1.5 text-xs text-slate-500"><span class="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0"></span>Hot 23%</span>
+    <span class="flex items-center gap-1.5 text-xs text-slate-500"><span class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>Warm 44%</span>
+    <span class="flex items-center gap-1.5 text-xs text-slate-500"><span class="w-2 h-2 rounded-full bg-sky-400 flex-shrink-0"></span>Nurturing 33%</span>
+  </div>
+</div>
+
+<!-- ── Recent Conversations ──────────────────────────────────────────────── -->
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm mb-7">
+  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+    <h2 class="text-sm font-bold text-slate-900">Recent Conversations</h2>
+    <a href="/sqladmin/conversation/list" class="text-xs text-violet-600 font-medium hover:text-violet-700 transition-colors">View all in Data →</a>
+  </div>
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-slate-100">
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-6 py-3">Lead</th>
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-4 py-3">Last Message</th>
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-4 py-3">Score</th>
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-4 py-3">Status</th>
+        <th class="text-right text-[10px] font-bold uppercase tracking-wider text-slate-400 px-6 py-3">Time</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-50">
+
+      <tr class="hover:bg-slate-50/50 transition-colors">
+        <td class="px-6 py-3.5">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center flex-shrink-0">
+              <span class="text-[10px] font-bold text-white">M</span>
+            </div>
+            <span class="text-sm font-semibold text-slate-800">@maria_k92</span>
+          </div>
+        </td>
+        <td class="px-4 py-3.5 max-w-xs">
+          <span class="text-slate-500 text-xs truncate block" style="max-width:260px;">I've had 3 failed IVF cycles and I'm starting to lose hope...</span>
+        </td>
+        <td class="px-4 py-3.5">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700">87</span>
+        </td>
+        <td class="px-4 py-3.5">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Hot
+          </span>
+        </td>
+        <td class="px-6 py-3.5 text-right text-xs text-slate-400">4m ago</td>
+      </tr>
+
+      <tr class="hover:bg-slate-50/50 transition-colors">
+        <td class="px-6 py-3.5">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center flex-shrink-0">
+              <span class="text-[10px] font-bold text-white">S</span>
+            </div>
+            <span class="text-sm font-semibold text-slate-800">@sara.bloom</span>
+          </div>
+        </td>
+        <td class="px-4 py-3.5 max-w-xs">
+          <span class="text-slate-500 text-xs truncate block" style="max-width:260px;">My AMH came back really low, not sure what that means for me...</span>
+        </td>
+        <td class="px-4 py-3.5">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">74</span>
+        </td>
+        <td class="px-4 py-3.5">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Warm
+          </span>
+        </td>
+        <td class="px-6 py-3.5 text-right text-xs text-slate-400">12m ago</td>
+      </tr>
+
+      <tr class="hover:bg-slate-50/50 transition-colors">
+        <td class="px-6 py-3.5">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center flex-shrink-0">
+              <span class="text-[10px] font-bold text-white">F</span>
+            </div>
+            <span class="text-sm font-semibold text-slate-800">@fertility_hope</span>
+          </div>
+        </td>
+        <td class="px-4 py-3.5 max-w-xs">
+          <span class="text-slate-500 text-xs truncate block" style="max-width:260px;">We've been trying for 2 years now, feeling really overwhelmed...</span>
+        </td>
+        <td class="px-4 py-3.5">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700">91</span>
+        </td>
+        <td class="px-4 py-3.5">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Hot
+          </span>
+        </td>
+        <td class="px-6 py-3.5 text-right text-xs text-slate-400">31m ago</td>
+      </tr>
+
+      <tr class="hover:bg-slate-50/50 transition-colors">
+        <td class="px-6 py-3.5">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center flex-shrink-0">
+              <span class="text-[10px] font-bold text-white">J</span>
+            </div>
+            <span class="text-sm font-semibold text-slate-800">@juliette_m</span>
+          </div>
+        </td>
+        <td class="px-4 py-3.5 max-w-xs">
+          <span class="text-slate-500 text-xs truncate block" style="max-width:260px;">Just want to understand my options before committing to anything...</span>
+        </td>
+        <td class="px-4 py-3.5">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">55</span>
+        </td>
+        <td class="px-4 py-3.5">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Warm
+          </span>
+        </td>
+        <td class="px-6 py-3.5 text-right text-xs text-slate-400">1h ago</td>
+      </tr>
+
+      <tr class="hover:bg-slate-50/50 transition-colors">
+        <td class="px-6 py-3.5">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center flex-shrink-0">
+              <span class="text-[10px] font-bold text-white">N</span>
+            </div>
+            <span class="text-sm font-semibold text-slate-800">@naturalmama28</span>
+          </div>
+        </td>
+        <td class="px-4 py-3.5 max-w-xs">
+          <span class="text-slate-500 text-xs truncate block" style="max-width:260px;">Looking into natural fertility support, not sure where to start...</span>
+        </td>
+        <td class="px-4 py-3.5">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-700">38</span>
+        </td>
+        <td class="px-4 py-3.5">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-600">
+            <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>Nurturing
+          </span>
+        </td>
+        <td class="px-6 py-3.5 text-right text-xs text-slate-400">2h ago</td>
+      </tr>
+
+    </tbody>
+  </table>
+</div>
+
+<!-- ── AI / Token Monitoring ─────────────────────────────────────────────── -->
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm mb-7">
+  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+    <div>
+      <h2 class="text-sm font-bold text-slate-900">AI Usage & Token Monitor</h2>
+      <p class="text-xs text-slate-400 mt-0.5">GPT-4o mini · This month</p>
+    </div>
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-100">
+      <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-60"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500"></span></span>
+      Live
+    </span>
+  </div>
+
+  <div class="p-6 grid grid-cols-2 gap-6">
+
+    <!-- Left: stat tiles -->
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-slate-50 rounded-xl p-4">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Tokens Used</div>
+        <div class="text-xl font-bold text-slate-900">2.41M</div>
+        <div class="text-xs text-slate-400 mt-0.5">this month</div>
+      </div>
+      <div class="bg-slate-50 rounded-xl p-4">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">API Cost</div>
+        <div class="text-xl font-bold text-slate-900">$18.72</div>
+        <div class="flex items-center gap-1 mt-0.5">
+          <span class="text-[10px] font-semibold text-emerald-600">↓ 8%</span>
+          <span class="text-xs text-slate-400">vs last month</span>
+        </div>
+      </div>
+      <div class="bg-slate-50 rounded-xl p-4">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Avg / Conversation</div>
+        <div class="text-xl font-bold text-slate-900">1,847</div>
+        <div class="text-xs text-slate-400 mt-0.5">tokens</div>
+      </div>
+      <div class="bg-slate-50 rounded-xl p-4">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Conversations</div>
+        <div class="text-xl font-bold text-slate-900">1,308</div>
+        <div class="text-xs text-slate-400 mt-0.5">AI handled</div>
+      </div>
+
+      <!-- Input vs Output breakdown -->
+      <div class="col-span-2 bg-slate-50 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Token Split</span>
+          <div class="flex items-center gap-3 text-xs text-slate-500">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-violet-400 inline-block"></span>Input 68%</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-purple-300 inline-block"></span>Output 32%</span>
+          </div>
+        </div>
+        <div class="flex rounded-full overflow-hidden h-2">
+          <div class="bg-violet-400" style="width:68%"></div>
+          <div class="bg-purple-300" style="width:32%"></div>
+        </div>
+        <div class="flex justify-between mt-2 text-[10px] text-slate-400">
+          <span>1.64M input tokens</span>
+          <span>0.77M output tokens</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: 7-day bar chart -->
+    <div>
+      <div class="flex items-end justify-between mb-3">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Daily Token Usage (last 7 days)</span>
+        <span class="text-[10px] text-slate-400">peak: 420K</span>
+      </div>
+      <div class="flex items-end gap-2 h-28">
+        <!-- bars: Mon–Sun, heights proportional to peak 420K -->
+        <div class="flex-1 flex flex-col items-center gap-1.5">
+          <div class="w-full rounded-t-md bg-violet-200 hover:bg-violet-400 transition-colors" style="height:67%"></div>
+          <span class="text-[9px] text-slate-400">Mon</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5">
+          <div class="w-full rounded-t-md bg-violet-300 hover:bg-violet-400 transition-colors" style="height:81%"></div>
+          <span class="text-[9px] text-slate-400">Tue</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5">
+          <div class="w-full rounded-t-md bg-violet-200 hover:bg-violet-400 transition-colors" style="height:74%"></div>
+          <span class="text-[9px] text-slate-400">Wed</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5">
+          <div class="w-full rounded-t-md bg-violet-400 hover:bg-violet-500 transition-colors" style="height:93%"></div>
+          <span class="text-[9px] text-slate-400">Thu</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5">
+          <div class="w-full rounded-t-md bg-violet-500 hover:bg-violet-600 transition-colors" style="height:100%"></div>
+          <span class="text-[9px] text-slate-400">Fri</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5">
+          <div class="w-full rounded-t-md bg-violet-100 hover:bg-violet-300 transition-colors" style="height:43%"></div>
+          <span class="text-[9px] text-slate-400">Sat</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5">
+          <div class="w-full rounded-t-md bg-violet-100 hover:bg-violet-300 transition-colors" style="height:33%"></div>
+          <span class="text-[9px] text-slate-400">Sun</span>
+        </div>
+      </div>
+      <!-- Y-axis labels -->
+      <div class="flex justify-between mt-3 text-[9px] text-slate-300">
+        <span>0</span><span>140K</span><span>280K</span><span>420K</span>
+      </div>
+
+      <!-- Model breakdown -->
+      <div class="mt-5 pt-4 border-t border-slate-100">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Model Breakdown</div>
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-2 text-xs text-slate-600">
+              <span class="w-2 h-2 rounded-full bg-violet-500 flex-shrink-0"></span>
+              GPT-4o mini (conversations)
+            </span>
+            <div class="flex items-center gap-2">
+              <div class="w-20 h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-violet-500 rounded-full" style="width:92%"></div></div>
+              <span class="text-[10px] text-slate-400 w-6">92%</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-2 text-xs text-slate-600">
+              <span class="w-2 h-2 rounded-full bg-purple-300 flex-shrink-0"></span>
+              GPT-4o (quality checks)
+            </span>
+            <div class="flex items-center gap-2">
+              <div class="w-20 h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-purple-300 rounded-full" style="width:8%"></div></div>
+              <span class="text-[10px] text-slate-400 w-6">8%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── ROI ────────────────────────────────────────────────────────────────── -->
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm mb-7">
+  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+    <div>
+      <h2 class="text-sm font-bold text-slate-900">Return on Investment</h2>
+      <p class="text-xs text-slate-400 mt-0.5">Based on 23% booking rate · £2,800 avg programme value</p>
+    </div>
+    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+      ↑ 24,892% ROI
+    </span>
+  </div>
+
+  <div class="p-6">
+
+    <!-- 3 headline numbers -->
+    <div class="grid grid-cols-3 gap-5 mb-6">
+
+      <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 border border-emerald-100">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-3">Revenue Generated</div>
+        <div class="text-3xl font-bold text-emerald-800 mb-1">£18,200</div>
+        <div class="text-xs text-emerald-600 font-medium">this month · 13 bookings</div>
+        <div class="mt-3 flex items-center gap-1.5">
+          <span class="inline-flex items-center gap-0.5 bg-emerald-100 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M4 6.5V1.5M1.5 4L4 1.5 6.5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            +£4,200
+          </span>
+          <span class="text-[10px] text-emerald-500">vs last month</span>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-br from-sky-50 to-blue-50 rounded-2xl p-5 border border-sky-100">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-sky-600 mb-3">VA Hours Saved</div>
+        <div class="text-3xl font-bold text-sky-800 mb-1">312 hrs</div>
+        <div class="text-xs text-sky-600 font-medium">this month · 0 manual replies</div>
+        <div class="mt-3 flex items-center gap-1.5">
+          <span class="inline-flex items-center bg-sky-100 text-sky-700 text-xs font-semibold px-2 py-0.5 rounded-full">@ £15/hr</span>
+          <span class="text-[10px] text-sky-500">= £4,680 saved</span>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-5 border border-violet-100">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-violet-600 mb-3">Cost per Hot Lead</div>
+        <div class="text-3xl font-bold text-violet-800 mb-1">£0.40</div>
+        <div class="text-xs text-violet-600 font-medium">total AI spend ÷ hot leads</div>
+        <div class="mt-3 flex items-center gap-1.5">
+          <span class="inline-flex items-center bg-violet-100 text-violet-700 text-xs font-semibold px-2 py-0.5 rounded-full">47 hot leads</span>
+          <span class="text-[10px] text-violet-500">from $18.72 spend</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Platform vs VA comparison -->
+    <div class="bg-slate-50 rounded-xl p-5 mb-6">
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">AI Platform vs. Manual VA — Monthly Cost Comparison</div>
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center gap-4">
+          <span class="text-xs text-slate-500 w-40 flex-shrink-0">This AI Platform</span>
+          <div class="flex-1 flex items-center gap-3">
+            <div class="h-6 rounded-md bg-violet-500 flex items-center px-2.5" style="width:0.4%;">
+            </div>
+            <span class="text-xs font-bold text-slate-700">$18.72 / month</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 text-violet-700">Automated</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="text-xs text-slate-500 w-40 flex-shrink-0">Manual VA (equiv.)</span>
+          <div class="flex-1 flex items-center gap-3">
+            <div class="h-6 rounded-md bg-rose-200 flex items-center px-2.5" style="width:100%;">
+            </div>
+            <span class="text-xs font-bold text-slate-700 whitespace-nowrap">£4,680 / month</span>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
+        <span class="text-xs text-slate-500">Monthly saving by using AI</span>
+        <span class="text-sm font-bold text-emerald-700">≈ £4,661 saved every month</span>
+      </div>
+    </div>
+
+    <!-- 6-month revenue trend -->
+    <div>
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Revenue Trend (6 months)</span>
+        <span class="text-xs text-emerald-600 font-semibold">↑ 94% growth</span>
+      </div>
+      <div class="flex items-end gap-3 h-24">
+        <div class="flex-1 flex flex-col items-center gap-2">
+          <span class="text-[9px] text-slate-400">£9.4k</span>
+          <div class="w-full rounded-t-lg bg-emerald-100 hover:bg-emerald-300 transition-colors" style="height:52%"></div>
+          <span class="text-[9px] text-slate-400">Jan</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-2">
+          <span class="text-[9px] text-slate-400">£11.2k</span>
+          <div class="w-full rounded-t-lg bg-emerald-200 hover:bg-emerald-300 transition-colors" style="height:62%"></div>
+          <span class="text-[9px] text-slate-400">Feb</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-2">
+          <span class="text-[9px] text-slate-400">£12.6k</span>
+          <div class="w-full rounded-t-lg bg-emerald-200 hover:bg-emerald-300 transition-colors" style="height:69%"></div>
+          <span class="text-[9px] text-slate-400">Mar</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-2">
+          <span class="text-[9px] text-slate-400">£14.0k</span>
+          <div class="w-full rounded-t-lg bg-emerald-300 hover:bg-emerald-400 transition-colors" style="height:77%"></div>
+          <span class="text-[9px] text-slate-400">Apr</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-2">
+          <span class="text-[9px] text-slate-400">£16.8k</span>
+          <div class="w-full rounded-t-lg bg-emerald-400 hover:bg-emerald-500 transition-colors" style="height:92%"></div>
+          <span class="text-[9px] text-slate-400">May</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-2">
+          <span class="text-[9px] font-semibold text-emerald-700">£18.2k</span>
+          <div class="w-full rounded-t-lg bg-emerald-500 hover:bg-emerald-600 transition-colors" style="height:100%"></div>
+          <span class="text-[9px] font-semibold text-slate-600">Jun</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Integration Status ────────────────────────────────────────────────── -->
+<div class="grid grid-cols-4 gap-4">
+
+  <!-- ManyChat -->
+  <div class="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 shadow-sm">
+    <div class="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" class="text-blue-600">
+        <path d="M15 10.5a6 6 0 01-6 6H4.5L2 18V6a6 6 0 016-6H12a6 6 0 013 5.2V10.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M6 8h6M6 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="min-w-0">
+      <div class="text-xs font-bold text-slate-800 truncate">ManyChat</div>
+      <div class="flex items-center gap-1 mt-0.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+        <span class="text-[11px] text-emerald-600 font-medium">Connected</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- OpenAI -->
+  <div class="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 shadow-sm">
+    <div class="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center flex-shrink-0">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" class="text-violet-600">
+        <path d="M9 2l1.8 5.4H16L11.1 10.6l1.8 5.4L9 13l-3.9 3 1.8-5.4L2 7.4h5.2L9 2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="min-w-0">
+      <div class="text-xs font-bold text-slate-800 truncate">OpenAI GPT-4o</div>
+      <div class="flex items-center gap-1 mt-0.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+        <span class="text-[11px] text-emerald-600 font-medium">Active</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instagram DM -->
+  <div class="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 shadow-sm">
+    <div class="w-9 h-9 rounded-lg bg-pink-50 flex items-center justify-center flex-shrink-0">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" class="text-pink-500">
+        <rect x="2" y="2" width="14" height="14" rx="4" stroke="currentColor" stroke-width="1.4"/>
+        <circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="1.4"/>
+        <circle cx="13" cy="5" r="0.8" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="min-w-0">
+      <div class="text-xs font-bold text-slate-800 truncate">Instagram DM</div>
+      <div class="flex items-center gap-1 mt-0.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+        <span class="text-[11px] text-emerald-600 font-medium">Live</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Webhook -->
+  <div class="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 shadow-sm">
+    <div class="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center flex-shrink-0">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" class="text-slate-500">
+        <path d="M9 3v3M9 12v3M3 9h3M12 9h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="9" cy="9" r="2.5" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M5.2 5.2l1.4 1.4M11.4 11.4l1.4 1.4M5.2 12.8l1.4-1.4M11.4 6.6l1.4-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="min-w-0">
+      <div class="text-xs font-bold text-slate-800 truncate">Webhook</div>
+      <div class="flex items-center gap-1 mt-0.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+        <span class="text-[11px] text-emerald-600 font-medium">Healthy</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.getElementById('dash-date').textContent =
+    new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+</script>
+
+{% endblock %}

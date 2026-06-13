@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin — Fertility Solution</title>
+  <title>Admin — The Fertility Solution</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -28,30 +29,114 @@
   </script>
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+<body class="flex h-screen bg-slate-50 text-slate-900 antialiased overflow-hidden">
 
-  <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-slate-200 flex items-center justify-between px-6 h-14 shadow-sm">
-    <span class="font-bold text-slate-900 flex items-center gap-2 text-[15px] tracking-tight">
-      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0">
-        <rect width="26" height="26" rx="7" fill="#7c3aed"/>
-        <rect x="6" y="7" width="14" height="2" rx="1" fill="white" opacity="0.9"/>
-        <rect x="6" y="12" width="10" height="2" rx="1" fill="white" opacity="0.9"/>
-        <rect x="6" y="17" width="7" height="2" rx="1" fill="white" opacity="0.9"/>
-      </svg>
-      Admin Panel
-      <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-widest bg-violet-100 text-violet-700 border border-violet-200 ml-1">v0.998 beta</span>
-    </span>
-    <div class="flex items-center gap-0.5">
-      <a href="/admin/config" class="text-slate-500 hover:bg-violet-50 hover:text-violet-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">Settings</a>
-      <a href="/admin/chat" class="text-slate-500 hover:bg-violet-50 hover:text-violet-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">Chat</a>
-<a href="/admin/logout" class="text-slate-400 hover:bg-red-50 hover:text-red-500 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ml-2">Sign out</a>
+  <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside class="w-[220px] flex-shrink-0 h-full bg-white border-r border-slate-200 flex flex-col">
+
+    <!-- Logo -->
+    <div class="px-5 pt-6 pb-5 border-b border-slate-100">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="4" width="10" height="1.5" rx="0.75" fill="white" opacity="0.9"/>
+            <rect x="3" y="7.25" width="7" height="1.5" rx="0.75" fill="white" opacity="0.9"/>
+            <rect x="3" y="10.5" width="5" height="1.5" rx="0.75" fill="white" opacity="0.9"/>
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <div class="text-[13px] font-bold text-slate-900 tracking-tight leading-tight truncate">The Fertility Solution</div>
+          <span class="inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold tracking-widest bg-violet-100 text-violet-700 border border-violet-200 mt-0.5">AI Platform</span>
+        </div>
+      </div>
     </div>
-  </nav>
 
-  <main class="max-w-3xl mx-auto px-5 py-5 pb-5">
-    {% block content %}{% endblock %}
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 flex flex-col gap-0.5" id="sidebar-nav">
+
+      <a href="/admin/dashboard" data-nav
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="flex-shrink-0 opacity-75">
+          <path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          <path d="M6 15v-5h4v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Dashboard
+      </a>
+
+      <a href="/admin/chat" data-nav
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="flex-shrink-0 opacity-75">
+          <path d="M13.5 9a4.5 4.5 0 01-4.5 4.5H4L2 15V5a4.5 4.5 0 014.5-4.5H9a4.5 4.5 0 014.5 4.5V9z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        </svg>
+        Chat Sandbox
+      </a>
+
+      <a href="/admin/config" data-nav
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="flex-shrink-0 opacity-75">
+          <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Settings
+      </a>
+
+      <a href="/sqladmin" data-nav
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="flex-shrink-0 opacity-75">
+          <ellipse cx="8" cy="4" rx="5" ry="2" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M3 4v4c0 1.1 2.24 2 5 2s5-.9 5-2V4" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M3 8v4c0 1.1 2.24 2 5 2s5-.9 5-2V8" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        Data
+      </a>
+
+    </nav>
+
+    <!-- Bottom: status + sign out -->
+    <div class="px-4 py-4 border-t border-slate-100 flex flex-col gap-3">
+      <div class="flex items-center gap-2 px-2">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        <span class="text-[11px] text-slate-500 font-medium">System Live</span>
+      </div>
+      <a href="/admin/logout"
+         class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="flex-shrink-0">
+          <path d="M5 13H2a1 1 0 01-1-1V2a1 1 0 011-1h3M9.5 10.5L13 7l-3.5-3.5M5 7h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Sign out
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ── Main content ─────────────────────────────────────────────────────── -->
+  <main class="flex-1 overflow-y-auto">
+    <div class="{% block content_pad %}p-8{% endblock %}">
+      {% block content %}{% endblock %}
+    </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
+
+  <script>
+    (function () {
+      const path = window.location.pathname;
+      document.querySelectorAll('[data-nav]').forEach(function (link) {
+        const href = link.getAttribute('href');
+        const isActive = href === '/admin/dashboard'
+          ? (path === '/admin/dashboard' || path === '/admin')
+          : path.startsWith(href);
+        if (isActive) {
+          link.classList.add('bg-violet-50', 'text-violet-700', 'font-semibold');
+        } else {
+          link.classList.add('text-slate-500', 'hover:bg-slate-50', 'hover:text-slate-700');
+        }
+      });
+    })();
+  </script>
+
 </body>
 </html>
