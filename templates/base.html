@@ -54,15 +54,6 @@
     <!-- Navigation -->
     <nav class="flex-1 px-3 py-4 flex flex-col gap-0.5" id="sidebar-nav">
 
-      <a href="/admin/dashboard" data-nav
-         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="flex-shrink-0 opacity-75">
-          <path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-          <path d="M6 15v-5h4v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Dashboard
-      </a>
-
       <a href="/admin/chat" data-nav
          class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="flex-shrink-0 opacity-75">
@@ -126,9 +117,7 @@
       const path = window.location.pathname;
       document.querySelectorAll('[data-nav]').forEach(function (link) {
         const href = link.getAttribute('href');
-        const isActive = href === '/admin/dashboard'
-          ? (path === '/admin/dashboard' || path === '/admin')
-          : path.startsWith(href);
+        const isActive = path.startsWith(href);
         if (isActive) {
           link.classList.add('bg-violet-50', 'text-violet-700', 'font-semibold');
         } else {

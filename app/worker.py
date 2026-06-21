@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import random
+import re
 
 from app.db.database import AsyncSessionLocal
 from app.repositories.config import get_all_config
@@ -22,6 +23,11 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 _processing_users: set[str] = set()
+_MEDIA_URL_RE = re.compile(r"^https?://\S+$")
+
+
+def _is_media_url(text: str) -> bool:
+    return bool(_MEDIA_URL_RE.match(text))
 
 
 async def start_worker(app_state) -> None:
@@ -76,6 +82,13 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
 
             batch_texts = [r.content.lower() for r in rows]
             cfg = await get_all_config(db)
+
+            if any(_is_media_url(txt) for txt in batch_texts):
+                logger.info("Media message detected (batch) for user %s", ig_user_id)
+                await pause_ai(db, ig_user_id, "media_message")
+                await mark_batch_processed(db, ig_user_id)
+                await app_state.manychat_client.add_tag(manychat_contact_id, 86596410)
+                return
 
             blocklist = [p.strip().lower() for p in cfg.get("medical_blocklist", "").split("\n") if p.strip()]
             if blocklist and any(any(phrase in txt for phrase in blocklist) for txt in batch_texts):

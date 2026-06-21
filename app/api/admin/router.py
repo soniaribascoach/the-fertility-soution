@@ -143,13 +143,17 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
     messages = body.get("messages", [])
 
     cfg = await get_all_config(db)
-    triggers = [t.strip().lower() for t in cfg.get("human_takeover_triggers", "").split("\n") if t.strip()]
     last_user_text = next(
         (m["content"].lower() for m in reversed(messages) if m.get("role") == "user"), ""
     )
-    human_takeover = bool(triggers and any(t in last_user_text for t in triggers))
-    if human_takeover:
-        return JSONResponse({"reply": None, "human_takeover": True})
+
+    import re
+    if re.match(r"^https?://\S+$", last_user_text):
+        return JSONResponse({"reply": None, "human_takeover": True, "takeover_reason": "media"})
+
+    triggers = [t.strip().lower() for t in cfg.get("human_takeover_triggers", "").split("\n") if t.strip()]
+    if triggers and any(t in last_user_text for t in triggers):
+        return JSONResponse({"reply": None, "human_takeover": True, "takeover_reason": "keyword"})
 
     client = request.app.state.openai_client
     few_shot_scenarios = getattr(request.app.state, "few_shot_scenarios", {})

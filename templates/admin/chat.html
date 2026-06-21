@@ -285,8 +285,11 @@
     typingEl.classList.remove('flex');
   }
 
-  function appendTakeoverBanner() {
+  function appendTakeoverBanner(reason) {
     if (emptyEl) emptyEl.style.display = 'none';
+    const detail = reason === 'media'
+      ? 'Media message detected — voice note, image, or file.'
+      : 'Message matched a configured trigger phrase.';
     const banner = document.createElement('div');
     banner.className = 'msg-in';
     banner.style.cssText = 'display:flex; align-items:flex-start; gap:10px; background:#fffbeb; border:1px solid #fcd34d; border-radius:14px; padding:12px 16px; margin:0 0 2px;';
@@ -294,7 +297,7 @@
       '<span style="font-size:16px; line-height:1.4; flex-shrink:0;">⚠️</span>' +
       '<div>' +
         '<div style="font-family:\'DM Sans\',sans-serif; font-size:13px; font-weight:600; color:#92400e; line-height:1.4;">Human takeover triggered</div>' +
-        '<div style="font-family:\'DM Sans\',sans-serif; font-size:12px; color:#b45309; margin-top:2px;">Message matched a configured trigger phrase.</div>' +
+        '<div style="font-family:\'DM Sans\',sans-serif; font-size:12px; color:#b45309; margin-top:2px;">' + detail + '</div>' +
       '</div>';
     messages.insertBefore(banner, typingEl);
     scrollToBottom();
@@ -317,7 +320,7 @@
       });
       const data = await res.json();
       hideTyping();
-      if (data.human_takeover) appendTakeoverBanner();
+      if (data.human_takeover) { appendTakeoverBanner(data.takeover_reason); return; }
       if (data.reply) {
         conversationHistory.push({ role: 'assistant', content: data.reply });
         appendMessage('ai', data.reply);
