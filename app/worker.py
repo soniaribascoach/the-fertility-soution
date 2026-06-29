@@ -112,6 +112,29 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             history = await get_history(db, ig_user_id, limit=20)
             history_dicts = [{"role": r.role, "content": r.content} for r in history]
 
+            # Phase 1 — CTA keyword bypass (first ever message only)
+            if len(history_dicts) == 1:
+                cta_keywords = {
+                    k.strip().lower()
+                    for k in cfg.get("phase1_cta_keywords", "").split("\n")
+                    if k.strip()
+                }
+                first_msg = history_dicts[0]["content"].strip().lower()
+                if cta_keywords and first_msg in cta_keywords:
+                    opening = cfg.get("phase1_opening_message", "").strip()
+                    if opening:
+                        logger.info("Phase 1 CTA keyword '%s' triggered for user %s", first_msg, ig_user_id)
+                        chunks = split_reply(opening)
+                        delay = calculate_delay(chunks[0], settings.max_typing_delay)
+                        await asyncio.sleep(delay)
+                        for i, chunk in enumerate(chunks):
+                            if i > 0:
+                                await asyncio.sleep(calculate_delay(chunk, settings.max_typing_delay))
+                            await app_state.manychat_client.send_message(manychat_contact_id, chunk)
+                        await save_message(db, ig_user_id, "assistant", opening)
+                        await mark_batch_processed(db, ig_user_id)
+                        return
+
             raw_text, usage = await generate_reply(
                 db=db,
                 openai_client=app_state.openai_client,

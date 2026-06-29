@@ -28,6 +28,7 @@ templates.env.filters["fromjson"] = lambda s: _json.loads(s) if s else {}
 templates.env.filters["split_bubbles"] = lambda s: [b.strip() for b in s.split("\n\n") if b.strip()] or [s]
 
 CONFIG_KEYS = [
+    "phase1_cta_keywords", "phase1_opening_message",
     "booking_link", "score_threshold", "prompt_scoring_rules",
     "prompt_about", "prompt_services", "prompt_tone", "prompt_flow",
     "prompt_hard_rules", "prompt_opening_variants", "prompt_qualification_questions",
@@ -104,6 +105,7 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
     def _split(key):
         return [t for t in cfg.get(key, "").split("\n") if t.strip()]
 
+    phase1_keyword_items = _split("phase1_cta_keywords")
     blocklist_items = _split("medical_blocklist")
     takeover_items = _split("human_takeover_triggers")
     hard_rule_items = _split("prompt_hard_rules")
@@ -119,6 +121,7 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
         "admin/config.html",
         {
             "cfg": cfg,
+            "phase1_keyword_items": phase1_keyword_items,
             "blocklist_items": blocklist_items,
             "takeover_items": takeover_items,
             "hard_rule_items": hard_rule_items,
@@ -170,6 +173,8 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
 @router.post("/admin/config/save")
 async def config_save(
         request: Request,
+        phase1_cta_keywords: str = Form(""),
+        phase1_opening_message: str = Form(""),
         booking_link: str = Form(""),
         score_threshold: str = Form(""),
         prompt_scoring_rules: str = Form(""),
@@ -192,6 +197,8 @@ async def config_save(
     if not is_authenticated(request):
         return RedirectResponse("/admin/login", status_code=302)
 
+    await set_config(db, "phase1_cta_keywords", phase1_cta_keywords)
+    await set_config(db, "phase1_opening_message", phase1_opening_message)
     await set_config(db, "booking_link", booking_link)
     await set_config(db, "score_threshold", score_threshold)
     await set_config(db, "prompt_scoring_rules", prompt_scoring_rules)

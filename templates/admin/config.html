@@ -48,7 +48,7 @@
 <!-- ── Tab Navigation ──────────────────────────────────────────────────── -->
 <div class="border-b border-slate-200 mb-6">
   <nav class="-mb-px flex gap-0" aria-label="Settings sections">
-    {% for tab in [('qualification','Lead Qualification'), ('behaviour','AI Behaviour'), ('coaching','Advanced Coaching'), ('safety','Safety Guardrails')] %}
+    {% for tab in [('phase1','Phase 1 — Opening'), ('qualification','Lead Qualification'), ('behaviour','AI Behaviour'), ('coaching','Advanced Coaching'), ('safety','Safety Guardrails')] %}
     <button type="button" data-tab="{{ tab[0] }}"
       class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap">
       {{ tab[1] }}
@@ -59,8 +59,26 @@
 
 <form method="post" action="/admin/config/save">
 
+  <!-- ── Phase 1 — Opening ────────────────────────────────────────────── -->
+  <section data-panel="phase1" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Phase 1 — Opening</h2>
+
+    <div class="mb-7">
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">CTA Keywords</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">One keyword per line (case-insensitive). When a lead's very first message exactly matches any of these, the AI is bypassed and the opening message below is sent immediately.</p>
+      {{ dynamic_list('phase1-keywords-list', 'phase1_cta_keywords', phase1_keyword_items, 'e.g. BABY', 'Add Keyword') }}
+    </div>
+
+    <div>
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Opening Message</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Sent verbatim when a CTA keyword is detected. Keep it warm and open-ended — no booking link, no fertility advice.</p>
+      <textarea name="phase1_opening_message" rows="4"
+        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.phase1_opening_message or '' }}</textarea>
+    </div>
+  </section>
+
   <!-- ── Lead Qualification ────────────────────────────────────────────── -->
-  <section data-panel="qualification" class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+  <section data-panel="qualification" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
     <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Lead Qualification</h2>
 
     <div class="mb-7">
@@ -151,7 +169,7 @@
 
 <script>
 // ── Tabs ──────────────────────────────────────────────────────────────────────
-const TABS = ['qualification', 'behaviour', 'coaching', 'safety'];
+const TABS = ['phase1', 'qualification', 'behaviour', 'coaching', 'safety'];
 
 function activateTab(name) {
   const target = TABS.includes(name) ? name : TABS[0];
@@ -218,6 +236,7 @@ document.querySelectorAll('.dynamic-row textarea').forEach(ta => {
 
 // ── Sync hidden textareas on submit ──────────────────────────────────────────
 const DYNAMIC_LISTS = {
+  'phase1-keywords-list':    'phase1_cta_keywords_hidden',
   'hard-rules-list':         'prompt_hard_rules_hidden',
   'pattern-responses-list':  'prompt_pattern_responses_hidden',
   'objection-handling-list': 'prompt_objection_handling_hidden',

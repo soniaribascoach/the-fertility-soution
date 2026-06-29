@@ -1,0 +1,15 @@
+#,Feature,Detailed Explanation,Effort,Notes,Priority,Cost
+1,AI Model Improvement ,2-3 Iterations for AI quality/voice improvements,Low,This should definitely be a part of Milestone 4,Must Have,$100
+2,TikTok Integration,"Extend the same DM bot to TikTok via ManyChat's TikTok channel. Requires a new webhook adapter for TikTok's message format, TikTok-specific character limits, and content policy handling. Feasibility depends on ManyChat's TikTok DM support tier.",High,,Must Have,$300
+3,Initiate DMs to New Followers,"When someone follows the Instagram account, trigger an automated welcome DM via ManyChat's new-follower flow. Opening message is soft and discovery-oriented (not promotional), following the keyword flow principle. Requires rate limiting, deduplication, and opt-out handling. Goal: open a conversation, not close a sale.",Mid,,Nice to Have,$100
+4,Comment Trigger,"Feasible, Comment to DM workflow for both platforms",Mid,,Must Have,$100
+5,Opening Keywords / Campaigns,"Configure trigger keywords and active campaigns (e.g. GUIDE, FREE, campaign codes) in the admin panel. When a user sends a keyword AI will already know this is a campaign",Mid,,Must Have,$100
+6,Spanish First-Class Support,"Auto-detect the user's language on their first message. Switch to a Spanish-language system prompt variant, load Spanish few-shot scenarios (new scenario files",Low,,Must Have,$70
+7,Auto-Resume,"Detect YouTube links, TikTok URLs, PDF links or Scans, and other non-text content in incoming messages. Pause AI,  tag the lead in ManyChat for human review. When the human responds and the thread is resolved, auto-resume AI with full conversation context preserved. ",Mid,,Must Have,$100
+8,Old DM,"Not feasible directly, explore Broadcast feature",Mid,"Not feasible directly, explore Broadcast feature",Nice to Have,$100
+9,Improved Human Takeover,"For Links, Images, Voice Notes etc",Low,Very Low Effort,Must Have,$0
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,Total,$970
