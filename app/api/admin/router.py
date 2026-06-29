@@ -1,13 +1,17 @@
 import json as _json
+import os
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import select, func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
+from app.models.few_shot_version import FewShotVersion
 from app.repositories.config import get_all_config, set_config
 from app.services.ai_pipeline import generate_reply
+from app.services.few_shots import load_few_shot_scenarios
 from app.api.admin.auth import (
     is_authenticated,
     check_rate_limit,
@@ -15,6 +19,8 @@ from app.api.admin.auth import (
     reset_attempts,
 )
 from config import settings
+
+FEW_SHOTS_DIR = "few_shots"
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -205,5 +211,95 @@ async def config_save(
     await set_config(db, "human_takeover_triggers", human_takeover_triggers)
 
     return RedirectResponse("/admin/config?saved=true", status_code=302)
+
+
+# ── Few-shots ─────────────────────────────────────────────────────────────────
+
+def _list_scenarios() -> list[str]:
+    return sorted(
+        f for f in os.listdir(FEW_SHOTS_DIR)
+        if os.path.isfile(os.path.join(FEW_SHOTS_DIR, f)) and not f.startswith(".")
+    )
+
+
+@router.get("/admin/few-shots", response_class=HTMLResponse)
+async def few_shots_get(request: Request, scenario: str = None, saved: str = None, db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    scenarios = _list_scenarios()
+    if not scenarios:
+        return templates.TemplateResponse(request, "admin/few_shots.html", {"scenarios": [], "selected": None})
+
+    selected = scenario if scenario in scenarios else scenarios[0]
+
+    with open(os.path.join(FEW_SHOTS_DIR, selected), "r", encoding="utf-8") as fh:
+        content = fh.read()
+
+    versions_result = await db.execute(
+        select(FewShotVersion)
+        .where(FewShotVersion.scenario_name == selected)
+        .order_by(FewShotVersion.id.desc())
+    )
+    versions = versions_result.scalars().all()
+
+    counts_result = await db.execute(
+        select(FewShotVersion.scenario_name, sa_func.count(FewShotVersion.id))
+        .group_by(FewShotVersion.scenario_name)
+    )
+    version_counts = dict(counts_result.all())
+
+    return templates.TemplateResponse(request, "admin/few_shots.html", {
+        "scenarios": scenarios,
+        "selected": selected,
+        "content": content,
+        "versions": versions,
+        "version_counts": version_counts,
+        "saved": saved == "true",
+    })
+
+
+@router.post("/admin/few-shots/{name}/save")
+async def few_shots_save(request: Request, name: str, content: str = Form(...), db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    path = os.path.join(FEW_SHOTS_DIR, name)
+    if not os.path.isfile(path):
+        return RedirectResponse(f"/admin/few-shots?scenario={name}", status_code=302)
+
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(content)
+
+    db.add(FewShotVersion(scenario_name=name, content=content))
+    await db.commit()
+
+    request.app.state.few_shot_scenarios = load_few_shot_scenarios(FEW_SHOTS_DIR)
+
+    return RedirectResponse(f"/admin/few-shots?scenario={name}&saved=true", status_code=302)
+
+
+@router.post("/admin/few-shots/{name}/rollback/{version_id}")
+async def few_shots_rollback(request: Request, name: str, version_id: int, db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    result = await db.execute(
+        select(FewShotVersion).where(FewShotVersion.id == version_id, FewShotVersion.scenario_name == name)
+    )
+    version = result.scalar_one_or_none()
+    if not version:
+        return RedirectResponse(f"/admin/few-shots?scenario={name}", status_code=302)
+
+    path = os.path.join(FEW_SHOTS_DIR, name)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(version.content)
+
+    db.add(FewShotVersion(scenario_name=name, content=version.content))
+    await db.commit()
+
+    request.app.state.few_shot_scenarios = load_few_shot_scenarios(FEW_SHOTS_DIR)
+
+    return RedirectResponse(f"/admin/few-shots?scenario={name}&saved=true", status_code=302)
 
 

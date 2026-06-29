@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block content_pad %}p-0{% endblock %}
+{% block content %}
+
+<div class="flex h-full" style="height: calc(100vh - 0px);">
+
+  <!-- ── Scenario list ─────────────────────────────────────────────────────── -->
+  <aside class="w-[220px] flex-shrink-0 border-r border-slate-200 bg-white flex flex-col h-screen overflow-hidden">
+    <div class="px-4 pt-5 pb-3 border-b border-slate-100">
+      <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Few-Shot Scenarios</p>
+    </div>
+    <nav class="flex-1 overflow-y-auto px-2 py-3 flex flex-col gap-0.5">
+      {% for name in scenarios %}
+      {% set display = name.replace('_', ' ').title() %}
+      {% set count = version_counts.get(name, 0) %}
+      <a href="/admin/few-shots?scenario={{ name }}"
+         class="flex items-center justify-between px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all
+                {% if name == selected %}bg-violet-50 text-violet-700 font-semibold{% else %}text-slate-500 hover:bg-slate-50 hover:text-slate-700{% endif %}">
+        <span class="truncate">{{ display }}</span>
+        {% if count > 0 %}
+        <span class="ml-2 flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold
+                     {% if name == selected %}bg-violet-100 text-violet-600{% else %}bg-slate-100 text-slate-400{% endif %}">
+          v{{ count }}
+        </span>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </nav>
+  </aside>
+
+  <!-- ── Editor ────────────────────────────────────────────────────────────── -->
+  <div class="flex-1 overflow-y-auto">
+    <div class="p-8 max-w-3xl">
+
+      {% if not selected %}
+      <p class="text-slate-400 text-sm">No scenarios found.</p>
+
+      {% else %}
+
+      <!-- Header -->
+      <div class="flex items-center gap-3 mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ selected.replace('_', ' ').title() }}</h1>
+        {% if versions %}
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-violet-100 text-violet-700 border border-violet-200">
+          v{{ versions | length }}
+        </span>
+        {% endif %}
+      </div>
+
+      <!-- Saved toast -->
+      {% if saved %}
+      <div class="flex items-center gap-2.5 bg-green-50 text-green-800 border border-green-200 rounded-lg px-4 py-3 mb-5 text-sm font-medium animate-slideDown" id="saved-toast">
+        <span>&#10003;</span> Saved successfully.
+      </div>
+      {% endif %}
+
+      <!-- Editor form -->
+      <form method="post" action="/admin/few-shots/{{ selected }}/save">
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all mb-2">
+          <div class="px-4 pt-3 pb-1 border-b border-slate-100 flex items-center gap-2">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Dialogue</span>
+            <span class="text-[10px] text-slate-300">User: / Sonia: format</span>
+          </div>
+          <textarea
+            name="content"
+            id="few-shot-editor"
+            class="w-full px-4 py-4 text-sm font-mono bg-transparent focus:outline-none resize-none text-slate-800 leading-relaxed"
+            style="min-height: 420px;"
+          >{{ content }}</textarea>
+        </div>
+        <div class="flex justify-end mt-3">
+          <button type="submit"
+            class="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white rounded-lg text-sm font-semibold hover:bg-violet-700 hover:shadow-md transition-all">
+            Save as new version
+          </button>
+        </div>
+      </form>
+
+      <!-- Version history -->
+      <div class="mt-10">
+        <h2 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Version History</h2>
+
+        {% if versions %}
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          {% for v in versions %}
+          <div class="flex items-center justify-between px-5 py-3.5
+                      {% if not loop.last %}border-b border-slate-100{% endif %}
+                      {% if loop.first %}bg-slate-50{% endif %}">
+            <div class="flex items-center gap-3">
+              <span class="text-sm text-slate-700 font-medium tabular-nums">
+                {{ v.saved_at.strftime('%b %d, %Y at %H:%M') if v.saved_at else 'Unknown' }}
+              </span>
+              {% if loop.first %}
+              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700">Latest</span>
+              {% endif %}
+            </div>
+            {% if not loop.first %}
+            <form method="post" action="/admin/few-shots/{{ selected }}/rollback/{{ v.id }}">
+              <button type="submit"
+                class="text-[12px] font-semibold text-violet-600 hover:text-violet-800 hover:underline transition-colors">
+                Rollback
+              </button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-slate-400 italic">No saved versions yet. Use "Save as new version" to start tracking history.</p>
+        {% endif %}
+      </div>
+
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  const ta = document.getElementById('few-shot-editor');
+  if (ta) {
+    const resize = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
+    ta.addEventListener('input', resize);
+    resize();
+  }
+
+  const toast = document.getElementById('saved-toast');
+  if (toast) setTimeout(() => toast.style.display = 'none', 4000);
+</script>
+
+{% endblock %}
