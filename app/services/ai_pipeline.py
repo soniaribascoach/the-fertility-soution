@@ -10,6 +10,24 @@ from app.services.pricing_classifier import classify_price_asks
 logger = logging.getLogger(__name__)
 
 _MODEL = "gpt-4o-mini"
+
+
+def check_phase1(cfg: dict, messages: list[dict]) -> str | None:
+    """Return the Phase 1 opening message if this is a CTA keyword trigger, else None."""
+    user_messages = [m for m in messages if m.get("role") == "user"]
+    if len(user_messages) != 1:
+        return None
+    cta_keywords = {
+        k.strip().lower()
+        for k in cfg.get("phase1_cta_keywords", "").split("\n")
+        if k.strip()
+    }
+    if not cta_keywords:
+        return None
+    first_msg = user_messages[0]["content"].strip().lower()
+    if first_msg not in cta_keywords:
+        return None
+    return cfg.get("phase1_opening_message", "").strip() or None
 _PROMPT_TOKEN_COST = 0.00000015
 _COMPLETION_TOKEN_COST = 0.0000006
 

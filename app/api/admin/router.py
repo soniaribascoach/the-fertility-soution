@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.models.few_shot_version import FewShotVersion
 from app.repositories.config import get_all_config, set_config
-from app.services.ai_pipeline import generate_reply
+from app.services.ai_pipeline import generate_reply, check_phase1
 from app.services.few_shots import load_few_shot_scenarios
 from app.api.admin.auth import (
     is_authenticated,
@@ -163,6 +163,11 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
     triggers = [t.strip().lower() for t in cfg.get("human_takeover_triggers", "").split("\n") if t.strip()]
     if triggers and any(t in last_user_text for t in triggers):
         return JSONResponse({"reply": None, "human_takeover": True, "takeover_reason": "keyword"})
+
+    # Phase 1 — CTA keyword bypass (first ever message only)
+    opening = check_phase1(cfg, messages)
+    if opening:
+        return JSONResponse({"reply": opening, "human_takeover": False})
 
     client = request.app.state.openai_client
     few_shot_scenarios = getattr(request.app.state, "few_shot_scenarios", {})
