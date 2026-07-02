@@ -17,7 +17,6 @@ from app.admin.views import (
     ConversationAdmin,
     UserStateAdmin,
     PendingMessageAdmin,
-    EventAdmin,
     AppConfigAdmin,
 )
 from app.db.database import engine, Base, AsyncSessionLocal
@@ -73,7 +72,6 @@ sqladmin = Admin(
 sqladmin.add_view(ConversationAdmin)
 sqladmin.add_view(UserStateAdmin)
 sqladmin.add_view(PendingMessageAdmin)
-sqladmin.add_view(EventAdmin)
 sqladmin.add_view(AppConfigAdmin)
 
 app.include_router(health.router, tags=["Health"])

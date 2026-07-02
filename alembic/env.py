@@ -12,7 +12,6 @@ sys.path.insert(0, os.getcwd())
 # Import Base and all models so Alembic knows about.md the tables
 from app.db.database import Base
 from app.models import conversation  # noqa: F401 — registers model with Base
-from app.models import event  # noqa: F401
 from app.models import config  # noqa: F401
 from app.models import pending_message  # noqa: F401
 from app.models import user_state  # noqa: F401
