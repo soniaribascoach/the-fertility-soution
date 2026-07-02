@@ -3,7 +3,6 @@ from sqladmin import ModelView
 from app.models.conversation import Conversation
 from app.models.user_state import UserState
 from app.models.pending_message import PendingMessage
-from app.models.event import Event
 from app.models.config import AppConfig
 
 
@@ -112,24 +111,6 @@ class PendingMessageAdmin(ModelView, model=PendingMessage):
         PendingMessage.processed_at,
     ]
     column_default_sort = ("received_at", True)
-
-    can_create = False
-    can_edit = False
-    can_delete = True
-    can_view_details = True
-
-
-class EventAdmin(ModelView, model=Event):
-    name = "Event"
-    name_plural = "Events"
-    icon = "fa-solid fa-bolt"
-    category = "Data"
-
-    column_list = [Event.id, Event.created_at]
-    column_details_list = [Event.id, Event.created_at, Event.event_data]
-    column_sortable_list = [Event.id, Event.created_at]
-    column_default_sort = ("created_at", True)
-    page_size = 50
 
     can_create = False
     can_edit = False

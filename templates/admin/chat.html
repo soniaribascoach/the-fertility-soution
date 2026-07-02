@@ -212,6 +212,21 @@
   const emptyEl  = document.getElementById('empty-state');
 
   const conversationHistory = [];
+  let leadState = null;
+
+  function updatePhaseChip(phase, action) {
+    let chip = document.getElementById('phase-chip');
+    if (!phase) { if (chip) chip.style.display = 'none'; return; }
+    if (!chip) {
+      chip = document.createElement('span');
+      chip.id = 'phase-chip';
+      chip.style.cssText = "font-family:'DM Sans',sans-serif; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#7c3aed; background:rgba(124,58,237,0.07); border:1px solid rgba(124,58,237,0.18); padding:2px 7px; border-radius:5px; margin-left:6px;";
+      const badge = document.querySelector('.flex.items-center.gap-2');
+      if (badge) badge.appendChild(chip);
+    }
+    chip.style.display = '';
+    chip.textContent = action ? `${phase} · ${action}` : phase;
+  }
 
   function now() {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -316,15 +331,19 @@
       const res = await fetch('/admin/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: conversationHistory }),
+        body: JSON.stringify({ messages: conversationHistory, lead_state: leadState }),
       });
       const data = await res.json();
       hideTyping();
-      if (data.human_takeover) { appendTakeoverBanner(data.takeover_reason); return; }
+      if (data.lead_state) leadState = data.lead_state;
+      updatePhaseChip(data.phase, data.action);
       if (data.reply) {
         conversationHistory.push({ role: 'assistant', content: data.reply });
         appendMessage('ai', data.reply);
-      } else {
+      }
+      if (data.human_takeover) {
+        appendTakeoverBanner(data.takeover_reason);
+      } else if (!data.reply) {
         appendMessage('ai', 'Something went wrong. Please try again.');
       }
     } catch {
@@ -340,6 +359,8 @@
     }
     toRemove.forEach(el => el.remove());
     conversationHistory.length = 0;
+    leadState = null;
+    updatePhaseChip(null);
     emptyEl.style.display = '';
   }
 
