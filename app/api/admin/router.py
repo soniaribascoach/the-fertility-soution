@@ -152,6 +152,25 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
     messages = body.get("messages", [])
 
     cfg = await get_all_config(db)
+
+    # New qualification-funnel brain (behind a config flag). The sandbox is
+    # stateless server-side, so lead_state is round-tripped via the client.
+    brain_version = (cfg.get("brain_version") or "legacy").strip().lower()
+    if brain_version == "funnel":
+        from app.services.brain import run_turn
+        result = await run_turn(
+            request.app.state.openai_client, messages, cfg,
+            body.get("lead_state"), ig_user_id="admin_sandbox",
+        )
+        return JSONResponse({
+            "reply": result.reply_text,
+            "human_takeover": result.pause,
+            "takeover_reason": result.pause_reason,
+            "lead_state": result.lead_state,
+            "phase": result.lead_state.get("phase"),
+            "action": result.action,
+        })
+
     last_user_text = next(
         (m["content"].lower() for m in reversed(messages) if m.get("role") == "user"), ""
     )

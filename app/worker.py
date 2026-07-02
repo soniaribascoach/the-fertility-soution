@@ -13,8 +13,9 @@ from app.repositories.pending_message import (
     mark_batch_processed,
     release_stale_locks,
 )
-from app.repositories.user_state import is_ai_paused, pause_ai
+from app.repositories.user_state import is_ai_paused, pause_ai, get_lead_state, save_lead_state
 from app.services.ai_pipeline import generate_reply, check_phase1
+from app.services.brain import run_turn, HUMAN_REVIEW_TAG
 from app.services.message_splitter import split_reply
 from app.services.output_parser import parse_ai_output
 from app.services.typing_delay import calculate_delay
@@ -82,6 +83,14 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
 
             batch_texts = [r.content.lower() for r in rows]
             cfg = await get_all_config(db)
+
+            # New qualification-funnel brain (behind a config flag for safe rollout).
+            brain_version = (cfg.get("brain_version") or "legacy").strip().lower()
+            if brain_version == "funnel":
+                await _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state)
+                await mark_batch_processed(db, ig_user_id)
+                logger.info("Processed conversation (funnel) for user %s", ig_user_id)
+                return
 
             if any(_is_media_url(txt) for txt in batch_texts):
                 logger.info("Media message detected (batch) for user %s", ig_user_id)
@@ -165,3 +174,49 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
         logger.exception("Error handling conversation for user %s", ig_user_id)
     finally:
         _processing_users.discard(ig_user_id)
+
+
+async def _send_bubbles(app_state, manychat_contact_id: str, text: str) -> None:
+    chunks = split_reply(text)
+    await asyncio.sleep(calculate_delay(chunks[0], settings.max_typing_delay))
+    for i, chunk in enumerate(chunks):
+        if i > 0:
+            await asyncio.sleep(calculate_delay(chunk, settings.max_typing_delay))
+        await app_state.manychat_client.send_message(manychat_contact_id, chunk)
+
+
+async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state) -> None:
+    """Run the qualification-funnel brain for one batch and apply side effects."""
+    history = await get_history(db, ig_user_id, limit=20)
+    history_dicts = [{"role": r.role, "content": r.content} for r in history]
+    lead_state = await get_lead_state(db, ig_user_id)
+
+    result = await run_turn(
+        app_state.openai_client, history_dicts, cfg, lead_state, ig_user_id=ig_user_id
+    )
+
+    await save_lead_state(db, ig_user_id, result.lead_state)
+
+    if result.reply_text:
+        await save_message(
+            db, ig_user_id, "assistant", result.reply_text,
+            token_cost=result.usage.get("token_cost"),
+            prompt_tokens=result.usage.get("prompt_tokens"),
+            completion_tokens=result.usage.get("completion_tokens"),
+            ai_model=result.usage.get("ai_model"),
+        )
+        await _send_bubbles(app_state, manychat_contact_id, result.reply_text)
+
+    if result.pause:
+        await pause_ai(db, ig_user_id, result.pause_reason or "human_handover")
+    if result.add_tag:
+        tag_id = HUMAN_REVIEW_TAG
+        if result.qualified:
+            qtag = (cfg.get("qualified_tag_id") or "").strip()
+            tag_id = int(qtag) if qtag.isdigit() else HUMAN_REVIEW_TAG
+        await app_state.manychat_client.add_tag(manychat_contact_id, tag_id)
+
+    logger.info(
+        "Brain turn for %s: action=%s phase=%s pause=%s",
+        ig_user_id, result.action, result.lead_state.get("phase"), result.pause,
+    )
