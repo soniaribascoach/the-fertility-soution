@@ -60,6 +60,21 @@ def load_few_shot_scenarios(directory: str) -> dict[str, list[dict]]:
     return scenarios
 
 
+def get_few_shot_scenarios(app_state, directory: str = "few_shots") -> dict[str, list[dict]]:
+    """Lazy accessor for the LEGACY brain's few-shots.
+
+    The funnel brain doesn't use these, so they are no longer loaded at app
+    boot. On the first legacy-path call (brain_version=legacy) they are loaded
+    once and cached on app.state; the admin few-shots editor refreshes the
+    same cache on save/rollback.
+    """
+    cached = getattr(app_state, "few_shot_scenarios", None)
+    if cached is None:
+        cached = load_few_shot_scenarios(directory)
+        app_state.few_shot_scenarios = cached
+    return cached
+
+
 def select_few_shots(
     scenarios: dict[str, list[dict]],
     conversation_text: str,

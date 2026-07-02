@@ -21,7 +21,6 @@ from app.admin.views import (
 )
 from app.db.database import engine, Base, AsyncSessionLocal
 from app.models import simulation  # noqa: F401
-from app.services.few_shots import load_few_shot_scenarios
 from app.services.manychat_client import ManyChatClient
 from app.worker import start_worker
 from config import settings
@@ -36,7 +35,8 @@ logging.basicConfig(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
-    app.state.few_shot_scenarios = load_few_shot_scenarios("few_shots")
+    # Few-shots are NOT loaded at boot: only the legacy brain uses them, and
+    # they are lazy-loaded on first legacy call (see few_shots.get_few_shot_scenarios).
     app.state.manychat_client = ManyChatClient(api_token=settings.manychat_api_token)
 
     async with engine.begin() as conn:

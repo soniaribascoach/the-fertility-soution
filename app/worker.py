@@ -16,6 +16,7 @@ from app.repositories.pending_message import (
 from app.repositories.user_state import is_ai_paused, pause_ai, get_lead_state, save_lead_state
 from app.services.ai_pipeline import generate_reply, check_phase1
 from app.services.brain import run_turn, HUMAN_REVIEW_TAG
+from app.services.few_shots import get_few_shot_scenarios
 from app.services.message_splitter import split_reply
 from app.services.output_parser import parse_ai_output
 from app.services.typing_delay import calculate_delay
@@ -139,7 +140,7 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             raw_text, usage = await generate_reply(
                 db=db,
                 openai_client=app_state.openai_client,
-                few_shot_scenarios=app_state.few_shot_scenarios,
+                few_shot_scenarios=get_few_shot_scenarios(app_state),
                 ig_user_id=ig_user_id,
                 messages=history_dicts,
                 cfg=cfg,

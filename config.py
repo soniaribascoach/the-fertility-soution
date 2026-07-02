@@ -1,6 +1,10 @@
 import re
 from pydantic_settings import BaseSettings
 
+# Product version shown in the admin UI. Bump on notable releases.
+# v1.1 = qualification-funnel brain (see specs/brain_architecture.md).
+APP_VERSION = "v1.1"
+
 
 class Settings(BaseSettings):
     environment: str = "development"

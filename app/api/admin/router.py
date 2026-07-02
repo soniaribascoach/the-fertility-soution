@@ -11,14 +11,14 @@ from app.db.database import get_db
 from app.models.few_shot_version import FewShotVersion
 from app.repositories.config import get_all_config, set_config
 from app.services.ai_pipeline import generate_reply, check_phase1
-from app.services.few_shots import load_few_shot_scenarios
+from app.services.few_shots import load_few_shot_scenarios, get_few_shot_scenarios
 from app.api.admin.auth import (
     is_authenticated,
     check_rate_limit,
     record_failed_attempt,
     reset_attempts,
 )
-from config import settings
+from config import settings, APP_VERSION
 
 FEW_SHOTS_DIR = "few_shots"
 
@@ -26,6 +26,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 templates.env.filters["fromjson"] = lambda s: _json.loads(s) if s else {}
 templates.env.filters["split_bubbles"] = lambda s: [b.strip() for b in s.split("\n\n") if b.strip()] or [s]
+templates.env.globals["app_version"] = APP_VERSION
 
 CONFIG_KEYS = [
     "phase1_cta_keywords", "phase1_opening_message",
@@ -189,8 +190,7 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
         return JSONResponse({"reply": opening, "human_takeover": False})
 
     client = request.app.state.openai_client
-    few_shot_scenarios = getattr(request.app.state, "few_shot_scenarios", {})
-    raw_text, _ = await generate_reply(db, client, few_shot_scenarios, "admin_sandbox", messages)
+    raw_text, _ = await generate_reply(db, client, get_few_shot_scenarios(request.app.state), "admin_sandbox", messages)
     return JSONResponse({"reply": raw_text, "human_takeover": False})
 
 
