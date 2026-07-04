@@ -21,6 +21,7 @@ _PLACEHOLDER_DEFAULTS = {
     "natalia_phone": "+1 (415) 694-1799",
     "monika_phone": "+1 (647) 992-6383",
     "price_range": "$1,500 to $14,000",
+    "price_range_es": "$1,500 a $14,000",
 }
 
 # config key -> placeholder name (lets admins override any of the above)
@@ -33,6 +34,7 @@ _CONFIG_OVERRIDES = {
     "natalia_phone": "natalia_phone",
     "monika_phone": "monika_phone",
     "price_range": "price_range",
+    "price_range_es": "price_range_es",
 }
 
 
@@ -334,9 +336,236 @@ SCRIPTS: dict[Action, str] = {
         "Sorry but our meetings and program wouldn't be suitable for your needs. I'm very "
         "sorry for that. I wish you all the best."
     ),
-    Action.OOS_LANGUAGE_BARRIER: (
-        "Hi sister! I understand your situation. However, all my programs and meetings are "
-        "conducted in English. Sorry about that."
+}
+
+
+# --- Spanish registry ---------------------------------------------------------
+# Same actions and placeholders as SCRIPTS, in warm, Latin-American-neutral
+# Spanish (informal "tu"). Covers every action the controller can reach; dormant
+# actions (POST_BOOKING_*, BOOKING_WHO_*, unreferenced explain-role variants,
+# OLD_CONVO, COLD_OUTREACH) intentionally fall back to English via render().
+# DRAFT copy: pending client (Sonia) review before go-live.
+
+SCRIPTS_ES: dict[Action, str] = {
+    # Priority qualification (Phase 3)
+    Action.ASK_PRIORITY: (
+        "En una escala del 1 al 10, ¿qué tan prioritario es para ti quedar embarazada en "
+        "este momento?"
+    ),
+    Action.REENGAGE_LOW_PRIORITY: (
+        "Con 15 años de experiencia y resultados comprobados en todo el mundo, confío en que "
+        "podemos lograr avances juntas en tu camino a la maternidad. Mi método es muy "
+        "efectivo con clientas que se comprometen de lleno con el proceso. ¿Estás lista para "
+        "dedicarte a este camino?"
+    ),
+    Action.LOW_PRIORITY_INFO_GATHERING: (
+        "Mi trabajo es más efectivo con mujeres y parejas que están totalmente comprometidas "
+        "a hacer de la fertilidad una prioridad. ¿Sientes que estás lista para enfocarte en "
+        "esto ahora, o estás más en una etapa de buscar información?"
+    ),
+    Action.NURTURE_CLOSE: (
+        "Gracias por ser tan honesta conmigo. Parece que el mejor paso por ahora es mi "
+        "masterclass gratuita y mis recursos, y cuando te sientas lista para enfocarte de "
+        "verdad en esto, aquí estaré para ti.\n\n{register_link}"
+    ),
+
+    # Explain role (Phase 4)
+    Action.EXPLAIN_ROLE: (
+        "Para que quede claro, soy coach de fertilidad, no soy doctora ni una clínica de "
+        "fertilidad. No realizo FIV, no receto medicamentos ni reemplazo la atención médica.\n\n"
+        "Mi trabajo es un enfoque holístico de la fertilidad, altamente personalizado y "
+        "respaldado por la investigación. Miro el panorama completo de lo que puede estar "
+        "afectando tu capacidad de concebir y lo que tu cuerpo puede necesitar para sentirse "
+        "más seguro, más sano y mejor preparado para el embarazo.\n\n"
+        "Según el caso, esto puede incluir cosas como nutrición, inflamación, hormonas, "
+        "calidad de óvulos y esperma, regulación del sistema nervioso, sueño, estilo de vida, "
+        "tiempos, estrés, salud intestinal, salud metabólica y mucho más. Pero no se limita a "
+        "eso, porque cada mujer y cada pareja es diferente.\n\n"
+        "Por eso me gusta entender primero tu situación específica antes de decir si puedo "
+        "ayudarte.\n\n"
+        "¿Es ese el tipo de apoyo que estás buscando?"
+    ),
+    Action.EXPLAIN_ROLE_TFS3: (
+        "Claro, entiendo perfectamente que quieras saber más sobre mi método y mis "
+        "resultados. Tengo una sólida trayectoria ayudando a mujeres como tú a lograr su "
+        "sueño de ser madres.\n\n"
+        "Puedes ver testimonios de clientas en mi sitio web: {website}\n\n"
+        "También puedes revisar mi perfil de IG, está lleno de testimonios: {ig_highlights}\n\n"
+        "Y mira mi masterclass gratuita para entender mejor mis métodos y ver casos reales: "
+        "{watch_replay}"
+    ),
+    Action.EXPLAIN_ROLE_CONFIRM: "¿Es ese el tipo de apoyo que estás buscando?",
+
+    # Financial readiness (Phase 5)
+    Action.FINANCIAL_CHECK: (
+        "Para que lo sepas, si decidimos que encajamos bien, este es un programa de coaching "
+        "pago que requiere tiempo, energía y compromiso económico. ¿Es algo a lo que estarías "
+        "abierta si sientes que es lo correcto para ti?"
+    ),
+    Action.FINANCIAL_DECLINE: (
+        "Gracias por ser honesta conmigo. Quizás sea mejor empezar por ahora con la "
+        "masterclass gratuita y mis recursos, y cuando te sientas lista para un apoyo más "
+        "profundo, aquí estaré.\n\n"
+        "{register_link}"
+    ),
+
+    # Partner / decision-maker (Phase 6)
+    Action.PARTNER_CHECK: (
+        "Como la fertilidad suele ser una decisión de equipo, recomiendo mucho que ambos "
+        "estén en la llamada para que todos estemos alineados desde el principio. ¿Estás en "
+        "esto con tu pareja, o lo estás llevando por tu cuenta?"
+    ),
+    Action.PARTNER_ASK_JOIN: "¿Tu pareja podría acompañarte en la llamada?",
+    Action.PARTNER_PUSHBACK: (
+        "Usaremos esta reunión para ver si somos un buen equipo para trabajar juntas y "
+        "ayudarte a quedar embarazada. Por eso necesitamos que estén todas las personas que "
+        "toman la decisión. Si tu pareja decide contigo, lo necesitamos ahí. Si tú eres la "
+        "única que toma la decisión y puedes decidir sobre esta inversión en tu embarazo, "
+        "eres bienvenida a venir sola, lista para tomar decisiones poderosas para ti y tu "
+        "familia."
+    ),
+
+    # Booking (Phase 7)
+    Action.SEND_BOOKING: (
+        "Por lo que me cuentas, creo que vale la pena que hables con mi equipo para ver si "
+        "puedo ayudarte y cómo.\n\n"
+        "Aquí tienes el enlace para agendar tu llamada: {booking_link}\n\n"
+        "Por favor elige un horario en el que puedan estar ambos si tu pareja es parte de la "
+        "decisión. Si estás en esto por tu cuenta, por supuesto puedes venir sola.\n\n"
+        "Cuando agendes, envíame el correo que usaste para confirmarlo de nuestro lado."
+    ),
+    Action.BOOKING_IS_IT_SONIA: (
+        "La primera llamada es con mi equipo, para entender bien tu situación y ver si esto "
+        "es lo indicado para ti. Si todas decidimos que somos un gran equipo para trabajar "
+        "juntas, yo seré tu única coach dentro del programa y estaré contigo en cada paso "
+        "del camino."
+    ),
+    Action.BOOKING_CALL_PROCESS: (
+        "La primera sesión es para conocernos, ver dónde estás y si puedo ayudarte a lograr "
+        "tu sueño y cómo.\n\n"
+        "Soy coach de fertilidad con un 70% de éxito entre miles de parejas en todo el "
+        "mundo. Mi éxito se debe a 2 factores: 1. mi programa es realmente efectivo. "
+        "2. soy muy selectiva.\n\n"
+        "En la sesión te diré si puedo cambiar tu vida o no. Si puedo, te daré opciones y "
+        "toda la información para que tomes una decisión totalmente informada sobre si "
+        "quieres trabajar conmigo o no."
+    ),
+
+    # Advice / price / misc deflections
+    Action.ADVICE_DEFLECT: (
+        "Sería muy cuidadosa dándote consejos genéricos sin entender tu situación completa, "
+        "porque la fertilidad depende mucho de cada caso. El mejor siguiente paso sería "
+        "hablar con mi equipo para conocerte bien, entender qué has intentado y ver si puedo "
+        "ayudarte y cómo. ¿Puedo preguntarte cuánto tiempo llevan intentando y qué han hecho "
+        "hasta ahora?"
+    ),
+    Action.ADVICE_DEFLECT_LATE: (
+        "Sería muy cuidadosa dándote consejos genéricos sin entender tu situación completa, "
+        "porque la fertilidad depende mucho de cada caso. El mejor siguiente paso es hablar "
+        "con mi equipo para revisar tu caso específico y ver si puedo ayudarte y cómo."
+    ),
+    Action.ADVICE_DEFLECT_PUSH: (
+        "Normalmente hay muchos factores involucrados y depende de tu caso específico. Yo "
+        "miro el panorama completo, incluyendo nutrición, inflamación, estilo de vida, "
+        "hormonas, estrés y mucho más, pero no querría asumir qué es lo más importante para "
+        "ti sin entender primero tu situación. ¿Cuánto tiempo llevan intentando y qué han "
+        "probado hasta ahora?"
+    ),
+    Action.ADVICE_DEFLECT_PUSH_LATE: (
+        "Normalmente hay muchos factores involucrados y realmente depende de tu caso "
+        "específico. Miro el panorama completo en lugar de un solo síntoma o análisis, pero "
+        "el paso más útil es una conversación donde revisemos tu situación como corresponde."
+    ),
+    Action.PRICE_DEFLECT: (
+        "Depende del nivel de apoyo que cada persona necesita, así que no doy un número al "
+        "azar antes de entender tu situación. El primer paso es ver si realmente puedo "
+        "ayudarte y qué tipo de apoyo tendría sentido para ti. ¿Puedo preguntarte cuánto "
+        "tiempo llevan intentando y qué han hecho hasta ahora?"
+    ),
+    Action.PRICE_DEFLECT_LATE: (
+        "Depende del nivel de apoyo que cada persona necesita, así que no doy un número al "
+        "azar antes de entender tu situación. Déjame asegurarme primero de que esto es lo "
+        "indicado para ti, y de ahí revisamos todo lo demás."
+    ),
+    Action.PRICE_RANGE: (
+        "Los programas normalmente van de {price_range_es} según el nivel de apoyo. Lo más "
+        "importante es asegurarnos de que este sea el apoyo correcto para tu cuerpo y tu "
+        "situación."
+    ),
+    Action.PRICE_RANGE_FIRM: (
+        "Como te comenté, realmente depende y está dentro de ese rango de {price_range_es}. "
+        "La mejor forma de saber qué necesitarías es en la llamada, donde adaptamos todo a "
+        "tu situación."
+    ),
+    Action.PHONE_NUMBER_DEFLECT: (
+        "Solo tomo llamadas para citas confirmadas. Si quieres hablar conmigo o con mi "
+        "equipo, puedes agendarlo reservando tu llamada. Avísame si quieres que te envíe el "
+        "enlace para agendar."
+    ),
+    Action.MASTERCLASS_SEND: (
+        "¡Hola hermosa! Gracias por tu interés en lo que hago. :) Aquí tienes el enlace. "
+        "{register_link}\n\n"
+        "Cuéntame qué te pareció después de verla."
+    ),
+    Action.SOCIAL_PROOF: (
+        "Llevo más de 16 años haciendo este trabajo y he ayudado a dar la bienvenida a más "
+        "de 700 bebés, así que soy muy selectiva para asegurarme de que esto sea lo indicado "
+        "antes de invitar a alguien a una llamada."
+    ),
+    Action.PAYING_TWICE: (
+        "Podría haber algo de información parecida, pero ofrecemos mucho más que consejos. "
+        "Tenemos nutrición personalizada, sesiones de coaching privadas y grupales, una "
+        "amplia fuente de recursos educativos y una gran comunidad de mujeres con tu misma "
+        "meta que se apoyan entre sí durante este camino."
+    ),
+    Action.IVF_ONLY_OFFER: (
+        "Si la FIV es el mejor camino para ti médicamente, aún puedo ayudarte optimizando "
+        "tus probabilidades de éxito. Acompaño el panorama completo de la fertilidad y la "
+        "preparación para la FIV con un enfoque holístico, altamente personalizado y "
+        "respaldado por la investigación. ¿Es algo que te interesa?"
+    ),
+    Action.TROUBLE_BOOKING: (
+        "Lo siento. ¿Viste algún mensaje de error? ¿Puedes enviarme una captura de pantalla "
+        "para revisarlo de mi lado? Deberías recibir un correo de confirmación después de "
+        "agendar y ver la página de confirmación.\n\n"
+        "Si no viste esa página, por favor vuelve a agendar."
+    ),
+    Action.NO_MONEY: (
+        "Gracias por ser honesta. Si en algún momento te sientes totalmente lista para "
+        "comprometerte con esto, aquí estaré para ti."
+    ),
+
+    # Out-of-scope clarifying questions
+    Action.ASK_BOTH_TUBES: "¿Están bloqueadas ambas trompas, o solo una?",
+    Action.ASK_MENOPAUSE_REASON: (
+        "Gracias por contarme. ¿Puedo preguntarte cuál es la razón por la que ya no te llega "
+        "el periodo?"
+    ),
+    Action.ASK_MENOPAUSE_AGE: "Entiendo. ¿Y puedo preguntarte cuántos años tienes?",
+
+    # Out-of-scope terminal messages (paired with human takeover)
+    Action.OOS_BOTH_TUBES: (
+        "Si ambas trompas están completamente bloqueadas, el coaching no puede hacer que el "
+        "óvulo pase por las trompas, y no lo presentaría como algo que el coaching por sí "
+        "solo pueda resolver. No soy una clínica de fertilidad y no realizo FIV. En este "
+        "caso, solo puedo ayudarte si también estás haciendo FIV, porque puedo apoyarte "
+        "optimizando tu cuerpo, la inflamación, las hormonas, la calidad de tus óvulos, la "
+        "nutrición, tu sistema nervioso y tu preparación para la FIV, para mejorar tus "
+        "probabilidades de éxito."
+    ),
+    Action.OOS_MENOPAUSE: (
+        "Gracias por ser tan transparente conmigo. Por lo que me cuentas, esto puede estar "
+        "fuera del alcance de lo que puedo ayudar a través del coaching. Lo siento mucho y "
+        "te deseo lo mejor."
+    ),
+    Action.OOS_AGE_OVER_46: (
+        "Gracias por contármelo. Como la edad puede cambiar lo que es realista y qué tipo de "
+        "apoyo es apropiado, quiero revisar esto con cuidado antes de orientarte en una "
+        "dirección equivocada."
+    ),
+    Action.OOS_DEAF: (
+        "Lo siento, pero nuestras reuniones y nuestro programa no serían adecuados para lo "
+        "que necesitas. Lo lamento mucho y te deseo lo mejor."
     ),
 }
 
@@ -374,6 +603,36 @@ AFFIRMATIONS = [
     "Thank you for being honest with me.",
 ]
 
+# Spanish counterparts of the banks above (same keys/order). DRAFT copy,
+# pending client review.
+EMPATHY_VARIANTS_ES = {
+    "hopeless": (
+        "Siento mucho que estés pasando por esto. Puede ser muy difícil, pero no estás sola "
+        "en este camino. Estoy aquí para ayudarte."
+    ),
+    "neutral": "Admiro lo comprometida que estás con este camino. Gracias por contarme.",
+    "misfortune": (
+        "Siento mucho que estés pasando por esto. Entiendo lo difícil que debe haber sido, "
+        "pero el hecho de que sigas adelante a pesar de estos desafíos me dice que eres "
+        "fuerte y resiliente. Gracias por contarme."
+    ),
+}
+
+DISCOVERY_QUESTIONS_ES = {
+    "trying_duration": "¿Cuánto tiempo llevan intentando y qué han probado hasta ahora?",
+    "age": "¿Cuántos años tienes?",
+    "treatment_path": "¿Están intentando de forma natural, haciendo IIU, FIV, o todavía lo están decidiendo?",
+    "done_testing": "¿Ya se han hecho estudios de fertilidad?",
+    "diagnosis": "¿Algún doctor les ha dado un diagnóstico específico?",
+}
+
+AFFIRMATIONS_ES = [
+    "Gracias por contarme. Eso me da un mejor panorama.",
+    "Entendido, eso me ayuda.",
+    "Tiene sentido.",
+    "Gracias por ser honesta conmigo.",
+]
+
 # Follow-up sequences (used by a follow-up scheduler, not the live turn flow).
 FOLLOWUPS = {
     "confirm_booking_1": (
@@ -407,15 +666,19 @@ FOLLOWUPS = {
 
 # --- Renderer ----------------------------------------------------------------
 
-def render(action: Action, cfg: dict | None = None) -> str:
+def render(action: Action, cfg: dict | None = None, language: str = "en") -> str:
     """Render a scripted action's verbatim text with config placeholders filled.
 
-    Raises KeyError on an unknown action, and asserts no placeholder was left
-    unfilled (so a typo'd template fails loudly in tests, never in production).
+    `language="es"` renders the Spanish template, falling back to English for
+    actions without a Spanish version (dormant ones). Raises KeyError on an
+    unknown action, and asserts no placeholder was left unfilled (so a typo'd
+    template fails loudly in tests, never in production).
     """
-    if action not in SCRIPTS:
+    registry = SCRIPTS_ES if language == "es" else SCRIPTS
+    template = registry.get(action) or SCRIPTS.get(action)
+    if template is None:
         raise KeyError(f"No script template for action {action!r}")
-    text = SCRIPTS[action].format(**placeholders(cfg))
+    text = template.format(**placeholders(cfg))
     assert "{" not in text and "}" not in text, (
         f"Unfilled placeholder in rendered {action!r}: {text!r}"
     )

@@ -33,6 +33,7 @@ class TurnDirective:
     allow_price_figure: bool = False
     max_chars: int = 400               # length budget for the generated message
     pinned_text: Optional[str] = None  # exact text for non-generated modes (OOS)
+    language: str = "en"               # en | es — the lead's sticky language
     # side effects (passthrough from the Decision)
     send_message: bool = True
     pause: bool = False
@@ -54,6 +55,7 @@ class _ModeSpec:
 
 
 _DISCLAIMER_KEY = "not a doctor"
+_DISCLAIMER_KEY_ES = "no soy doctora"  # exact phrase in the ES EXPLAIN_ROLE script
 
 # Per-action generation spec. Anything not listed uses a safe generic default.
 _SPEC = {
@@ -117,7 +119,6 @@ _SPEC = {
     Action.OOS_MENOPAUSE: _ModeSpec("OOS", "", generate=False),
     Action.OOS_AGE_OVER_46: _ModeSpec("OOS", "", generate=False),
     Action.OOS_DEAF: _ModeSpec("OOS", "", generate=False),
-    Action.OOS_LANGUAGE_BARRIER: _ModeSpec("OOS", "", generate=False),
 }
 
 _DEFAULT_SPEC = _ModeSpec("MISC", "Respond warmly and briefly, staying on the conversation's goal.")
@@ -185,8 +186,10 @@ def _explain_role_style(ig_user_id: str) -> tuple:
     return _EXPLAIN_ROLE_A
 
 
-def _price_tokens(cfg: Optional[dict]) -> list:
-    value = scripts.placeholders(cfg).get("price_range", "")
+def _price_tokens(cfg: Optional[dict], language: str = "en") -> list:
+    # must_include has to match the figures the language's script renders.
+    key = "price_range_es" if language == "es" else "price_range"
+    value = scripts.placeholders(cfg).get(key, "")
     return re.findall(r"\$[\d,]+", value)
 
 
@@ -209,14 +212,15 @@ def _still_needed(state: dict) -> list:
 def build_directive(decision, cfg: Optional[dict] = None, ig_user_id: str = "") -> TurnDirective:
     action = decision.action
     state = decision.lead_state
+    language = state["slots"].get("language") or "en"
 
-    # Human takeover sends nothing.
-    if action == Action.HUMAN_TAKEOVER:
+    # Human takeover (incl. unsupported language) sends nothing.
+    if action in (Action.HUMAN_TAKEOVER, Action.UNSUPPORTED_LANGUAGE):
         return TurnDirective(
             mode="TAKEOVER", action=action, generate=False, objective="",
             reference_text="", pinned_text=None, send_message=False,
             pause=decision.pause, pause_reason=decision.pause_reason,
-            add_tag=decision.add_tag, lead_state=state,
+            add_tag=decision.add_tag, lead_state=state, language=language,
         )
 
     spec = _SPEC.get(action, _DEFAULT_SPEC)
@@ -233,40 +237,43 @@ def build_directive(decision, cfg: Optional[dict] = None, ig_user_id: str = "") 
     elif override:
         reference_text = override[0]
     elif action in scripts.SCRIPTS:
-        reference_text = scripts.render(action, cfg)
+        reference_text = scripts.render(action, cfg, language)
     else:
         reference_text = ""
 
-    # Pinned / non-generated (OOS declines).
+    # Pinned / non-generated (OOS declines) — verbatim, in the lead's language.
     if not spec.generate:
         return TurnDirective(
             mode=spec.mode, action=action, generate=False, objective=spec.objective,
-            reference_text=scripts.render(action, cfg) if action in scripts.SCRIPTS else "",
-            pinned_text=scripts.render(action, cfg) if action in scripts.SCRIPTS else "",
+            reference_text=scripts.render(action, cfg, language) if action in scripts.SCRIPTS else "",
+            pinned_text=scripts.render(action, cfg, language) if action in scripts.SCRIPTS else "",
             send_message=decision.send_message, pause=decision.pause,
             pause_reason=decision.pause_reason, add_tag=decision.add_tag,
-            qualified=decision.qualified, lead_state=state,
+            qualified=decision.qualified, lead_state=state, language=language,
         )
 
     allow_urls = [ph[name] for name in spec.url_names if ph.get(name)]
     must_include = list(allow_urls) if spec.require_urls else []
     if spec.price:
-        must_include += _price_tokens(cfg)
+        must_include += _price_tokens(cfg, language)
 
     known_facts = {k: state["slots"][k] for k in _FACT_KEYS if state["slots"].get(k)}
     if action == Action.ASK_DISCOVERY and decision.composer_brief:
         known_facts = decision.composer_brief.get("facts_to_reflect", known_facts)
 
     max_chars = override[1] if override else (900 if action in _LONG_ACTIONS else 400)
+    if language == "es":
+        max_chars = int(max_chars * 1.2)  # Spanish runs ~15-20% longer
 
+    disclaimer_key = _DISCLAIMER_KEY_ES if language == "es" else _DISCLAIMER_KEY
     return TurnDirective(
         mode=spec.mode, action=action, generate=True, objective=spec.objective,
         reference_text=reference_text, known_facts=known_facts,
         still_needed=_still_needed(state), must_include=must_include,
         allow_urls=allow_urls, allow_price_figure=spec.price,
         max_chars=max_chars,
-        pinned_text=(_DISCLAIMER_KEY if spec.disclaimer else None),
+        pinned_text=(disclaimer_key if spec.disclaimer else None),
         send_message=decision.send_message, pause=decision.pause,
         pause_reason=decision.pause_reason, add_tag=decision.add_tag,
-        qualified=decision.qualified, lead_state=state,
+        qualified=decision.qualified, lead_state=state, language=language,
     )

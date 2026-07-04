@@ -1,6 +1,6 @@
 # AI Brain Architecture — The Fertility Solution DM Bot
 
-**Status:** implemented & tested (106 tests passing), active behind a config flag.
+**Status:** implemented & tested (~148 tests passing), active behind a config flag. Bilingual (English/Spanish) since July 2026; Spanish copy pending client review.
 **Read this first if you're a new session.** This single document is the full
 context for the qualification-funnel "brain" that generates Sonia's DM replies.
 Source of product requirements: [`sonia_feedback_spec.md`](./sonia_feedback_spec.md).
@@ -13,6 +13,9 @@ All brain code lives in `app/services/brain/`.
 - The brain turns an inbound Instagram DM into Sonia's next reply.
 - Its #1 goal: **qualify leads and protect the calendar** — never book too early,
   never hallucinate links/prices/medical advice, never sound like a script robot.
+- It is **bilingual (English + Spanish)**: the whole funnel runs in the lead's
+  language (sticky `language` slot, extracted per turn). Any OTHER language →
+  **silence** + pause + review tag (never a decline she can't read).
 - It went through **two designs**: v1 (fully scripted) → paused for feeling robotic;
   v2 (**Soft Director + Generative Voice**, current) fixed that. This doc describes v2.
 - If you're changing behavior: the **flow/gates are deterministic code** (`controller.py`),
@@ -57,11 +60,11 @@ verbatim/validated output (no hallucinated links, prices, or medical advice).
 | # | Stage | LLM? | What it does |
 |---|---|---|---|
 | 0 | **Safety gate** | No | Media-URL message, `medical_blocklist` phrase, or `human_takeover_triggers` phrase → pause + tag, short-circuit. |
-| 1 | **Phase-1 CTA bypass** | No | If the *only* user message so far exactly equals a `phase1_cta_keywords` entry → return the verbatim `phase1_opening_message`. |
-| 2 | **Extractor** | **Yes #1** | Reads recent turns + current slots → strict JSON: slot deltas, `intent`, `situation_type`, `oos_signal`, `takeover`. Never writes user-facing text. `gpt-4o-mini`, temp 0. |
-| 3 | **Director** (`controller.decide`) | No | Merges slot deltas; picks the SINGLE next `Action`; enforces the booking gate, OOS/takeover, loop guard, terminal handoffs. |
+| 1 | **Phase-1 CTA bypass** | No | If the *only* user message so far exactly equals a `phase1_cta_keywords` entry → return the verbatim `phase1_opening_message`. CTA keywords are English-campaign only and carry no language signal; Spanish is entered when the lead's first real message is read by the extractor. |
+| 2 | **Extractor** | **Yes #1** | Reads recent turns + current slots → strict JSON: slot deltas, `intent`, `situation_type`, `oos_signal`, `language` (en\|es\|other\|unclear), `takeover`. Never writes user-facing text. `gpt-4o-mini`, temp 0. |
+| 3 | **Director** (`controller.decide`) | No | Merges slot deltas; updates the sticky `language` slot (confident en/es reads only; `unclear` keeps it; `other` → silent `UNSUPPORTED_LANGUAGE` takeover); picks the SINGLE next `Action`; enforces the booking gate, OOS/takeover, loop guard, terminal handoffs. |
 | 4 | **build_directive** | No | Maps the `Action` → a `TurnDirective`: mode, objective, reference language, `must_include`, `allow_urls`, `allow_price_figure`, `max_chars`, pinned text, and pause/tag/qualified flags. |
-| 5 | **Voice** | Voice only | Non-generated actions (OOS declines) return pinned verbatim text; `HUMAN_TAKEOVER` returns no text. Everything else → `voice.generate()` (LLM #2, `gpt-4o-mini`, temp 0.6) → `validate_generated()` → regenerate once at temp 0 → **fall back to the verbatim approved script** if still invalid. |
+| 5 | **Voice** | Voice only | Non-generated actions (OOS declines) return pinned verbatim text **in the lead's language**; `HUMAN_TAKEOVER`/`UNSUPPORTED_LANGUAGE` return no text. Everything else → `voice.generate()` (LLM #2, `gpt-4o-mini`, temp 0.6; Spanish persona addendum + Spanish few-shots when `language=es`) → `validate_generated()` → regenerate once at temp 0 → **fall back to the verbatim approved script** (in the lead's language) if still invalid. |
 | 6 | **Finalize** | No | Returns `TurnResult`; the worker sends bubbles, pauses, tags, and persists `lead_state`. |
 
 `TurnResult`: `reply_text`, `pause`, `pause_reason`, `add_tag`, `qualified`, `action`, `usage`, `violations`, `lead_state`.
@@ -78,9 +81,10 @@ verbatim/validated output (no hallucinated links, prices, or medical advice).
 | `app/services/brain/controller.py` | **The Director.** `decide()` state machine, `booking_gate`, `_financial_ok`, `_guard_repeats`, OOS/menopause/takeover, terminal handoffs. Pure, no LLM. |
 | `app/services/brain/directive.py` | `TurnDirective` + `build_directive()`: Action→mode mapping, `_GUIDANCE` (short varied reference), `_explain_role_style` (A/B picker), URL/price/length constraints. |
 | `app/services/brain/voice.py` | LLM #2. `generate()` writes the message from a directive + few-shots + Sonia persona; smart-quote/dash normalization. |
-| `app/services/brain/scripts.py` | The verbatim **reference + fallback + pinned** library: every approved message keyed by `Action`, empathy variants, discovery questions, follow-ups, config placeholders + `render()`. |
+| `app/services/brain/scripts.py` | The verbatim **reference + fallback + pinned** library: every approved message keyed by `Action` (`SCRIPTS` + Spanish `SCRIPTS_ES` covering the reachable set, EN fallback for dormant actions), empathy variants / discovery questions / affirmations in both languages, follow-ups, config placeholders + `render(action, cfg, language)`. |
 | `app/services/brain/validator.py` | `validate()` (verbatim check) + `validate_generated()` (mode-aware guardrails on generated text). |
 | `app/worker.py` | `_run_brain_turn` — calls `run_turn`, applies side effects (send/split/typing, pause, tag, persist). Behind the `brain_version` flag. |
+| `app/services/resume.py` | `resume_lead` — re-arms the AI after a human takeover (clears pause + terminal flags via `constants.resume_lead_state`). Called by `POST /webhook/resume` (ManyChat tag automation) and the admin dashboard (§8). |
 | `app/api/admin/router.py` (`/admin/chat`) | Sandbox: calls `run_turn` synchronously, round-trips `lead_state`. |
 | `app/repositories/user_state.py` | `get_lead_state` / `save_lead_state` (persist funnel state on the `user_state` row). |
 
@@ -97,7 +101,8 @@ Carried forward turn-to-turn (never recomputed from scratch). `normalize_lead_st
 `strong_readiness`, `understands_role`, `open_to_holistic`, `financial_ready`,
 `partner_status` (couple|solo|donor|single_by_choice), `partner_is_decision_maker`,
 `partner_can_join`, `email_collected`, `closer_assigned`, `tubes_blocked` (none|one|both),
-`no_period_reason`, `ivf_interest`.
+`no_period_reason`, `ivf_interest`, `language` (en|es, **sticky**: set only on a
+confident per-turn read; `None` = not yet observed = treated as en).
 
 **Flags** (progress/control): `booking_sent`, `masterclass_sent`, `explained_role`,
 `asked_priority`, `situation_shared`, `handed_off` (conversation ended), `cost_declined`
@@ -164,6 +169,7 @@ exist but are no longer reached.
 All end the turn with `pause=True` + a review tag. Covered by `tests/brain/test_takeover.py` (live).
 
 **Deterministic (code, from extracted slots — do NOT rely on the LLM flag):**
+- **Unsupported language** (extracted `language == "other"`, i.e. neither English nor Spanish) → `UNSUPPORTED_LANGUAGE`: **silence** (no text she can't read), pause + review tag. Checked BEFORE the OOS declines below (those are outgoing en/es text). A `language` of `unclear` (short "ok"/"si" turns) keeps the sticky slot; `other` never overwrites it.
 - **Age > 46** → `OOS_AGE_OVER_46` (46 exactly still continues). *This was a real bug: it used to rely on the LLM's `oos_signal` and missed age 48.*
 - **Both tubes blocked** (`tubes_blocked == "both"`) → `OOS_BOTH_TUBES`.
 - **Menopause** (age-first): 40+ with a menopause/no-period signal → `OOS_MENOPAUSE`; < 40 asks the reason then continues if benign.
@@ -179,7 +185,44 @@ also route here but aren't in the deterministic test set.
 **Config phrase gate (Stage 0):** any phrase in `human_takeover_triggers` or `medical_blocklist`
 also pauses (a separate, admin-editable safety net).
 
-**OOS declines (`OOS_*`) are sent VERBATIM** (not generated) — sensitive language stays exact.
+**OOS declines (`OOS_*`) are sent VERBATIM** (not generated) — sensitive language stays exact,
+rendered from `SCRIPTS_ES` when the lead's language is Spanish.
+
+### Resuming after a takeover (the "Resume AI" feature)
+
+Once a human has resolved a paused conversation they can re-arm the AI. Resume
+**only re-arms** — the AI stays silent until the lead's next DM, then the funnel
+picks up from the preserved slots/flags.
+
+`app/services/resume.py: resume_lead()` (shared by both surfaces) clears the
+pause row (`is_ai_paused`/`paused_at`/`pause_reason`) **and** the terminal
+control flags via the pure helper `constants.resume_lead_state()`:
+`handed_off`, `cost_declined`, `oos_reason`, `takeover_reason`, the loop guard
+(`last_prompt` + `repeat_count`). Clearing the pause alone is NOT enough —
+`handed_off` keeps `decide()` silent and `cost_declined` instantly re-triggers
+takeover. Slots (facts) and progress flags (`booking_sent`, `explained_role`, …)
+are preserved. Idempotent. Pure tests: `tests/brain/test_resume.py`.
+
+**Surfaces:**
+- **ManyChat (primary)** — `POST /webhook/resume` accepts the ManyChat contact
+  payload (uses `ig_id`); auth = the usual HMAC signature **or** the shared
+  secret verbatim in an `X-Manychat-Secret` header (ManyChat's External Request
+  node can't compute HMACs). One-time ManyChat setup:
+  1. Create a tag **"Resume AI"**.
+  2. Automation → Rules: *Tag applied "Resume AI"* → *Start flow "Resume AI hook"*.
+  3. Flow "Resume AI hook" (sends nothing to the lead): External Request node —
+     `POST https://<host>/webhook/resume`, header `X-Manychat-Secret: <MANYCHAT_WEBHOOK_SECRET>`,
+     body = Full Contact Data — then an action removing the "Resume AI" tag
+     (and optionally the human-review tag).
+  4. Day-to-day: the agent finishes in Live Chat and adds the "Resume AI" tag. Done.
+- **Admin (fallback)** — the `/admin/dashboard` "Paused Leads" table lists every
+  paused lead (reason, phase, paused-at) with a Resume button
+  (`POST /admin/leads/{ig_user_id}/resume`, behind admin auth).
+
+**Caveat (by design):** slot-driven OOS pauses (age > 46, both tubes blocked)
+re-pause on the lead's next message because the slot still trips the
+deterministic gate — the safety net working. If the pause came from a
+mis-extraction, correct the slot in `/sqladmin` (UserState) before resuming.
 
 ---
 
@@ -205,6 +248,10 @@ also pauses (a separate, admin-editable safety net).
   → `open_to_holistic`; `financial_ready` only on explicit money openness; tight-budget + price
   question = `not_ready_no_money`; mild emotion ≠ distress.
 - `SlotDeltas` fields must all be in `SLOT_KEYS`; `Intent` literal must match the enum (drift-guarded by tests).
+- `language` ∈ en|es|other|unclear — classifies the lead's MOST RECENT message(s) only.
+  `other` only when clearly neither (Portuguese is "other", not Spanish); `unclear` for
+  short/ambiguous turns so the controller keeps the sticky value. Slots are extracted
+  from Spanish text just like English.
 
 ---
 
@@ -219,6 +266,10 @@ also pauses (a separate, admin-editable safety net).
   honesty", "I admire", …); vary wording; light human imperfections (occasional lowercase/
   fragments) but never mangle a link/number/the disclaimer. `gpt-4o-mini`, temp 0.6.
 - `_normalize()` straightens smart quotes and dashes.
+- **Spanish**: when `directive.language == "es"` the system prompt gets a Spanish addendum
+  (Latin-American-neutral, always "tú", banned Spanish openers, never mix English) and the
+  few-shots are swapped wholesale for `_EXAMPLES_ES` (mixing English exemplars with a
+  "reply in Spanish" instruction invites English drift on gpt-4o-mini).
 - Model choice: kept on `gpt-4o-mini` (client decision). It resists heavy "messiness"; a stronger
   model is the lever if noticeably-messier tone is ever wanted.
 
@@ -231,8 +282,8 @@ also pauses (a separate, admin-editable safety net).
 - **Price gating** — `$`+digits only if `allow_price_figure`.
 - **`must_include`** — required substrings present (booking/masterclass URL, closer phone, price figure).
 - **Disclaimer** — if the directive pins it, the "not a doctor" phrase must appear.
-- **No medical advice** — regex denylist (`\d+ ?(mg|mcg|iu)`, "milligram", "dosage"); *"prescribe"/"protocol" are excluded* — they appear in Sonia's own disclaimer; the GEval judge is the semantic backstop.
-- **Format/length** — no markdown/em-dash, ≤1 question, ≤ `max_chars`.
+- **No medical advice** — regex denylist (`\d+ ?(mg|mcg|iu|ui)`, "milligram", "dosage", and Spanish: "dosis", "dosificación", "miligramos", "microgramos"); *"prescribe"/"protocol" are excluded* — they appear in Sonia's own disclaimer; the GEval judge is the semantic backstop.
+- **Format/length** — no markdown/em-dash, ≤1 question (`¿…?` counts once), ≤ `max_chars` (+20% for Spanish, set in the directive). The disclaimer substring check is accent-folded.
 
 On failure → **regenerate once at temp 0 → fall back to the verbatim approved script**
 (`scripts.render(fallback_action)`). Worst case = v1's safe scripted behavior; best case = a
@@ -246,10 +297,11 @@ natural, reactive message.
 |---|---|
 | `brain_version` | `funnel` (new brain, active) or `legacy` (old monolith) — **instant rollback**. Seeded `funnel`. |
 | `qualified_tag_id` | ManyChat tag id applied on the qualified/link-sent handoff. **Set this to the real tag id** (falls back to the review tag `86596410` if unset/non-numeric). |
-| `phase1_cta_keywords`, `phase1_opening_message` | CTA keywords + the exact branded opener. |
-| `human_takeover_triggers`, `medical_blocklist`, `medical_deflection` | Stage-0 phrase safety net. |
+| `phase1_cta_keywords`, `phase1_opening_message` | CTA keywords + the exact branded opener (English-campaign only; no Spanish variant — language is detected from the lead's own messages). |
+| `human_takeover_triggers`, `medical_blocklist`, `medical_deflection` | Stage-0 phrase safety net. **Spanish phrases go in the SAME lists** (matching is casefolded; add accented and unaccented variants). |
+| `medical_deflection_es` | Spanish deflection for blocklisted messages, selected by the sticky language slot (falls back to `medical_deflection`). |
 | `default_closer` (natalia|monika), `closer_assignment` (round_robin) | Closer routing (mostly moot now that booking hands off before confirmation). |
-| `booking_link`, `masterclass_register_link`, `masterclass_replay_link`, `website_link`, `ig_highlights_link`, `natalia_phone`, `monika_phone`, `price_range` | Script placeholder overrides (defaults in `scripts.py`). |
+| `booking_link`, `masterclass_register_link`, `masterclass_replay_link`, `website_link`, `ig_highlights_link`, `natalia_phone`, `monika_phone`, `price_range`, `price_range_es` | Script placeholder overrides (defaults in `scripts.py`). `price_range_es` is the Spanish wording ("$1,500 a $14,000") — keep the figures identical to `price_range`. |
 
 ---
 
@@ -275,22 +327,24 @@ checks pause, locks batch, then **if `brain_version == funnel`** → `_run_brain
 - **Deterministic triggers must not depend on LLM flags** — age/tubes checked from the extracted number/slot (the age-48 miss).
 - **`financial_ready` only on explicit money openness** — enthusiasm ("count me in") is about coaching, not money.
 - **Light human imperfections** in the voice, but never on links/numbers/disclaimer.
+- **Bilingual en/es (July 2026)** — the program is fully bilingual, so the whole funnel runs in the lead's language; any other language → **silent** human handoff (`UNSUPPORTED_LANGUAGE`, replaces the old English `OOS_LANGUAGE_BARRIER` decline, whose copy became factually wrong). Language is **sticky extracted data** branched on by the controller (never an ad-hoc LLM boolean); short/ambiguous turns never flip it. Spanish verbatim copy (`SCRIPTS_ES`, voice few-shots, seeded ES opener) is a draft pending client review.
 
 ---
 
 ## 16. Testing
 
 - **Run:** `pytest -m "not live"` (fast, deterministic, no API) · `pytest -m live` (real OpenAI + DeepEval; needs `OPENAI_API_KEY`) · `pytest` (all, ~106 tests).
-- **Deterministic (pure):** `test_controller.py` (the funnel/gates/loop-guard/triggers), `test_directive.py`, `test_scripts.py`, `test_validator.py`, `test_generative.py` (validator fallbacks), `test_extractor_schema.py`.
-- **Live (real calls):** `test_extractor.py` (slot extraction), `test_run_turn.py` (full-funnel end-to-end), `test_takeover.py` (all 10 triggers), `test_eval.py` (DeepEval GEval judges: no-medical-advice, faithful-memory).
+- **Deterministic (pure):** `test_controller.py` (the funnel/gates/loop-guard/triggers incl. language routing), `test_directive.py`, `test_scripts.py` (incl. ES coverage/parity), `test_validator.py` (incl. ES rules), `test_generative.py` (validator fallbacks), `test_extractor_schema.py`, `test_language_gates.py` (ES phase-1 + safety gate), `test_resume.py` (resume flag reset).
+- **Live (real calls):** `test_extractor.py` (slot extraction), `test_run_turn.py` (full-funnel end-to-end), `test_takeover.py` (all 10 triggers), `test_language.py` (Spanish funnel, language switch, unsupported-language silence — French/German only, never Portuguese: es-confusion makes it flaky), `test_eval.py` (DeepEval GEval judges: no-medical-advice, faithful-memory, natural-Spanish).
 - **Philosophy:** real AI calls, not mocks; guarantees that matter live in deterministic tests; the LLM judge covers what regex can't (tone/hallucination).
 
 ---
 
 ## 17. Deploy & rollback
 
-- Migrations: `alembic upgrade head` (adds `user_state.phase` + `user_state.qualification`; seeds `brain_version=funnel`, `default_closer=natalia`). Local dev DB is Postgres `fertility_dm`.
+- Migrations: `alembic upgrade head` (adds `user_state.phase` + `user_state.qualification`; seeds `brain_version=funnel`, `default_closer=natalia`, and the Spanish config keys `price_range_es` / empty `medical_deflection_es`). Local dev DB is Postgres `fertility_dm`.
 - **Before go-live:** set `qualified_tag_id` to the real ManyChat tag.
+- **Before Spanish go-live:** have the client review the drafted Spanish copy (`SCRIPTS_ES`, voice `_EXAMPLES_ES`); add Spanish phrases (accented + unaccented, e.g. "clomifeno", "qué dosis", "quiero hablar con una persona") to the shared `medical_blocklist` / `human_takeover_triggers` lists; optionally set `medical_deflection_es`.
 - **Rollback:** set `brain_version=legacy` in AppConfig (instant; no deploy). Legacy modules remain.
 
 ---

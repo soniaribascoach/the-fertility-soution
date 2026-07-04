@@ -1,7 +1,8 @@
 """Pure unit tests for the output validator (Step 6). No LLM, no DB."""
 from app.services.brain.constants import Action
 from app.services.brain import scripts
-from app.services.brain.validator import validate
+from app.services.brain.validator import validate, validate_generated
+from app.services.brain.directive import TurnDirective
 
 
 # --- Composed (ASK_DISCOVERY) checks ----------------------------------------
@@ -76,3 +77,50 @@ def test_every_scripted_action_passes_its_own_render():
 def test_minimal_discovery_fallback_is_valid():
     text = "Thank you for sharing that. How long have you been trying, and what have you already tried?"
     assert validate(Action.ASK_DISCOVERY, text).ok
+
+
+# --- Spanish -------------------------------------------------------------------
+
+def _gen_directive(**kw):
+    defaults = dict(mode="DISCOVERY", action=Action.ASK_DISCOVERY, generate=True,
+                    objective="", reference_text="", language="es")
+    defaults.update(kw)
+    return TurnDirective(**defaults)
+
+
+def test_spanish_medical_advice_rejected():
+    for text in ("toma 50 mg de clomifeno", "la dosis recomendada es alta",
+                 "toma 400 ui de vitamina D", "unos 200 microgramos al día"):
+        r = validate_generated(_gen_directive(), text + " ¿cuántos años tienes?")
+        assert not r.ok and "medical_advice" in r.violations, text
+
+
+def test_inverted_question_marks_count_once():
+    r = validate_generated(_gen_directive(), "entiendo, gracias por contarme. ¿Cuántos años tienes?")
+    assert r.ok, r.violations
+
+
+def test_spanish_disclaimer_accent_folded():
+    d = _gen_directive(pinned_text="no soy doctora")
+    ok = "Soy coach de fertilidad, NO SOY DOCTORA ni clínica. ¿Te interesa ese apoyo?"
+    assert validate_generated(d, ok).ok
+    missing = "Soy coach de fertilidad y te acompaño. ¿Te interesa ese apoyo?"
+    r = validate_generated(d, missing)
+    assert not r.ok and "missing_disclaimer" in r.violations
+
+
+def test_spanish_verbatim_scripts_pass_and_english_text_fails():
+    for action in scripts.SCRIPTS_ES:
+        text = scripts.render(action, None, "es")
+        assert validate(action, text, None, "es").ok, action
+    # The English render must NOT pass as the Spanish verbatim.
+    r = validate(Action.OOS_MENOPAUSE, scripts.render(Action.OOS_MENOPAUSE), None, "es")
+    assert not r.ok and "not_verbatim" in r.violations
+
+
+def test_spanish_length_budget_uses_directive_max_chars():
+    text = ("te entiendo perfectamente y quiero acompañarte en esto con calma. " * 6
+            + "¿Cuántos años tienes?")
+    assert len(text) > 400
+    assert validate_generated(_gen_directive(max_chars=480), text).ok
+    assert "too_long" in validate_generated(_gen_directive(max_chars=400), text).violations

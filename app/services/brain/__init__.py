@@ -62,20 +62,27 @@ def _trailing_user_texts(history: list[dict]) -> list[str]:
 
 
 def _check_phase1(cfg: dict, history: list[dict]) -> Optional[str]:
-    """Exact CTA keyword as the only user message -> verbatim opener."""
+    """Exact CTA keyword as the only user message -> verbatim opener.
+
+    CTA keywords are English-campaign only; a bare keyword carries no language
+    signal, so the language slot stays unset (= en) until the lead actually
+    writes something and the extractor reads it.
+    """
     user_msgs = [m for m in history if m.get("role") == "user"]
     if len(user_msgs) != 1:
         return None
-    keywords = {k.strip().lower() for k in (cfg.get("phase1_cta_keywords") or "").split("\n") if k.strip()}
+    keywords = {k.strip().casefold() for k in (cfg.get("phase1_cta_keywords") or "").split("\n") if k.strip()}
     if not keywords:
         return None
-    if user_msgs[0].get("content", "").strip().lower() not in keywords:
+    if user_msgs[0].get("content", "").strip().casefold() not in keywords:
         return None
     return (cfg.get("phase1_opening_message") or "").strip() or None
 
 
 def _safety_gate(cfg: dict, recent_texts: list[str], state: dict) -> Optional[TurnResult]:
-    lowered = [t.strip().lower() for t in recent_texts if t.strip()]
+    # casefold (not lower) so accented Spanish phrases in the config lists
+    # match reliably; Spanish blocklist/trigger phrases live in the SAME lists.
+    lowered = [t.strip().casefold() for t in recent_texts if t.strip()]
     if not lowered:
         return None
 
@@ -86,17 +93,22 @@ def _safety_gate(cfg: dict, recent_texts: list[str], state: dict) -> Optional[Tu
         return TurnResult(reply_text=None, lead_state=state, pause=True,
                           pause_reason="media_message", add_tag=True, action="SAFETY_MEDIA")
 
-    # Medical blocklist -> send the configured deflection + takeover.
-    blocklist = [p.strip().lower() for p in (cfg.get("medical_blocklist") or "").split("\n") if p.strip()]
+    # Medical blocklist -> send the configured deflection + takeover. The
+    # deflection language follows the sticky slot (a first-ever Spanish message
+    # gets the English deflection: language not yet observed, accepted edge —
+    # it pauses + tags either way and a human follows up).
+    blocklist = [p.strip().casefold() for p in (cfg.get("medical_blocklist") or "").split("\n") if p.strip()]
     if blocklist and any(any(p in t for p in blocklist) for t in lowered):
         deflection = (cfg.get("medical_deflection") or "").strip()
+        if state["slots"].get("language") == "es":
+            deflection = (cfg.get("medical_deflection_es") or "").strip() or deflection
         state["phase"] = Phase.TAKEOVER.value
         state["flags"]["takeover_reason"] = "medical_deflection"
         return TurnResult(reply_text=deflection or None, lead_state=state, pause=True,
                           pause_reason="medical_deflection", add_tag=True, action="SAFETY_MEDICAL")
 
     # Human-takeover trigger phrases.
-    triggers = [t.strip().lower() for t in (cfg.get("human_takeover_triggers") or "").split("\n") if t.strip()]
+    triggers = [t.strip().casefold() for t in (cfg.get("human_takeover_triggers") or "").split("\n") if t.strip()]
     if triggers and any(any(tr in t for tr in triggers) for t in lowered):
         state["phase"] = Phase.TAKEOVER.value
         state["flags"]["takeover_reason"] = "human_handover"
@@ -189,6 +201,9 @@ def _fallback_text(directive, cfg: dict) -> str:
     line if the action has no script). Worst-case output = today's safe behavior."""
     action = directive.action
     if action in scripts.SCRIPTS:
-        return scripts.render(action, cfg)
+        return scripts.render(action, cfg, directive.language)
+    # ASK_DISCOVERY: the reference is the controller-chosen question, already
+    # in the lead's language.
     question = directive.reference_text or ""
-    return f"Got it. {question}".strip()
+    prefix = "Entendido." if directive.language == "es" else "Got it."
+    return f"{prefix} {question}".strip()

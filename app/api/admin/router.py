@@ -9,8 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.models.few_shot_version import FewShotVersion
+from app.models.user_state import UserState
 from app.repositories.config import get_all_config, set_config
 from app.services.ai_pipeline import generate_reply, check_phase1
+from app.services.resume import resume_lead
 from app.services.few_shots import load_few_shot_scenarios, get_few_shot_scenarios
 from app.api.admin.auth import (
     is_authenticated,
@@ -30,6 +32,7 @@ templates.env.globals["app_version"] = APP_VERSION
 
 CONFIG_KEYS = [
     "phase1_cta_keywords", "phase1_opening_message",
+    "medical_deflection_es",
     "booking_link", "score_threshold", "prompt_scoring_rules",
     "prompt_about", "prompt_services", "prompt_tone", "prompt_flow",
     "prompt_hard_rules", "prompt_opening_variants", "prompt_qualification_questions",
@@ -48,10 +51,26 @@ async def admin_root(request: Request):
 
 
 @router.get("/admin/dashboard", response_class=HTMLResponse)
-async def dashboard_get(request: Request):
+async def dashboard_get(request: Request, db: AsyncSession = Depends(get_db)):
     if not is_authenticated(request):
         return RedirectResponse("/admin/login", status_code=302)
-    return templates.TemplateResponse(request, "admin/dashboard.html", {})
+    result = await db.execute(
+        select(UserState)
+        .where(UserState.is_ai_paused == True)  # noqa: E712
+        .order_by(UserState.paused_at.desc())
+    )
+    paused_leads = result.scalars().all()
+    return templates.TemplateResponse(
+        request, "admin/dashboard.html", {"paused_leads": paused_leads}
+    )
+
+
+@router.post("/admin/leads/{ig_user_id}/resume")
+async def lead_resume(request: Request, ig_user_id: str, db: AsyncSession = Depends(get_db)):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    await resume_lead(db, ig_user_id)
+    return RedirectResponse("/admin/dashboard", status_code=302)
 
 
 @router.get("/admin/login", response_class=HTMLResponse)
@@ -199,6 +218,7 @@ async def config_save(
         request: Request,
         phase1_cta_keywords: str = Form(""),
         phase1_opening_message: str = Form(""),
+        medical_deflection_es: str = Form(""),
         booking_link: str = Form(""),
         score_threshold: str = Form(""),
         prompt_scoring_rules: str = Form(""),
@@ -223,6 +243,7 @@ async def config_save(
 
     await set_config(db, "phase1_cta_keywords", phase1_cta_keywords)
     await set_config(db, "phase1_opening_message", phase1_opening_message)
+    await set_config(db, "medical_deflection_es", medical_deflection_es)
     await set_config(db, "booking_link", booking_link)
     await set_config(db, "score_threshold", score_threshold)
     await set_config(db, "prompt_scoring_rules", prompt_scoring_rules)

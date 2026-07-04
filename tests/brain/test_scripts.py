@@ -98,3 +98,75 @@ def test_explain_role_is_not_a_medical_provider_claim():
 def test_render_unknown_action_raises():
     with pytest.raises(KeyError):
         scripts.render_followup("does_not_exist")
+
+
+# --- Spanish registry ---------------------------------------------------------
+
+# Every scripted action the controller can actually reach must have a Spanish
+# version. Dormant actions (POST_BOOKING_*, BOOKING_WHO_*, unused explain-role
+# variants, OLD_CONVO, COLD_OUTREACH) intentionally fall back to English.
+REACHABLE_ACTIONS = {
+    Action.ASK_PRIORITY, Action.REENGAGE_LOW_PRIORITY,
+    Action.LOW_PRIORITY_INFO_GATHERING, Action.NURTURE_CLOSE,
+    Action.EXPLAIN_ROLE, Action.EXPLAIN_ROLE_CONFIRM, Action.EXPLAIN_ROLE_TFS3,
+    Action.FINANCIAL_CHECK, Action.FINANCIAL_DECLINE,
+    Action.PARTNER_CHECK, Action.PARTNER_ASK_JOIN, Action.PARTNER_PUSHBACK,
+    Action.SEND_BOOKING, Action.BOOKING_IS_IT_SONIA, Action.BOOKING_CALL_PROCESS,
+    Action.ADVICE_DEFLECT, Action.ADVICE_DEFLECT_LATE,
+    Action.ADVICE_DEFLECT_PUSH, Action.ADVICE_DEFLECT_PUSH_LATE,
+    Action.PRICE_DEFLECT, Action.PRICE_DEFLECT_LATE,
+    Action.PRICE_RANGE, Action.PRICE_RANGE_FIRM,
+    Action.PHONE_NUMBER_DEFLECT, Action.MASTERCLASS_SEND, Action.SOCIAL_PROOF,
+    Action.PAYING_TWICE, Action.IVF_ONLY_OFFER, Action.TROUBLE_BOOKING,
+    Action.NO_MONEY,
+    Action.ASK_BOTH_TUBES, Action.ASK_MENOPAUSE_REASON, Action.ASK_MENOPAUSE_AGE,
+    Action.OOS_BOTH_TUBES, Action.OOS_MENOPAUSE, Action.OOS_AGE_OVER_46,
+    Action.OOS_DEAF,
+}
+
+
+def test_scripts_es_covers_reachable_set():
+    missing = REACHABLE_ACTIONS - set(scripts.SCRIPTS_ES)
+    assert not missing, f"reachable actions without a Spanish script: {missing}"
+
+
+def test_scripts_es_placeholder_parity():
+    import re
+    # Same placeholders as the English template, modulo the documented
+    # price_range -> price_range_es swap (the EN default embeds English "to").
+    for action, es in scripts.SCRIPTS_ES.items():
+        en_ph = set(re.findall(r"{(\w+)}", scripts.SCRIPTS[action]))
+        es_ph = set(re.findall(r"{(\w+)}", es))
+        en_ph = {"price_range_es" if p == "price_range" else p for p in en_ph}
+        assert es_ph == en_ph, f"placeholder mismatch in ES {action}: {es_ph} != {en_ph}"
+
+
+def test_render_es_falls_back_to_english_for_dormant_actions():
+    assert Action.OLD_CONVO not in scripts.SCRIPTS_ES
+    assert scripts.render(Action.OLD_CONVO, None, "es") == scripts.render(Action.OLD_CONVO)
+
+
+def test_every_es_script_renders_clean():
+    for action in scripts.SCRIPTS_ES:
+        text = scripts.render(action, None, "es")
+        assert text.strip(), f"ES {action} rendered empty"
+        assert "{" not in text and "}" not in text, f"ES {action} has an unfilled placeholder"
+        assert "—" not in text, f"em-dash in ES {action}"
+
+
+def test_es_price_range_uses_spanish_connector():
+    text = scripts.render(Action.PRICE_RANGE, None, "es")
+    assert "$1,500 a $14,000" in text
+    custom = scripts.render(Action.PRICE_RANGE, {"price_range_es": "$2,000 a $10,000"}, "es")
+    assert "$2,000 a $10,000" in custom
+
+
+def test_es_explain_role_contains_disclaimer_phrase():
+    # Iteration 3 pins this exact phrase as the Spanish disclaimer key.
+    assert "no soy doctora" in scripts.render(Action.EXPLAIN_ROLE, None, "es")
+
+
+def test_es_banks_key_parity():
+    assert set(scripts.EMPATHY_VARIANTS_ES) == set(scripts.EMPATHY_VARIANTS)
+    assert set(scripts.DISCOVERY_QUESTIONS_ES) == set(scripts.DISCOVERY_QUESTIONS)
+    assert len(scripts.AFFIRMATIONS_ES) == len(scripts.AFFIRMATIONS)

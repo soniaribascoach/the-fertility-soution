@@ -52,21 +52,27 @@ _INTENT_LITERAL = Literal[
     "asks_what_you_do", "asks_results_proof", "asks_phone", "asks_masterclass",
     "asks_is_it_sonia", "asks_call_process", "ready_to_book", "booked",
     "gives_email", "trouble_booking", "objection", "paying_twice",
-    "blocked_tubes", "menopause_no_period", "ivf_only", "non_english", "deaf",
+    "blocked_tubes", "menopause_no_period", "ivf_only", "deaf",
     "is_this_ai", "angry_or_challenging", "distress", "not_ready_no_money",
     "other",
 ]
 
 
 class Extraction(BaseModel):
+    # Language of the lead's most recent message(s). "unclear" for short or
+    # ambiguous turns so the controller keeps the sticky per-lead value.
+    # FIRST on purpose: structured outputs generate fields in schema order, and
+    # the raw-text language must be judged before the message is digested into
+    # the (English) fields below. Placing it mid-schema destabilized the
+    # takeover flag; placing it last misread French as Spanish.
+    language: Literal["en", "es", "other", "unclear"]
     slot_deltas: SlotDeltas
     intent: _INTENT_LITERAL
     # For Phase-2 empathy variant selection.
     situation_type: Literal["hopeless", "neutral", "misfortune", "none"]
     # Hard out-of-scope signals the controller acts on.
     oos_signal: Literal[
-        "none", "blocked_tubes", "menopause_no_period", "age_over_46",
-        "deaf", "non_english",
+        "none", "blocked_tubes", "menopause_no_period", "age_over_46", "deaf",
     ]
     # Soft human-takeover signal (angry, asks-if-AI, distress, etc.).
     takeover: bool
@@ -79,7 +85,8 @@ _SYSTEM = """You are a silent data-extraction component inside a fertility-coach
 CARDINAL RULE: Only set a slot field if the LEAD explicitly stated it in their own words. If they did not state it, leave it null. NEVER infer, assume, guess, or carry over. When unsure, use null. It is always better to return null than to invent a value.
 
 Field guidance:
-- slot_deltas: facts from the lead's MOST RECENT message(s). Fields already listed under KNOWN SO FAR are context only; do not re-populate them unless the lead restated or changed them this turn.
+- language: the language of the LEAD's MOST RECENT message(s) only. "en" when clearly English; "es" when clearly Spanish; "other" ONLY when the message is clearly in a language that is neither English nor Spanish (e.g. French, Portuguese, German, Italian - be careful, French and Portuguese are NOT Spanish, they are "other"). Use "unclear" for very short or ambiguous messages that could be any language: bare numbers, emojis, "ok", "yes", "si", "no", a name, or a lone keyword.
+- slot_deltas: facts from the lead's MOST RECENT message(s), extracted the same way whatever language she writes in. Fields already listed under KNOWN SO FAR are context only; do not re-populate them unless the lead restated or changed them this turn.
   - trying_duration: how long they have been trying (their words, e.g. "2 years").
   - age: their age in years, only if a number is stated.
   - treatment_path: natural | iui | ivf | deciding — only if clearly indicated.
@@ -98,7 +105,7 @@ Field guidance:
   - ivf_interest: true if they accept help optimizing an IVF path.
 - intent: classify the LEAD's most recent message (one label). Use not_ready_no_money when the lead clearly cannot afford it, has no money, has a very tight budget, wants only free help, or is not ready to commit at all. If she says her budget is tight / she can't afford it AND also asks the price in the same message, still classify it as not_ready_no_money (the affordability concern dominates). Do NOT use not_ready_no_money for "I need to ask/consult my partner" or "it's my partner's decision" - classify those as answers_question and set partner_status=couple and partner_is_decision_maker=true.
 - situation_type (for empathy): "hopeless" for age worries, PCOS, tube issues, or feeling hopeless/broken; "misfortune" for miscarriage, loss, failed IVF/IUI, chemical pregnancy; "neutral" for sharing steps with a positive/neutral tone; "none" when there is no emotional content to acknowledge.
-- oos_signal: "blocked_tubes" if they mention blocked tubes; "menopause_no_period" if menopausal or no period for a long time; "age_over_46" if their stated age is over 46; "deaf"; "non_english" if they are writing in another language or say they don't speak English; else "none".
+- oos_signal: "blocked_tubes" if they mention blocked tubes; "menopause_no_period" if menopausal or no period for a long time; "age_over_46" if their stated age is over 46; "deaf"; else "none".
 - takeover: true if the lead is angry/challenging, asks whether this is AI/a bot, asks for medical advice that needs a diagnosis or treatment, expresses suicidal thoughts or severe distress, gives contradictory information, demands to speak to Sonia directly before qualifying, or asks for exceptions / special treatment / to bypass the process (e.g. "can you make an exception for me", "can you bend your rules", "can I skip the call/questions"). ALSO true if the lead is confused or frustrated with the conversation itself (e.g. "I already told you", "how do I tell you this", "you're not listening", "what do you mean") or the conversation is clearly going in circles. Put a short phrase in takeover_reason; otherwise null. NOTE: mild emotional venting such as "it's been hard", "I'm discouraged", "I'm exhausted", or "this is stressful" is NOT severe distress and NOT a takeover; classify it as answers_question with situation_type "hopeless", and leave priority_score null unless she actually gives a number.
 - confidence: 0..1 confidence in the intent label."""
 

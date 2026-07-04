@@ -7,10 +7,10 @@ from app.services.brain import scripts
 
 
 def ext(intent="other", situation_type="none", oos_signal="none",
-        takeover=False, takeover_reason=None, confidence=0.9, **slots):
+        takeover=False, takeover_reason=None, confidence=0.9, language="en", **slots):
     deltas = SlotDeltas(**{k: slots.get(k) for k in SlotDeltas.model_fields})
     return Extraction(slot_deltas=deltas, intent=intent, situation_type=situation_type,
-                      oos_signal=oos_signal, takeover=takeover,
+                      oos_signal=oos_signal, language=language, takeover=takeover,
                       takeover_reason=takeover_reason, confidence=confidence)
 
 
@@ -86,6 +86,60 @@ def test_takeover_sends_nothing():
     d = _directive_for(empty_lead_state(), ext(intent="is_this_ai", takeover=True))
     assert d.generate is False and d.send_message is False
     assert d.pinned_text is None and d.pause is True
+
+
+def test_unsupported_language_sends_nothing():
+    d = _directive_for(empty_lead_state(), ext(language="other"))
+    assert d.action == Action.UNSUPPORTED_LANGUAGE
+    assert d.generate is False and d.send_message is False
+    assert d.pinned_text is None and d.pause is True and d.add_tag is True
+
+
+def test_language_threads_from_lead_state():
+    st = empty_lead_state()
+    st["slots"]["trying_duration"] = "1 year"
+    d = _directive_for(st, ext(language="es", intent="shares_situation"))
+    assert d.language == "es"
+
+    d_default = _directive_for(empty_lead_state(), ext(intent="shares_situation"))
+    assert d_default.language == "en"
+
+
+def test_es_oos_decline_is_pinned_spanish_verbatim():
+    d = _directive_for(empty_lead_state(), ext(language="es", oos_signal="age_over_46", age=49))
+    assert d.generate is False
+    assert d.pinned_text == scripts.render(Action.OOS_AGE_OVER_46, None, "es")
+
+
+def test_es_max_chars_bumped_and_disclaimer_key_spanish():
+    slots = {"language": "es", "trying_duration": "2 años", "age": 38,
+             "treatment_path": "ivf", "priority_score": 9}
+    st = state(slots=slots)
+    d = _directive_for(st, ext(language="es", intent="answers_question"))
+    assert d.action == Action.EXPLAIN_ROLE
+    en_d = _directive_for(state(slots={**slots, "language": None}),
+                          ext(intent="answers_question"))
+    assert d.max_chars == int(en_d.max_chars * 1.2)
+    if d.pinned_text:  # style A pins the disclaimer; B does not
+        assert d.pinned_text == "no soy doctora"
+
+
+def test_es_discovery_brief_carries_spanish_question():
+    st = state(slots={"language": "es"})
+    d = _directive_for(st, ext(language="es", intent="shares_situation"))
+    assert d.action == Action.ASK_DISCOVERY
+    assert d.reference_text == scripts.DISCOVERY_QUESTIONS_ES["trying_duration"]
+
+
+def test_es_price_reveal_requires_spanish_range_tokens():
+    st = state(slots={"language": "es", "trying_duration": "2 años", "age": 38,
+                      "treatment_path": "ivf"},
+               counters={"price_ask_count": 1})
+    d = _directive_for(st, ext(language="es", intent="asks_price"))
+    assert d.action == Action.PRICE_RANGE and d.allow_price_figure
+    rendered = scripts.render(Action.PRICE_RANGE, None, "es")
+    for token in d.must_include:
+        assert token in rendered, (token, rendered)
 
 
 def test_send_booking_directive_is_qualified_handoff():

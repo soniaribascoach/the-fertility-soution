@@ -99,6 +99,55 @@
 
 </div>
 
+<!-- ── Paused Leads (human takeover) ─────────────────────────────────────── -->
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm mb-7">
+  <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+    <div>
+      <h2 class="text-sm font-bold text-slate-900">Paused Leads</h2>
+      <p class="text-xs text-slate-400 mt-0.5">AI is silent for these leads — resume once a human has resolved the conversation</p>
+    </div>
+    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold {{ 'bg-amber-50 text-amber-700 border border-amber-100' if paused_leads else 'bg-emerald-50 text-emerald-700 border border-emerald-100' }}">
+      {{ paused_leads | length }} paused
+    </span>
+  </div>
+  {% if paused_leads %}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-slate-100">
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-6 py-3">Instagram User ID</th>
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-4 py-3">Reason</th>
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-4 py-3">Phase</th>
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-4 py-3">Paused At</th>
+        <th class="text-right text-[10px] font-bold uppercase tracking-wider text-slate-400 px-6 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-50">
+      {% for lead in paused_leads %}
+      <tr class="hover:bg-slate-50/50 transition-colors">
+        <td class="px-6 py-3.5 text-sm font-semibold text-slate-800">{{ lead.instagram_user_id }}</td>
+        <td class="px-4 py-3.5">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">{{ lead.pause_reason or "—" }}</span>
+        </td>
+        <td class="px-4 py-3.5 text-xs text-slate-500">{{ lead.phase or "—" }}</td>
+        <td class="px-4 py-3.5 text-xs text-slate-400">{{ lead.paused_at.strftime("%d %b %Y, %H:%M") if lead.paused_at else "—" }}</td>
+        <td class="px-6 py-3.5 text-right">
+          <form method="post" action="/admin/leads/{{ lead.instagram_user_id }}/resume"
+                onsubmit="return confirm('Resume the AI for {{ lead.instagram_user_id }}? It will reply to their next DM.');">
+            <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 text-white hover:bg-violet-700 transition-colors">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 1.5l5.5 3.5-5.5 3.5V1.5z" fill="currentColor"/></svg>
+              Resume AI
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="px-6 py-8 text-center text-sm text-slate-400">No paused leads — the AI is handling every conversation.</div>
+  {% endif %}
+</div>
+
 <!-- ── Lead Pipeline ─────────────────────────────────────────────────────── -->
 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-7">
   <div class="flex items-center justify-between mb-5">

@@ -10,6 +10,7 @@ Research on guardrails shows combining structural + regex checks catches the
 overwhelming majority of bad outputs; this layer is that net.
 """
 import re
+import unicodedata
 from dataclasses import dataclass, field
 
 from app.services.brain.constants import Action
@@ -18,15 +19,25 @@ from app.services.brain import scripts
 _URL_RE = re.compile(r"https?://\S+")
 _MD_RE = re.compile(r"(\*\*|##|__|^\s*[-*•]\s)", re.M)
 _MONEY_RE = re.compile(r"\$\s*\d")
-# Dosage language that would constitute medical advice. NOTE: "prescribe" and
-# "protocol" are deliberately excluded — they appear in Sonia's own disclaimer
-# ("I don't prescribe medication"), so flagging them causes false positives. The
-# GEval "no medical advice" judge is the semantic backstop for real advice.
+# Dosage language that would constitute medical advice, in English and Spanish
+# (one combined regex — the Spanish terms cannot false-positive in English
+# text). "ui" is the Spanish IU, digit-anchored so it cannot hit prose. NOTE:
+# "prescribe" and "protocol" are deliberately excluded — they appear in Sonia's
+# own disclaimer ("I don't prescribe medication"), so flagging them causes
+# false positives. The GEval "no medical advice" judge is the semantic backstop.
 _MEDICAL_RE = re.compile(
-    r"\b\d+\s?(mg|mcg|iu)\b|\bmilligram|\bdosage\b",
+    r"\b\d+\s?(mg|mcg|iu|ui)\b|\bmilligram|\bdosage\b"
+    r"|\bdosis\b|dosificaci[oó]n|\bmiligramos?\b|\bmicrogramos?\b",
     re.I,
 )
 _EMDASH = "—"
+
+
+def _fold(s: str) -> str:
+    """Accent-insensitive casefold, so the Spanish disclaimer check is robust
+    to the model writing e.g. "doctora"/"médica" accents inconsistently."""
+    decomposed = unicodedata.normalize("NFD", s)
+    return "".join(c for c in decomposed if not unicodedata.combining(c)).casefold()
 
 
 @dataclass
@@ -35,12 +46,13 @@ class ValidationResult:
     violations: list[str] = field(default_factory=list)
 
 
-def validate(action: Action, text: str, cfg: dict | None = None) -> ValidationResult:
+def validate(action: Action, text: str, cfg: dict | None = None,
+             language: str = "en") -> ValidationResult:
     """Validate an outgoing message for the given action."""
     if action != Action.ASK_DISCOVERY:
         # Scripted action: the only requirement is verbatim fidelity.
         try:
-            expected = scripts.render(action, cfg)
+            expected = scripts.render(action, cfg, language)
         except KeyError:
             return ValidationResult(False, ["no_template"])
         if text.strip() != expected.strip():
@@ -97,8 +109,9 @@ def validate_generated(directive, text: str) -> ValidationResult:
         if token not in t:
             v.append(f"missing:{token[:20]}")
 
-    # The not-a-doctor disclaimer, when required (pinned_text on a generate turn).
-    if directive.generate and directive.pinned_text and directive.pinned_text.lower() not in t.lower():
+    # The not-a-doctor disclaimer, when required (pinned_text on a generate
+    # turn). Accent-folded so Spanish accent variance never false-positives.
+    if directive.generate and directive.pinned_text and _fold(directive.pinned_text) not in _fold(t):
         v.append("missing_disclaimer")
 
     # Price figure only when the reveal is allowed.

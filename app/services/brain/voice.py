@@ -44,6 +44,14 @@ Hard rules (these never bend):
 You will be given the recent conversation, your goal for this turn, the facts she has shared, the substance to convey (put it in your own warm words), and any hard requirements. Write only Sonia's next message."""
 
 
+# Appended to the system prompt when the lead's language is Spanish.
+_SYSTEM_ES_ADDENDUM = """
+
+The lead writes in Spanish. Write EVERY reply in natural, warm, Latin-American-neutral Spanish, always using the informal "tu" (never "usted"). Do not mix in English words and do not translate literally from English; write the way a warm coach actually texts in Spanish.
+BANNED Spanish openers - never start a message with any of these: "Gracias por compartir", "Te agradezco", "Aprecio tu honestidad", "Me alegra saber", "Que bueno escuchar", "Admiro". React to what she actually said instead.
+Links, phone numbers, and price figures stay EXACTLY as given, never translated or altered."""
+
+
 # Few-shot demonstrations across modes. Each teaches acknowledgment + goal.
 _EXAMPLES = [
     # Emotional disclosure where a priority score was expected (the test_3 miss).
@@ -94,6 +102,58 @@ _EXAMPLES = [
 ]
 
 
+# Spanish few-shots mirroring _EXAMPLES (full swap when the lead writes in
+# Spanish: mixing English exemplar outputs with a "reply in Spanish" instruction
+# invites English drift on gpt-4o-mini). DRAFT copy, pending client review.
+_EXAMPLES_ES = [
+    # Emotional disclosure where a priority score was expected.
+    (
+        "CONVERSATION SO FAR (most recent last):\n"
+        "Sonia: En una escala del 1 al 10, ¿qué tan prioritario es para ti quedar embarazada en este momento?\n"
+        "Lead: Ha sido muy difícil y desalentador.\n\n"
+        "GOAL: Ask, on a scale of 1 to 10, how much of a priority getting pregnant is right now.\n"
+        "SHE HAS TOLD YOU: she has been trying and it has been emotionally hard.\n"
+        "REQUIRED: no links, no price. One question max.",
+        "te entiendo, y de verdad suena muy pesado de cargar. cuando te sientas lista, del 1 al 10, ¿qué tan prioritario es para ti quedar embarazada ahora mismo?",
+    ),
+    # Rich medical + partner share early in discovery.
+    (
+        "CONVERSATION SO FAR (most recent last):\n"
+        "Sonia: ¿Cuánto tiempo llevan intentando y qué han probado hasta ahora?\n"
+        "Lead: Tengo AMH baja y periodos irregulares. Mi esposo y yo llevamos más de un año intentando.\n\n"
+        "GOAL: Acknowledge what she shared, then ask her age.\n"
+        "SHE HAS TOLD YOU: low AMH, irregular periods, trying over a year, has a husband.\n"
+        "REQUIRED: no links, no price. One question max.",
+        "AMH baja y ciclos irregulares encima de un año intentando es mucho. qué bueno que tú y tu esposo lo están enfrentando juntos. ¿cuántos años tienes?",
+    ),
+    # Financial check right after a vulnerable, no-insurance disclosure.
+    (
+        "CONVERSATION SO FAR (most recent last):\n"
+        "Lead: Dejé de ir a la clínica de fertilidad porque era muy duro emocionalmente y no tenía seguro. Creo que estoy lista para intentarlo de nuevo, y quiero un enfoque holístico.\n\n"
+        "GOAL: Gently note it is a paid program and ask if she is open to that if it feels aligned.\n"
+        "SHE HAS TOLD YOU: left the clinic due to emotional toll and no insurance, feels ready now, wants a holistic approach.\n"
+        "REQUIRED: no links, no price. One question max.",
+        "Eso tomó mucha valentía, y tiene todo el sentido que necesitaras un descanso de todo eso. El enfoque holístico es justo como trabajo, así que puede que encajemos muy bien. Para que lo sepas, es un programa de coaching pago si decidimos que es lo correcto, ¿es algo a lo que estarías abierta si sientes que va contigo?",
+    ),
+    # Explain-role with the required disclaimer.
+    (
+        "CONVERSATION SO FAR (most recent last):\n"
+        "Lead: sí, de verdad quiero ayuda\n\n"
+        "GOAL: Explain that you are a fertility coach, not a doctor, describe your holistic approach, and ask if that is the support she is looking for.\n"
+        "REQUIRED: You MUST clearly say, in Spanish, that you are a fertility coach, not a doctor or clinic (the exact phrase \"no soy doctora\" must appear). No links, no price. One question max.",
+        "Para que quede claro, soy coach de fertilidad, no soy doctora ni una clínica, así que no hago FIV ni receto nada. Lo que hago es mirar tu panorama completo, cosas como nutrición, hormonas, estrés y estilo de vida, y armar un plan personalizado para preparar tu cuerpo para el embarazo. ¿Es ese el tipo de apoyo que estás buscando?",
+    ),
+    # Booking invite with the required link.
+    (
+        "CONVERSATION SO FAR (most recent last):\n"
+        "Lead: sí, él puede estar en la llamada\n\n"
+        "GOAL: Invite her to book the call, include the booking link, and ask her to send the email she used.\n"
+        "REQUIRED: You MUST include exactly: https://www.thefertilitysolution.com/free-call . That is the only link allowed. No price. One question max.",
+        "Por todo lo que me has contado, creo que vale la pena que tú y tu pareja hablen con mi equipo para ver cómo puedo ayudarte. Aquí tienes el enlace para agendar tu llamada: https://www.thefertilitysolution.com/free-call. Cuando tomes un horario, envíame el correo que usaste para confirmarlo de nuestro lado.",
+    ),
+]
+
+
 def _fmt_facts(facts: dict) -> str:
     if not facts:
         return "(nothing yet)"
@@ -106,7 +166,11 @@ def _requirements(directive) -> str:
     if directive.must_include:
         lines.append("You MUST include exactly: " + " , ".join(directive.must_include))
     if directive.generate and directive.pinned_text:
-        lines.append("You MUST clearly say you are a fertility coach, not a doctor or clinic.")
+        if directive.language == "es":
+            lines.append("You MUST clearly say, in Spanish, that you are a fertility coach, "
+                         "not a doctor or clinic (the exact phrase \"no soy doctora\" must appear).")
+        else:
+            lines.append("You MUST clearly say you are a fertility coach, not a doctor or clinic.")
     if directive.allow_urls:
         lines.append("The only link(s) you may include: " + " , ".join(directive.allow_urls)
                      + " (include only if it serves the goal).")
@@ -134,7 +198,8 @@ def _format(directive, history: list[dict]) -> str:
         f"STILL TO UNDERSTAND over the next messages (do not rush; ask at most one thing now): {agenda}\n"
         f"SUBSTANCE TO CONVEY (say it in your own warm, natural words, keep the meaning): {substance}\n"
         f"{_requirements(directive)}\n"
-        "Write Sonia's next message now."
+        + ("Write Sonia's next message now, in Spanish."
+           if directive.language == "es" else "Write Sonia's next message now.")
     )
 
 
@@ -147,8 +212,10 @@ async def generate(
     temperature: float = 0.6,
 ) -> tuple[str, dict]:
     """Generate the message for a directive. Returns (text, usage)."""
-    messages = [{"role": "system", "content": _SYSTEM}]
-    for brief, out in _EXAMPLES:
+    es = getattr(directive, "language", "en") == "es"
+    system = _SYSTEM + _SYSTEM_ES_ADDENDUM if es else _SYSTEM
+    messages = [{"role": "system", "content": system}]
+    for brief, out in (_EXAMPLES_ES if es else _EXAMPLES):
         messages.append({"role": "user", "content": brief})
         messages.append({"role": "assistant", "content": out})
     messages.append({"role": "user", "content": _format(directive, history)})

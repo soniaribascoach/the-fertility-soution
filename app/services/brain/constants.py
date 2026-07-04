@@ -92,10 +92,10 @@ class Action(str, Enum):
     OOS_MENOPAUSE = "OOS_MENOPAUSE"
     OOS_AGE_OVER_46 = "OOS_AGE_OVER_46"
     OOS_DEAF = "OOS_DEAF"
-    OOS_LANGUAGE_BARRIER = "OOS_LANGUAGE_BARRIER"
 
     # Terminal: hand to human, send nothing
     HUMAN_TAKEOVER = "HUMAN_TAKEOVER"
+    UNSUPPORTED_LANGUAGE = "UNSUPPORTED_LANGUAGE"  # not en/es -> silent handoff
 
 
 class Intent(str, Enum):
@@ -119,7 +119,6 @@ class Intent(str, Enum):
     BLOCKED_TUBES = "blocked_tubes"
     MENOPAUSE_NO_PERIOD = "menopause_no_period"
     IVF_ONLY = "ivf_only"
-    NON_ENGLISH = "non_english"
     DEAF = "deaf"
     IS_THIS_AI = "is_this_ai"
     ANGRY_OR_CHALLENGING = "angry_or_challenging"
@@ -151,6 +150,7 @@ SLOT_KEYS = [
     "tubes_blocked",            # none | one | both
     "no_period_reason",         # free text (menopause assessment)
     "ivf_interest",             # True when they accept IVF-optimization help
+    "language",                 # en | es (sticky; None means not yet observed -> en)
 ]
 
 FLAG_KEYS = [
@@ -195,6 +195,28 @@ def empty_lead_state() -> dict:
         "flags": dict(_DEFAULT_FLAGS),
         "counters": {k: 0 for k in COUNTER_KEYS},
     }
+
+
+# Control flags cleared when a human resumes the AI after a takeover. Facts
+# (slots) and progress flags (booking_sent, explained_role, ...) survive so
+# the funnel picks up where it left off instead of restarting.
+_RESUME_CLEARED_FLAGS = {
+    "handed_off": False,
+    "cost_declined": False,
+    "last_prompt": None,
+    "oos_reason": None,
+    "takeover_reason": None,
+}
+
+
+def resume_lead_state(state: dict | None) -> dict:
+    """Re-arm a lead after a human takeover: clear the terminal/control flags
+    that would keep the brain silent (or instantly re-trigger a takeover) while
+    preserving every extracted fact and funnel-progress flag."""
+    base = normalize_lead_state(state)
+    base["flags"].update(_RESUME_CLEARED_FLAGS)
+    base["counters"]["repeat_count"] = 0
+    return base
 
 
 def normalize_lead_state(state: dict | None) -> dict:

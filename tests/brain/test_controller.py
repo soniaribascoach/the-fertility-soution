@@ -11,12 +11,12 @@ from app.services.brain import scripts
 
 
 def ext(intent="other", situation_type="none", oos_signal="none",
-        takeover=False, takeover_reason=None, confidence=0.9, **slots):
+        takeover=False, takeover_reason=None, confidence=0.9, language="en", **slots):
     deltas = SlotDeltas(**{k: slots.get(k) for k in SlotDeltas.model_fields})
     return Extraction(
         slot_deltas=deltas, intent=intent, situation_type=situation_type,
-        oos_signal=oos_signal, takeover=takeover, takeover_reason=takeover_reason,
-        confidence=confidence,
+        oos_signal=oos_signal, language=language, takeover=takeover,
+        takeover_reason=takeover_reason, confidence=confidence,
     )
 
 
@@ -328,6 +328,44 @@ def test_is_this_ai_triggers_takeover():
     assert d.action == Action.HUMAN_TAKEOVER
     assert d.send_message is False
     assert d.pause is True and d.add_tag is True
+
+
+# --- Language ----------------------------------------------------------------
+
+def test_unsupported_language_is_silent():
+    # Not en/es -> say NOTHING (she can't read our decline); pause + tag a human.
+    d = decide(empty_lead_state(), ext(language="other"))
+    assert d.action == Action.UNSUPPORTED_LANGUAGE
+    assert d.send_message is False
+    assert d.pause is True and d.add_tag is True
+    assert d.pause_reason == "unsupported_language"
+
+
+def test_language_sticky_updates_on_confident_turn():
+    st = state(slots={"language": "en", "trying_duration": "1 year"})
+    d = decide(st, ext(language="es", intent="shares_situation", age=34))
+    assert d.lead_state["slots"]["language"] == "es"
+    assert d.action != Action.UNSUPPORTED_LANGUAGE  # the funnel continues
+
+
+def test_unclear_keeps_prior_language():
+    st = state(slots={"language": "es", "trying_duration": "1 year"})
+    d = decide(st, ext(language="unclear", intent="answers_question"))
+    assert d.lead_state["slots"]["language"] == "es"
+
+
+def test_other_language_beats_oos_decline():
+    # A French-speaking 48-year-old must get silence, not the English age decline.
+    d = decide(empty_lead_state(), ext(language="other", age=48))
+    assert d.action == Action.UNSUPPORTED_LANGUAGE
+    assert d.send_message is False
+
+
+def test_other_does_not_overwrite_sticky_slot():
+    st = state(slots={"language": "es"})
+    d = decide(st, ext(language="other"))
+    assert d.action == Action.UNSUPPORTED_LANGUAGE
+    assert d.lead_state["slots"]["language"] == "es"
 
 
 # --- Interrupts (answer, then resume) ---------------------------------------

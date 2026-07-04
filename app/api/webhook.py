@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.repositories.conversation import save_message
 from app.repositories.pending_message import insert_message, is_duplicate
+from app.services.resume import resume_lead
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,35 @@ def _verify_signature(body: bytes, header: str | None) -> bool:
         hashlib.sha256,
     ).hexdigest()
     return hmac.compare_digest(expected, header)
+
+
+def _verify_resume_auth(body: bytes, request: Request) -> bool:
+    """ManyChat's External Request node can't compute an HMAC, so /webhook/resume
+    also accepts the shared secret verbatim in an X-Manychat-Secret header."""
+    if _verify_signature(body, request.headers.get("X-Hub-Signature-256")):
+        return True
+    header_secret = request.headers.get("X-Manychat-Secret") or ""
+    return bool(header_secret) and hmac.compare_digest(
+        settings.manychat_webhook_secret, header_secret
+    )
+
+
+@router.post("/webhook/resume")
+async def resume_webhook(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    body = await request.body()
+    if not _verify_resume_auth(body, request):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
+    payload = await request.json()
+    ig_user_id = str(payload.get("ig_id") or "")
+    if not ig_user_id:
+        raise HTTPException(status_code=400, detail="Missing ig_id")
+
+    prior_reason = await resume_lead(db, ig_user_id)
+    return {"status": "ok", "was_paused": prior_reason is not None}
 
 
 @router.post("/webhook")

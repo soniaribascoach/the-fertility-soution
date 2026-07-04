@@ -59,6 +59,11 @@ _INTERRUPTS = {
     "not_ready_no_money",
 }
 
+# Intents that are ALWAYS a human takeover per the spec. Checked from the
+# extracted intent label so the trigger never depends on the LLM also
+# remembering to set the takeover boolean (same lesson as the age-48 miss).
+_TAKEOVER_INTENTS = {"is_this_ai", "angry_or_challenging", "distress"}
+
 # Discovery questions in priority order; the first missing slot is asked next.
 _DISCOVERY_ORDER = ["trying_duration", "age", "treatment_path", "done_testing", "diagnosis"]
 
@@ -156,7 +161,18 @@ def decide(
     if f.get("cost_declined"):
         return _takeover(state, "cant_afford_engaging")
 
-    # 1) Hard out-of-scope. Check the EXTRACTED FACTS deterministically first, so
+    # 1) Language. Sticky slot: only a confident read updates it; short/ambiguous
+    # turns ("ok", "si", a number) keep the current value. An unsupported
+    # language must be checked BEFORE the OOS declines below — those are
+    # outgoing en/es text, and a lead we can't talk to gets silence, not a
+    # decline she can't read. "other" does not overwrite the sticky slot.
+    lang = extraction.language
+    if lang in ("en", "es"):
+        s["language"] = lang
+    elif lang == "other":
+        return _takeover(state, "unsupported_language", action=Action.UNSUPPORTED_LANGUAGE)
+
+    # 2) Hard out-of-scope. Check the EXTRACTED FACTS deterministically first, so
     # these never depend on the LLM remembering to set an oos flag (age is a
     # number -> code decides, not the model).
     age = s.get("age")
@@ -168,8 +184,6 @@ def decide(
     oos = extraction.oos_signal
     if oos == "deaf":
         return _oos(state, Action.OOS_DEAF, "oos_deaf")
-    if oos == "non_english":
-        return _oos(state, Action.OOS_LANGUAGE_BARRIER, "oos_language")
     if oos == "age_over_46":  # LLM flagged it but no numeric age parsed
         return _oos(state, Action.OOS_AGE_OVER_46, "age_over_46")
     if oos == "blocked_tubes":
@@ -182,18 +196,21 @@ def decide(
             return decision
         # else: young + benign -> continue
 
-    # 2) Soft human-takeover signal (angry / asks-if-AI / distress / etc.).
+    # 3) Human-takeover: from the intent label deterministically (asks-if-AI /
+    # angry / severe distress), or the extractor's soft takeover flag.
+    if intent in _TAKEOVER_INTENTS:
+        return _takeover(state, extraction.takeover_reason or intent)
     if extraction.takeover:
         return _takeover(state, extraction.takeover_reason or "complex_case")
 
-    # 3) Intent interrupts — answer, then stay put.
+    # 4) Intent interrupts — answer, then stay put.
     if intent in _INTERRUPTS:
         decision = _handle_interrupt(state, intent, cfg)
         if decision is not None:
             return _guard_repeats(state, decision)
         # ivf_only when already interested falls through to the funnel.
 
-    # 4) The qualification waterfall.
+    # 5) The qualification waterfall.
     decision = _waterfall(state, cfg, ig_user_id, extraction.situation_type)
     return _guard_repeats(state, decision)
 
@@ -383,10 +400,13 @@ def _ask_discovery(state: dict, missing_slot: str, situation_type: str = "none")
         for k in ("trying_duration", "age", "treatment_path", "what_tried", "diagnosis_detail")
         if s.get(k)
     }
+    es = s.get("language") == "es"
+    empathy = scripts.EMPATHY_VARIANTS_ES if es else scripts.EMPATHY_VARIANTS
+    questions = scripts.DISCOVERY_QUESTIONS_ES if es else scripts.DISCOVERY_QUESTIONS
     brief = {
-        "empathy_line": scripts.EMPATHY_VARIANTS.get(situation_type),
+        "empathy_line": empathy.get(situation_type),
         "facts_to_reflect": facts,
-        "next_question": scripts.DISCOVERY_QUESTIONS[missing_slot],
+        "next_question": questions[missing_slot],
     }
     return Decision(
         action=Action.ASK_DISCOVERY,
@@ -433,11 +453,11 @@ def _ended(state: dict) -> Decision:
     )
 
 
-def _takeover(state: dict, reason: str) -> Decision:
+def _takeover(state: dict, reason: str, action: Action = Action.HUMAN_TAKEOVER) -> Decision:
     state["phase"] = Phase.TAKEOVER.value
     state["flags"]["takeover_reason"] = reason
     return Decision(
-        action=Action.HUMAN_TAKEOVER,
+        action=action,
         next_phase=Phase.TAKEOVER.value,
         lead_state=state,
         send_message=False,
