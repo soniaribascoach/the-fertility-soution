@@ -88,7 +88,10 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             # New qualification-funnel brain (behind a config flag for safe rollout).
             brain_version = (cfg.get("brain_version") or "legacy").strip().lower()
             if brain_version == "funnel":
-                await _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state)
+                await _run_brain_turn(
+                    db, ig_user_id, manychat_contact_id, cfg, app_state,
+                    [r.content for r in rows],
+                )
                 await mark_batch_processed(db, ig_user_id)
                 logger.info("Processed conversation (funnel) for user %s", ig_user_id)
                 return
@@ -186,14 +189,15 @@ async def _send_bubbles(app_state, manychat_contact_id: str, text: str) -> None:
         await app_state.manychat_client.send_message(manychat_contact_id, chunk)
 
 
-async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state) -> None:
+async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state, batch_texts) -> None:
     """Run the qualification-funnel brain for one batch and apply side effects."""
     history = await get_history(db, ig_user_id, limit=20)
     history_dicts = [{"role": r.role, "content": r.content} for r in history]
     lead_state = await get_lead_state(db, ig_user_id)
 
     result = await run_turn(
-        app_state.openai_client, history_dicts, cfg, lead_state, ig_user_id=ig_user_id
+        app_state.openai_client, history_dicts, cfg, lead_state,
+        ig_user_id=ig_user_id, new_texts=batch_texts,
     )
 
     await save_lead_state(db, ig_user_id, result.lead_state)

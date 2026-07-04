@@ -59,7 +59,7 @@ verbatim/validated output (no hallucinated links, prices, or medical advice).
 
 | # | Stage | LLM? | What it does |
 |---|---|---|---|
-| 0 | **Safety gate** | No | Media-URL message, `medical_blocklist` phrase, or `human_takeover_triggers` phrase → pause + tag, short-circuit. |
+| 0 | **Safety gate** | No | Media-URL message, `medical_blocklist` phrase, or `human_takeover_triggers` phrase → pause + tag, short-circuit. Scans **only the current batch** (`run_turn(new_texts=…)`, passed by the worker) — human Live-Chat replies aren't in our history, so gating on trailing user texts would re-trip on an already-handled link/phrase after every resume. The sandbox (no batch) falls back to the trailing user texts. |
 | 1 | **Phase-1 CTA bypass** | No | If the *only* user message so far exactly equals a `phase1_cta_keywords` entry → return the verbatim `phase1_opening_message`. CTA keywords are English-campaign only and carry no language signal; Spanish is entered when the lead's first real message is read by the extractor. |
 | 2 | **Extractor** | **Yes #1** | Reads recent turns + current slots → strict JSON: slot deltas, `intent`, `situation_type`, `oos_signal`, `language` (en\|es\|other\|unclear), `takeover`. Never writes user-facing text. `gpt-4o-mini`, temp 0. |
 | 3 | **Director** (`controller.decide`) | No | Merges slot deltas; updates the sticky `language` slot (confident en/es reads only; `unclear` keeps it; `other` → silent `UNSUPPORTED_LANGUAGE` takeover); picks the SINGLE next `Action`; enforces the booking gate, OOS/takeover, loop guard, terminal handoffs. |
@@ -223,6 +223,12 @@ are preserved. Idempotent. Pure tests: `tests/brain/test_resume.py`.
 re-pause on the lead's next message because the slot still trips the
 deterministic gate — the safety net working. If the pause came from a
 mis-extraction, correct the slot in `/sqladmin` (UserState) before resuming.
+
+**Stage-0 pauses do NOT re-trip after resume:** the safety gate scans only the
+new batch (`new_texts`), so a media link or blocklist phrase a human already
+handled never re-pauses the lead on their next message (it's still a trailing
+user message in history — human replies aren't persisted). Covered by
+`tests/brain/test_resume.py` (pure + live).
 
 ---
 

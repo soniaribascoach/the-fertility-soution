@@ -137,9 +137,15 @@ async def run_turn(
     lead_state: Optional[dict] = None,
     *,
     ig_user_id: str = "",
+    new_texts: Optional[list[str]] = None,
 ) -> TurnResult:
+    # `new_texts` is the current unprocessed batch. The safety gate must scan
+    # ONLY these: human Live-Chat replies are never saved to our history, so
+    # after a resume the old gated message (media link, blocklist phrase) is
+    # still a trailing user message and would re-trip the gate on every turn.
+    # Callers without a batch (admin sandbox) fall back to the trailing texts.
     state = normalize_lead_state(lead_state)
-    recent = _trailing_user_texts(history)
+    recent = list(new_texts) if new_texts is not None else _trailing_user_texts(history)
 
     # 0) Safety gate (no LLM).
     gated = _safety_gate(cfg, recent, state)

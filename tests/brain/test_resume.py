@@ -1,8 +1,10 @@
-"""Pure tests for resume_lead_state — the flag reset applied when a human
-re-arms the AI after a takeover (via ManyChat tag automation or the admin
-dashboard). No API calls."""
+"""Tests for the resume feature: resume_lead_state (the flag reset applied when
+a human re-arms the AI) and the safety gate scanning only the NEW batch — so an
+already-handled media link / blocklist phrase can't re-trip a takeover after a
+human resumes. Pure except the one marked live."""
 import pytest
 
+from app.services.brain import run_turn
 from app.services.brain.constants import (
     COUNTER_KEYS,
     FLAG_KEYS,
@@ -82,3 +84,60 @@ def test_normalizes_schema():
     assert resumed["phase"] == "PRIORITY"
     assert resumed["slots"]["age"] == 30
     assert set(resumed["flags"]) == set(FLAG_KEYS)
+
+
+# --- Safety gate scans only the new batch after a resume -----------------------
+#
+# Human Live-Chat replies are never saved to our history, so after a media/
+# blocklist takeover the old gated message is still a TRAILING user message.
+# The worker therefore passes the current batch as new_texts; without it the
+# lead's very next message would re-trip the gate forever.
+
+_OLD_LINK = "https://instagram.com/reel/abc123"
+_NEW_TEXT = "thanks, that video was me! so what do we do next?"
+
+
+def _history_after_human_reply():
+    # user sent a link (takeover), a human replied in Live Chat (not persisted),
+    # the human resumed the AI, then the lead sent a normal message.
+    return [
+        {"role": "user", "content": _OLD_LINK},
+        {"role": "user", "content": _NEW_TEXT},
+    ]
+
+
+async def test_media_in_new_batch_still_gates():
+    # gate fires before any LLM call, so no client is needed
+    r = await run_turn(None, _history_after_human_reply(), {}, None,
+                       new_texts=[_OLD_LINK])
+    assert r.action == "SAFETY_MEDIA" and r.pause is True
+
+
+async def test_no_batch_falls_back_to_trailing_texts():
+    # sandbox behavior (no batch): the trailing link still gates
+    r = await run_turn(None, _history_after_human_reply(), {}, None)
+    assert r.action == "SAFETY_MEDIA" and r.pause is True
+
+
+async def test_old_blocklist_phrase_not_regated_in_new_batch():
+    # blocklisted phrase already handled by a human -> clean new batch passes
+    # the gate (gate returns None; run_turn then proceeds toward the extractor,
+    # which the empty new_texts=[] NOOP short-circuit lets us avoid here)
+    cfg = {"medical_blocklist": "clomid dosage"}
+    history = [
+        {"role": "user", "content": "what clomid dosage should I take?"},
+        {"role": "user", "content": "ok thank you!"},
+    ]
+    r = await run_turn(None, history, cfg, None, new_texts=[])
+    assert r.action == "NOOP" and r.pause is False
+
+
+@pytest.mark.live
+async def test_no_retakeover_after_human_resume(openai_client):
+    # THE bug scenario: old link in history, clean new batch -> the funnel
+    # continues instead of pausing again.
+    r = await run_turn(openai_client, _history_after_human_reply(), {}, None,
+                       new_texts=[_NEW_TEXT])
+    assert r.pause is False
+    assert r.action not in ("SAFETY_MEDIA", "HUMAN_TAKEOVER")
+    assert r.reply_text
