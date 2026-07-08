@@ -79,20 +79,16 @@ SCRIPTS: dict[Action, str] = {
         "be here for you.\n\n{register_link}"
     ),
 
-    # Explain role (Phase 4)
+    # Explain role (Phase 4) — Sonia's v1.1 wording: answer what a coach DOES.
     Action.EXPLAIN_ROLE: (
-        "Just so it's clear, I'm a fertility coach, not a doctor or fertility clinic. "
-        "I don't perform IVF, prescribe medication, or replace medical care.\n\n"
-        "My work is a highly personalized, research-backed, holistic approach to fertility. "
-        "I look at the full picture of what may be affecting your ability to conceive and "
-        "what your body may need in order to feel safer, healthier, and more supported for "
-        "pregnancy.\n\n"
-        "Depending on the case, this can include things like nutrition, inflammation, "
-        "hormones, egg and sperm quality, nervous system regulation, sleep, lifestyle, "
-        "timing, stress, gut health, metabolic health, and much more. But it is not limited "
-        "to those things, because every woman and every couple is different.\n\n"
-        "That's why I like to understand your specific situation first before saying whether "
-        "I may be able to help.\n\n"
+        "A fertility coach helps you look at the full picture around your fertility and "
+        "build a personalized plan to support your body before or during trying naturally, "
+        "IUI, or IVF.\n\n"
+        "I'm not a doctor or clinic, so I don't prescribe medication, perform IVF, or "
+        "replace medical care.\n\n"
+        "My work can include things like nutrition, inflammation, hormones, egg and sperm "
+        "quality, nervous system regulation, sleep, stress, gut health, metabolic health, "
+        "timing, and lifestyle, depending on the person.\n\n"
         "Is that the kind of support you're looking for?"
     ),
     Action.EXPLAIN_ROLE_TFS_UPDATED: (
@@ -145,12 +141,21 @@ SCRIPTS: dict[Action, str] = {
         "this with a partner, or are you navigating this on your own?"
     ),
     Action.PARTNER_ASK_JOIN: "Would your partner be able to join you on the call?",
+    # Sonia's v1.1 wording, generalized beyond donor sperm to any solo path.
+    Action.SOLO_NO_PARTNER_ACK: (
+        "Got it. Since you're navigating this on your own, you would not need a partner on "
+        "the call.\n\n"
+        "Are you currently trying naturally, doing IUI, preparing for IVF, or still "
+        "deciding your next step?"
+    ),
+    # Sonia's v1.1 wording (gender-generalized; asks the decision-maker
+    # question instead of ending on a statement).
     Action.PARTNER_PUSHBACK: (
-        "We will use this meeting to determine if we are a match to work together to help you "
-        "get pregnant. Which is why we need all the decision-makers there. If your partner is "
-        "a decision-maker, we need him there. If you are the only decision maker and you can "
-        "make your own investment decisions in your pregnancy, you're welcome to come alone "
-        "to the meeting, ready to make powerful decisions for you and your family."
+        "That's okay. If you are the only decision maker, you can absolutely come alone. "
+        "But if your partner is involved in the decision, I really need them on the call "
+        "too so we don't waste their time or yours.\n\n"
+        "Are you the only person making the decision about getting support, or would they "
+        "need to be aligned too?"
     ),
 
     # Booking (Phase 7)
@@ -160,7 +165,8 @@ SCRIPTS: dict[Action, str] = {
         "Here's the link to book your call: {booking_link}\n\n"
         "Please choose a time when both decision makers can attend if your partner is part "
         "of the decision. If you're doing this on your own, of course you can come alone.\n\n"
-        "Once you book, send me the email you used so we can confirm it on our end."
+        "Once you book, please follow the next steps carefully so we can make sure your "
+        "call is confirmed."
     ),
     Action.BOOKING_IS_IT_SONIA: (
         "The first call is with my team so we can understand your situation properly and see "
@@ -194,14 +200,16 @@ SCRIPTS: dict[Action, str] = {
         "Can I have your email address so I can verify and make sure your schedule shows on "
         "our end?"
     ),
+    # Dormant: the AI pauses at SEND_BOOKING, so the TEAM sends this prep
+    # message manually after the lead books (Sonia's v1.1 wording).
     Action.POST_BOOKING_CONFIRM_NATALIA: (
-        "Great! You'll be speaking with my associate, Natalia! Please make sure to confirm "
-        "via text message when you receive a text confirmation request from this number "
-        "{natalia_phone}\n\n"
-        "Before the call, it's very important to watch this short masterclass so you have a "
-        "good sense of how I help my clients in your situation: {watch_replay}\n\n"
-        "You'll also see some client case studies and it will ensure that you're fully "
-        "informed before our call, deal?"
+        "Perfect, I'm so glad you booked.\n\n"
+        "Before the call, please watch this short masterclass so you have a clear sense of "
+        "how I help my clients and can come into the call fully informed:\n\n"
+        "{watch_replay}\n\n"
+        "Natalia will text you the day before your appointment to confirm the meeting. "
+        "Please make sure you reply to her and confirm, because we only hold confirmed "
+        "appointments on the calendar."
     ),
     Action.POST_BOOKING_CONFIRM_MONIKA: (
         "Great! You'll be speaking with my associate, Monika! Please make sure to confirm "
@@ -280,11 +288,12 @@ SCRIPTS: dict[Action, str] = {
         "of education resources, and a great community of like-minded women who support each "
         "other through this journey."
     ),
+    # Sonia's v1.1 wording: validate the medical path, never imply alternatives.
     Action.IVF_ONLY_OFFER: (
-        "If IVF is the best path for you medically, I may still be able to help by optimizing "
-        "your chances of success. I support the full picture of fertility and IVF preparation "
-        "using a highly personalized, research-backed, holistic approach. Is that something "
-        "you're interested in?"
+        "If IVF is the best path medically, I wouldn't want to dismiss that.\n\n"
+        "I may still be able to help by supporting your body before and during IVF through "
+        "a personalized, holistic approach.\n\n"
+        "Is that the kind of support you're interested in?"
     ),
     Action.TROUBLE_BOOKING: (
         "Sorry about that. Did you see any error message? Can you please send a screenshot so "
@@ -300,13 +309,22 @@ SCRIPTS: dict[Action, str] = {
         "Thanks for the follow! :) I appreciate it. Just wanted to know what brings you here. "
         "Are you on a journey to conceiving?"
     ),
+    # Sonia's v1.1 wording: free-only leads get the masterclass, not a goodbye.
     Action.NO_MONEY: (
-        "Thank you for being honest, if you ever find yourself fully ready to commit to this, "
-        "I'll be here for you."
+        "Of course. If you're only looking for free support right now, the best place to "
+        "start is my free masterclass. It will give you a clearer understanding of how I "
+        "look at fertility and what may be affecting your body.\n\n"
+        "You can watch it here:\n{register_link}"
     ),
 
     # Out-of-scope clarifying questions
     Action.ASK_BOTH_TUBES: "Are both tubes blocked, or only one?",
+    Action.ONE_TUBE_ACK: (
+        "Thank you for sharing that. If only one tube is blocked, that is different from "
+        "both tubes being blocked.\n\n"
+        "Are you currently trying naturally, doing IUI, considering IVF, or still deciding "
+        "your next step?"
+    ),
     Action.ASK_MENOPAUSE_REASON: (
         "Thank you for sharing that. Can I ask what's the reason you're no longer getting "
         "your period?"
@@ -326,6 +344,12 @@ SCRIPTS: dict[Action, str] = {
         "Thank you for being transparent with me. Based on what you shared, this may be "
         "outside the scope of what I can help with through coaching. I'm really sorry, and "
         "I wish you all the best."
+    ),
+    # Sonia's v1.1 wording: 12+ months without a period, regardless of age.
+    Action.OOS_NO_PERIOD_12M: (
+        "Thank you for being transparent with me. Since you haven't had a period in over "
+        "12 months, I'd want this reviewed carefully before pointing you in the wrong "
+        "direction. This may be outside the scope of what I can help with through coaching."
     ),
     Action.OOS_AGE_OVER_46: (
         "Thank you for sharing that with me. Because age can change what is realistically "
@@ -369,20 +393,16 @@ SCRIPTS_ES: dict[Action, str] = {
         "verdad en esto, aquí estaré para ti.\n\n{register_link}"
     ),
 
-    # Explain role (Phase 4)
+    # Explain role (Phase 4) — Sonia's v1.1 wording: answer what a coach DOES.
     Action.EXPLAIN_ROLE: (
-        "Para que quede claro, soy coach de fertilidad, no soy doctora ni una clínica de "
-        "fertilidad. No realizo FIV, no receto medicamentos ni reemplazo la atención médica.\n\n"
-        "Mi trabajo es un enfoque holístico de la fertilidad, altamente personalizado y "
-        "respaldado por la investigación. Miro el panorama completo de lo que puede estar "
-        "afectando tu capacidad de concebir y lo que tu cuerpo puede necesitar para sentirse "
-        "más seguro, más sano y mejor preparado para el embarazo.\n\n"
-        "Según el caso, esto puede incluir cosas como nutrición, inflamación, hormonas, "
-        "calidad de óvulos y esperma, regulación del sistema nervioso, sueño, estilo de vida, "
-        "tiempos, estrés, salud intestinal, salud metabólica y mucho más. Pero no se limita a "
-        "eso, porque cada mujer y cada pareja es diferente.\n\n"
-        "Por eso me gusta entender primero tu situación específica antes de decir si puedo "
-        "ayudarte.\n\n"
+        "Un coach de fertilidad te ayuda a mirar el panorama completo de tu fertilidad y a "
+        "crear un plan personalizado para apoyar a tu cuerpo antes o durante la búsqueda "
+        "natural, la IUI o la FIV.\n\n"
+        "Yo no soy doctora ni una clínica, así que no receto medicamentos, no realizo FIV "
+        "ni reemplazo la atención médica.\n\n"
+        "Mi trabajo puede incluir cosas como nutrición, inflamación, hormonas, calidad de "
+        "óvulos y esperma, regulación del sistema nervioso, sueño, estrés, salud intestinal, "
+        "salud metabólica, tiempos y estilo de vida, según cada persona.\n\n"
         "¿Es ese el tipo de apoyo que estás buscando?"
     ),
     Action.EXPLAIN_ROLE_TFS3: (
@@ -416,13 +436,18 @@ SCRIPTS_ES: dict[Action, str] = {
         "esto con tu pareja, o lo estás llevando por tu cuenta?"
     ),
     Action.PARTNER_ASK_JOIN: "¿Tu pareja podría acompañarte en la llamada?",
+    Action.SOLO_NO_PARTNER_ACK: (
+        "Entendido. Como estás llevando esto por tu cuenta, no necesitarías una pareja en "
+        "la llamada.\n\n"
+        "¿Estás intentando de forma natural, haciendo IUI, preparándote para FIV, o todavía "
+        "decidiendo tu siguiente paso?"
+    ),
     Action.PARTNER_PUSHBACK: (
-        "Usaremos esta reunión para ver si somos un buen equipo para trabajar juntas y "
-        "ayudarte a quedar embarazada. Por eso necesitamos que estén todas las personas que "
-        "toman la decisión. Si tu pareja decide contigo, lo necesitamos ahí. Si tú eres la "
-        "única que toma la decisión y puedes decidir sobre esta inversión en tu embarazo, "
-        "eres bienvenida a venir sola, lista para tomar decisiones poderosas para ti y tu "
-        "familia."
+        "Está bien. Si tú eres la única persona que toma la decisión, por supuesto puedes "
+        "venir sola. Pero si tu pareja es parte de la decisión, de verdad necesito que "
+        "también esté en la llamada para no perder su tiempo ni el tuyo.\n\n"
+        "¿Eres tú la única persona que decide sobre buscar este apoyo, o tu pareja también "
+        "tendría que estar de acuerdo?"
     ),
 
     # Booking (Phase 7)
@@ -432,7 +457,8 @@ SCRIPTS_ES: dict[Action, str] = {
         "Aquí tienes el enlace para agendar tu llamada: {booking_link}\n\n"
         "Por favor elige un horario en el que puedan estar ambos si tu pareja es parte de la "
         "decisión. Si estás en esto por tu cuenta, por supuesto puedes venir sola.\n\n"
-        "Cuando agendes, envíame el correo que usaste para confirmarlo de nuestro lado."
+        "Cuando agendes, por favor sigue los siguientes pasos con atención para que podamos "
+        "confirmar tu llamada."
     ),
     Action.BOOKING_IS_IT_SONIA: (
         "La primera llamada es con mi equipo, para entender bien tu situación y ver si esto "
@@ -519,10 +545,10 @@ SCRIPTS_ES: dict[Action, str] = {
         "meta que se apoyan entre sí durante este camino."
     ),
     Action.IVF_ONLY_OFFER: (
-        "Si la FIV es el mejor camino para ti médicamente, aún puedo ayudarte optimizando "
-        "tus probabilidades de éxito. Acompaño el panorama completo de la fertilidad y la "
-        "preparación para la FIV con un enfoque holístico, altamente personalizado y "
-        "respaldado por la investigación. ¿Es algo que te interesa?"
+        "Si la FIV es el mejor camino médicamente, no querría restarle importancia.\n\n"
+        "Aún puedo ayudarte apoyando a tu cuerpo antes y durante la FIV con un enfoque "
+        "holístico y personalizado.\n\n"
+        "¿Es ese el tipo de apoyo que te interesa?"
     ),
     Action.TROUBLE_BOOKING: (
         "Lo siento. ¿Viste algún mensaje de error? ¿Puedes enviarme una captura de pantalla "
@@ -531,12 +557,20 @@ SCRIPTS_ES: dict[Action, str] = {
         "Si no viste esa página, por favor vuelve a agendar."
     ),
     Action.NO_MONEY: (
-        "Gracias por ser honesta. Si en algún momento te sientes totalmente lista para "
-        "comprometerte con esto, aquí estaré para ti."
+        "Claro. Si por ahora solo buscas apoyo gratuito, el mejor lugar para empezar es mi "
+        "masterclass gratuita. Te dará una idea más clara de cómo veo la fertilidad y de lo "
+        "que puede estar afectando a tu cuerpo.\n\n"
+        "Puedes verla aquí:\n{register_link}"
     ),
 
     # Out-of-scope clarifying questions
     Action.ASK_BOTH_TUBES: "¿Están bloqueadas ambas trompas, o solo una?",
+    Action.ONE_TUBE_ACK: (
+        "Gracias por contarme. Si solo una trompa está bloqueada, es diferente a tener "
+        "ambas trompas bloqueadas.\n\n"
+        "¿Estás intentando de forma natural, haciendo IUI, considerando FIV, o todavía "
+        "decidiendo tu siguiente paso?"
+    ),
     Action.ASK_MENOPAUSE_REASON: (
         "Gracias por contarme. ¿Puedo preguntarte cuál es la razón por la que ya no te llega "
         "el periodo?"
@@ -557,6 +591,12 @@ SCRIPTS_ES: dict[Action, str] = {
         "Gracias por ser tan transparente conmigo. Por lo que me cuentas, esto puede estar "
         "fuera del alcance de lo que puedo ayudar a través del coaching. Lo siento mucho y "
         "te deseo lo mejor."
+    ),
+    Action.OOS_NO_PERIOD_12M: (
+        "Gracias por ser tan transparente conmigo. Como no te llega el periodo desde hace "
+        "más de 12 meses, quiero revisar esto con cuidado antes de orientarte en una "
+        "dirección equivocada. Esto puede estar fuera del alcance de lo que puedo ayudar a "
+        "través del coaching."
     ),
     Action.OOS_AGE_OVER_46: (
         "Gracias por contármelo. Como la edad puede cambiar lo que es realista y qué tipo de "

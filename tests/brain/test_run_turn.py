@@ -77,6 +77,41 @@ async def test_full_funnel_books_only_when_qualified(openai_client):
     assert state["flags"]["booking_sent"] is True
 
 
+async def test_multi_fact_message_reflected_before_priority_question(openai_client):
+    # Sonia v1.1: "I'm 39, trying 2 years, 2 failed IUIs" must be reflected
+    # back before the priority question, not skipped over.
+    history = []
+    r = await _say(openai_client, history, None, "FERTILITY")
+    state = r.lead_state
+
+    r = await _say(openai_client, history, state,
+                   "I'm 39, we've been trying for 2 years, and I've done 2 failed IUIs.")
+    assert r.action == Action.ASK_PRIORITY.value, f"got {r.action}"
+    text = (r.reply_text or "").lower()
+    reflected = sum(1 for token in ("39", "2 years", "iui") if token in text)
+    assert reflected >= 2, f"only {reflected} facts reflected: {r.reply_text}"
+    assert text.count("?") == 1
+
+
+async def test_one_message_fully_qualified_lead_books(openai_client):
+    # Sonia's headline v1.1 bug: her exact test paragraph states every
+    # criterion in one message and must get the booking link that same turn.
+    history = []
+    r = await _say(openai_client, history, None, "FERTILITY")
+    state = r.lead_state
+
+    r = await _say(openai_client, history, state, (
+        "I'm 38, we've been trying for 18 months, all testing looks normal, "
+        "we're trying naturally, pregnancy is a 10 priority, I understand this "
+        "is coaching and not medical care, I'm open to a paid program, and my "
+        "husband can join the call."
+    ))
+    assert r.action == Action.SEND_BOOKING.value, (
+        f"expected SEND_BOOKING, got {r.action}; slots={r.lead_state['slots']}"
+    )
+    assert BOOKING_URL in r.reply_text
+
+
 async def test_price_question_never_leaks_link_or_number(openai_client):
     history = []
     r = await _say(openai_client, history, None, "hi how much does your program cost?")
@@ -131,6 +166,78 @@ async def test_no_message_repeats_three_times_in_a_row(openai_client):
         assert not (a and a == b == c), f"reply repeated 3x in a row: {a!r}"
 
 
+@pytest.mark.parametrize("message", [
+    "I can't afford anything right now, but can you still help me?",
+    "I only want free advice",
+])
+async def test_free_only_leads_get_the_masterclass(openai_client, message):
+    # Sonia v1.1: free-resource leads must receive the free masterclass link,
+    # not a generic goodbye.
+    history = []
+    r = await _say(openai_client, history, None, message)
+    assert r.action in (Action.NO_MONEY.value, Action.MASTERCLASS_SEND.value), f"got {r.action}"
+    assert "thefertilitysolution.com/register" in (r.reply_text or ""), r.reply_text
+
+
+async def test_ivf_only_validated_never_offered_alternatives(openai_client):
+    # Sonia v1.1: never imply there are other options when a doctor said
+    # IVF is the only path; offer body support before/during IVF instead.
+    history = []
+    r = await _say(openai_client, history, None, "My doctor said IVF is my only option")
+    assert r.action == Action.IVF_ONLY_OFFER.value, f"got {r.action}"
+    text = (r.reply_text or "").lower()
+    assert "other options" not in text and "other paths" not in text, text
+    assert "ivf" in text
+
+
+async def test_no_period_14_months_reviewed_not_asked_age(openai_client):
+    # Sonia v1.1: no period in 14 months must trigger her review script and
+    # a human takeover, not continue discovery / ask her age.
+    history = []
+    r = await _say(openai_client, history, None, "I haven't had a period in 14 months")
+    assert r.action == Action.OOS_NO_PERIOD_12M.value, f"got {r.action}"
+    assert r.pause is True and r.add_tag is True
+    assert "12 months" in r.reply_text
+    assert "old" not in (r.reply_text or "").lower()
+
+
+async def test_donor_sperm_solo_lead_told_no_partner_needed(openai_client):
+    # Sonia v1.1: a solo/donor lead must be told explicitly that no partner
+    # is needed on the call, then asked her stage.
+    history = []
+    r = await _say(openai_client, history, None, "I'm doing this on my own with donor sperm")
+    assert r.action == Action.SOLO_NO_PARTNER_ACK.value, f"got {r.action}"
+    text = (r.reply_text or "").lower()
+    assert "partner" in text, text
+    assert any(w in text for w in ("naturally", "iui", "ivf")), text
+
+
+async def test_partner_refusal_clarifies_decision_maker_before_link(openai_client):
+    # Sonia v1.1: "husband doesn't want to join" must trigger the sole-
+    # decision-maker question, never the booking link.
+    history = []
+    r = await _say(openai_client, history, None, "FERTILITY")
+    state = r.lead_state
+    for msg in (
+        "I'm 36, we've been trying for 3 years, did 2 IUIs that failed",
+        "it's a 10, top priority",
+        "yes that's exactly the support I'm looking for, and I'm open to a paid program",
+    ):
+        r = await _say(openai_client, history, state, msg)
+        state = r.lead_state
+        assert BOOKING_URL not in (r.reply_text or "")
+
+    r = await _say(openai_client, history, state,
+                   "I'm married but my husband doesn't want to join the call")
+    state = r.lead_state
+    assert BOOKING_URL not in (r.reply_text or ""), f"link sent on refusal: {r.reply_text}"
+
+    r = await _say(openai_client, history, state,
+                   "I'm the only decision maker, I decide about this myself")
+    assert r.action == Action.SEND_BOOKING.value, f"expected booking, got {r.action}"
+    assert BOOKING_URL in r.reply_text
+
+
 async def test_both_tubes_blocked_triggers_takeover(openai_client):
     history = []
     state = None
@@ -142,3 +249,16 @@ async def test_both_tubes_blocked_triggers_takeover(openai_client):
     assert r.action == Action.OOS_BOTH_TUBES.value
     assert r.pause is True
     assert r.add_tag is True
+
+
+async def test_one_blocked_tube_acknowledged_no_takeover(openai_client):
+    # Sonia v1.1: one blocked tube -> acknowledge the one-vs-both difference
+    # and ask the treatment-stage question; no takeover, no generic re-start.
+    history = []
+    r = await _say(openai_client, history, None, "One of my tubes is blocked")
+    assert r.action == Action.ONE_TUBE_ACK.value, f"got {r.action}"
+    assert r.pause is False
+    text = (r.reply_text or "").lower()
+    assert "one" in text, text
+    assert any(w in text for w in ("naturally", "iui", "ivf")), text
+    assert "?" in text

@@ -194,11 +194,55 @@ def test_persistent_low_priority_ends_with_nurture_close():
 
 def test_explain_role_fires_even_if_already_open_to_holistic():
     # She pre-stated she wants holistic (open_to_holistic True) but must still hear
-    # the not-a-doctor role once, or the gate (explained_role) can never pass.
+    # the not-a-doctor role once. The only escape hatch is understands_role=True
+    # (she stated in her own words she knows this is coaching, not medical care).
     slots = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf",
              "priority_score": 9, "open_to_holistic": True}
     d = decide(state(slots=slots), ext(intent="answers_question"))
     assert d.action == Action.EXPLAIN_ROLE
+
+
+def test_understands_role_skips_explain_role():
+    # Sonia v1.1: her own "I understand this is coaching, not medical care"
+    # satisfies the role step -> advance to financial, no EXPLAIN_ROLE re-run.
+    slots = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf",
+             "priority_score": 9, "understands_role": True}
+    d = decide(state(slots=slots), ext(intent="answers_question"))
+    assert d.action == Action.FINANCIAL_CHECK
+
+
+def test_understands_role_alone_does_not_book():
+    d = decide(empty_lead_state(), ext(intent="answers_question", understands_role=True))
+    assert d.action == Action.ASK_DISCOVERY
+
+
+def test_open_to_holistic_false_blocks_despite_understands_role():
+    slots = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf",
+             "priority_score": 9, "understands_role": True, "open_to_holistic": False,
+             "financial_ready": True, "partner_status": "solo"}
+    d = decide(state(slots=slots, flags={"explained_role": True, "situation_shared": True}),
+               ext(intent="answers_question"))
+    assert d.action == Action.SOCIAL_PROOF
+    assert d.action != Action.SEND_BOOKING
+
+
+def test_partner_mention_infers_couple_status():
+    # "my husband can join" sets partner_can_join without partner_status;
+    # merge() must infer couple so the partner gate can resolve.
+    d = decide(empty_lead_state(), ext(intent="answers_question", partner_can_join=True))
+    assert d.lead_state["slots"]["partner_status"] == "couple"
+
+
+def test_one_message_fully_qualified_lead_books():
+    # Sonia's headline v1.1 bug: every criterion stated in ONE message must
+    # send the booking link that same turn.
+    d = decide(empty_lead_state(), ext(
+        intent="shares_situation", age=38, trying_duration="18 months",
+        done_testing=True, treatment_path="natural", priority_score=10,
+        understands_role=True, financial_ready=True, partner_can_join=True,
+    ))
+    assert d.action == Action.SEND_BOOKING
+    assert d.qualified is True
 
 
 def test_financial_decline_blocks_booking():
@@ -233,11 +277,72 @@ def test_partner_join_then_pushback_then_resolved():
     assert d_ok.action == Action.SEND_BOOKING
 
 
+def test_partner_refusal_never_books_without_decision_maker_answer():
+    # Sonia v1.1: "my husband doesn't want to join" sent the booking link.
+    # Even if the extractor over-infers sole-decision-maker on the refusal
+    # turn, merge() drops that delta and the bot asks the question first.
+    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
+            "open_to_holistic": True, "financial_ready": True}
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
+    d = decide(st, ext(intent="answers_question", partner_status="couple",
+                       partner_can_join=False, partner_is_decision_maker=False))
+    assert d.action == Action.PARTNER_PUSHBACK
+    assert d.lead_state["slots"]["partner_is_decision_maker"] is None
+
+    # Her explicit follow-up answer resolves it -> booking.
+    d2 = decide(d.lead_state, ext(intent="answers_question", partner_is_decision_maker=False))
+    assert d2.action == Action.SEND_BOOKING
+
+
+def test_decision_maker_answer_trusted_after_pushback_question():
+    # After PARTNER_PUSHBACK, "I'm the only decision maker" must book even if
+    # the extractor re-emits the earlier refusal (partner_can_join=False)
+    # alongside her answer.
+    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
+            "open_to_holistic": True, "financial_ready": True,
+            "partner_status": "couple", "partner_can_join": False}
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True,
+                                  "last_prompt": "PARTNER_PUSHBACK"})
+    d = decide(st, ext(intent="answers_question",
+                       partner_can_join=False, partner_is_decision_maker=False))
+    assert d.action == Action.SEND_BOOKING
+
+
+def test_partner_pushback_loop_guard_hands_off():
+    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
+            "open_to_holistic": True, "financial_ready": True,
+            "partner_status": "couple", "partner_can_join": False}
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
+    d1 = decide(st, ext(intent="answers_question"))
+    assert d1.action == Action.PARTNER_PUSHBACK
+    d2 = decide(d1.lead_state, ext(intent="answers_question"))
+    assert d2.action == Action.PARTNER_PUSHBACK
+    d3 = decide(d2.lead_state, ext(intent="answers_question"))
+    assert d3.action == Action.HUMAN_TAKEOVER
+
+
 def test_solo_lead_skips_partner_and_books():
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
             "open_to_holistic": True, "financial_ready": True, "partner_status": "single_by_choice"}
     d = decide(state(slots=base, flags={"explained_role": True}), ext(intent="answers_question"))
     assert d.action == Action.SEND_BOOKING
+
+
+def test_solo_disclosure_gets_no_partner_needed_ack():
+    # Sonia v1.1: "doing this on my own with donor sperm" -> explicitly say no
+    # partner is needed on the call, then the stage question.
+    d = decide(empty_lead_state(), ext(intent="shares_situation", partner_status="donor"))
+    assert d.action == Action.SOLO_NO_PARTNER_ACK
+    assert d.lead_state["slots"]["partner_status"] == "donor"
+
+    # Stage already known -> no ack detour.
+    st = state(slots={"what_tried": "IUI twice"})
+    d2 = decide(st, ext(intent="shares_situation", partner_status="solo"))
+    assert d2.action != Action.SOLO_NO_PARTNER_ACK
+
+    # Fires only on the delta turn; the next answer continues discovery.
+    d3 = decide(d.lead_state, ext(intent="answers_question", treatment_path="iui"))
+    assert d3.action == Action.ASK_DISCOVERY
 
 
 # --- Post-booking ------------------------------------------------------------
@@ -267,15 +372,52 @@ def test_blocked_tubes_clarify_then_oos():
     assert d_ask.action == Action.ASK_BOTH_TUBES
     assert d_ask.pause is False
 
+    # "my tubes are blocked" without a count -> still clarify, never assume both.
+    d_unspec = decide(empty_lead_state(),
+                      ext(oos_signal="blocked_tubes", tubes_blocked="unspecified"))
+    assert d_unspec.action == Action.ASK_BOTH_TUBES
+    assert d_unspec.pause is False
+
     d_oos = decide(empty_lead_state(), ext(oos_signal="blocked_tubes", tubes_blocked="both"))
     assert d_oos.action == Action.OOS_BOTH_TUBES
     assert d_oos.pause is True and d_oos.add_tag is True
     assert d_oos.lead_state["phase"] == Phase.OOS.value
 
 
-def test_one_blocked_tube_continues():
+def test_one_blocked_tube_acknowledged_then_continues():
+    # Sonia v1.1: one tube -> acknowledge the one-vs-both difference + stage
+    # question (never the generic first question), and no takeover.
     d = decide(empty_lead_state(), ext(oos_signal="blocked_tubes", tubes_blocked="one"))
-    assert d.action == Action.ASK_DISCOVERY
+    assert d.action == Action.ONE_TUBE_ACK
+    assert d.pause is False
+
+    # Stage already known -> no ack detour, the funnel just continues.
+    st = state(slots={"what_tried": "2 IUIs"})
+    d2 = decide(st, ext(oos_signal="blocked_tubes", tubes_blocked="one"))
+    assert d2.action == Action.ASK_DISCOVERY
+
+    # Ack fires only on the delta turn -> next turn continues the funnel.
+    d3 = decide(d.lead_state, ext(intent="answers_question", treatment_path="iui"))
+    assert d3.action == Action.ASK_DISCOVERY
+
+
+def test_no_period_over_12_months_is_oos_regardless_of_age():
+    # Sonia v1.1: 14 months without a period must trigger the review branch
+    # and takeover, never continue discovery or ask her age first.
+    for age in (None, 33, 44):
+        d = decide(state(slots={"age": age} if age else None),
+                   ext(intent="shares_situation", oos_signal="menopause_no_period",
+                       no_period_over_year=True))
+        assert d.action == Action.OOS_NO_PERIOD_12M, f"age={age}: got {d.action}"
+        assert d.pause is True and d.add_tag is True
+        assert d.action != Action.ASK_MENOPAUSE_AGE
+
+
+def test_no_period_over_year_deterministic_without_llm_signal():
+    # Same lesson as the age-48 miss: the slot alone must trigger it.
+    d = decide(empty_lead_state(), ext(intent="answers_question", no_period_over_year=True))
+    assert d.action == Action.OOS_NO_PERIOD_12M
+    assert d.pause is True
 
 
 def test_age_over_46_pauses():
@@ -504,3 +646,10 @@ def test_ivf_only_offer_then_continue():
     # Once interested, the offer is not repeated -> funnel resumes (discovery).
     d2 = decide(state(slots={"ivf_interest": True}), ext(intent="ivf_only"))
     assert d2.action == Action.ASK_DISCOVERY
+
+
+def test_ivf_only_offer_not_skipped_by_same_turn_over_read():
+    # Sonia v1.1 item 5: "doctor said IVF is my only option" must get the
+    # offer even if the extractor over-sets ivf_interest on that same turn.
+    d = decide(empty_lead_state(), ext(intent="ivf_only", ivf_interest=True))
+    assert d.action == Action.IVF_ONLY_OFFER

@@ -52,6 +52,7 @@ class Action(str, Enum):
     PARTNER_CHECK = "PARTNER_CHECK"
     PARTNER_ASK_JOIN = "PARTNER_ASK_JOIN"
     PARTNER_PUSHBACK = "PARTNER_PUSHBACK"
+    SOLO_NO_PARTNER_ACK = "SOLO_NO_PARTNER_ACK"  # solo/donor -> no partner needed + stage question
 
     # Booking
     SEND_BOOKING = "SEND_BOOKING"
@@ -86,10 +87,12 @@ class Action(str, Enum):
 
     # Out-of-scope clarifying questions + terminal messages
     ASK_BOTH_TUBES = "ASK_BOTH_TUBES"
+    ONE_TUBE_ACK = "ONE_TUBE_ACK"  # one tube blocked -> acknowledge + stage question
     ASK_MENOPAUSE_REASON = "ASK_MENOPAUSE_REASON"
     ASK_MENOPAUSE_AGE = "ASK_MENOPAUSE_AGE"
     OOS_BOTH_TUBES = "OOS_BOTH_TUBES"
     OOS_MENOPAUSE = "OOS_MENOPAUSE"
+    OOS_NO_PERIOD_12M = "OOS_NO_PERIOD_12M"  # 12+ months no period -> review, any age
     OOS_AGE_OVER_46 = "OOS_AGE_OVER_46"
     OOS_DEAF = "OOS_DEAF"
 
@@ -147,8 +150,9 @@ SLOT_KEYS = [
     "partner_can_join",
     "email_collected",          # the email string
     "closer_assigned",          # natalia | monika
-    "tubes_blocked",            # none | one | both
+    "tubes_blocked",            # none | one | both | unspecified (count unknown)
     "no_period_reason",         # free text (menopause assessment)
+    "no_period_over_year",      # True when she states 12+ months without a period
     "ivf_interest",             # True when they accept IVF-optimization help
     "language",                 # en | es (sticky; None means not yet observed -> en)
 ]

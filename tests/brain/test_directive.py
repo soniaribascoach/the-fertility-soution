@@ -52,13 +52,13 @@ def test_discovery_directive_carries_question_and_facts():
     assert d.still_needed  # agenda is non-empty early on
 
 
-def test_explain_role_disclaimer_is_optional():
-    # 5a ("have you considered working with a fertility coach...") is a like-for-like
-    # alternate, so the not-a-doctor disclaimer is no longer hard-required.
+def test_explain_role_disclaimer_required():
+    # Sonia v1.1: the role step must always answer plainly and carry the
+    # not-a-doctor disclaimer (the old style-B coach-question alternate is gone).
     slots = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9}
     d = _directive_for(state(slots=slots), ext(intent="answers_question"))
     assert d.mode == "EXPLAIN_ROLE"
-    assert d.pinned_text is None
+    assert d.pinned_text == "not a doctor"
 
 
 def test_price_reveal_allows_figure_and_requires_tokens():
@@ -120,8 +120,7 @@ def test_es_max_chars_bumped_and_disclaimer_key_spanish():
     en_d = _directive_for(state(slots={**slots, "language": None}),
                           ext(intent="answers_question"))
     assert d.max_chars == int(en_d.max_chars * 1.2)
-    if d.pinned_text:  # style A pins the disclaimer; B does not
-        assert d.pinned_text == "no soy doctora"
+    assert d.pinned_text == "no soy doctora"
 
 
 def test_es_discovery_brief_carries_spanish_question():
@@ -153,6 +152,25 @@ def test_explain_role_uses_short_guidance_not_long_script():
     # Short guidance reference + a tighter length budget than the long verbatim script.
     assert d.max_chars <= 600
     assert d.reference_text != scripts.render(Action.EXPLAIN_ROLE)
+
+
+def test_multi_fact_turn_asks_priority_with_reflection():
+    # Sonia v1.1: several new facts in one message -> the priority-question
+    # brief tells the Voice to reflect them back first, with room to do it.
+    d = _directive_for(empty_lead_state(),
+                       ext(intent="shares_situation", age=39,
+                           trying_duration="2 years", what_tried="2 failed IUIs"))
+    assert d.action == Action.ASK_PRIORITY
+    assert d.objective.startswith("She just shared several new details")
+    assert d.max_chars == 440
+
+
+def test_single_fact_turn_asks_priority_without_reflection_prefix():
+    st = state(slots={"trying_duration": "2 years", "what_tried": "2 IUIs"})
+    d = _directive_for(st, ext(intent="shares_situation", age=41))
+    assert d.action == Action.ASK_PRIORITY
+    assert not d.objective.startswith("She just shared")
+    assert d.max_chars == 320
 
 
 def test_masterclass_allows_only_register_link():

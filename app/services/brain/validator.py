@@ -40,6 +40,37 @@ def _fold(s: str) -> str:
     return "".join(c for c in decomposed if not unicodedata.combining(c)).casefold()
 
 
+# Regression backstop for the exact salesy/AI-like phrases Sonia reported in
+# the v1.1 feedback round (she retests these verbatim). Deliberately tiny:
+# tone is controlled at the generation side (voice persona + few-shots), not
+# by enumerating phrasing here.
+BANNED_PHRASES = [
+    "elevate your chances",
+    "navigate this journey",
+    "support you on this journey",
+    "which is awesome",
+    "ready to dive in",
+    "take care of yourself in the meantime",
+]
+BANNED_PHRASES_ES = [
+    "elevar tus posibilidades",
+    "navegar este viaje",
+    "apoyarte en este viaje",
+    "lo cual es increible",
+    "lista para sumergirte",
+    "cuidate mientras tanto",
+]
+
+
+def _banned_phrase(text: str) -> str | None:
+    """First banned phrase found in the text, accent/case/whitespace folded."""
+    folded = re.sub(r"\s+", " ", _fold(text))
+    for phrase in BANNED_PHRASES + BANNED_PHRASES_ES:
+        if re.sub(r"\s+", " ", _fold(phrase)) in folded:
+            return phrase
+    return None
+
+
 @dataclass
 class ValidationResult:
     ok: bool
@@ -73,6 +104,9 @@ def validate(action: Action, text: str, cfg: dict | None = None,
         violations.append("em_dash")
     if _MD_RE.search(text):
         violations.append("markdown")
+    banned = _banned_phrase(text)
+    if banned:
+        violations.append(f"banned_phrase:{banned}")
     q = text.count("?")
     if q != 1:
         violations.append(f"question_count={q}")
@@ -124,6 +158,9 @@ def validate_generated(directive, text: str) -> ValidationResult:
         v.append("em_dash")
     if _MD_RE.search(t):
         v.append("markdown")
+    banned = _banned_phrase(t)
+    if banned:
+        v.append(f"banned_phrase:{banned}")
     if t.count("?") > 1:
         v.append("too_many_questions")
     if len(t) > directive.max_chars:

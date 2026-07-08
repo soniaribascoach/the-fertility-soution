@@ -14,6 +14,7 @@ URL_ALLOWED = {
     Action.POST_BOOKING_CONFIRM_NATALIA,
     Action.POST_BOOKING_CONFIRM_MONIKA,
     Action.NURTURE_CLOSE,
+    Action.NO_MONEY,
 }
 
 
@@ -53,6 +54,12 @@ def test_only_url_allowed_actions_contain_links():
             assert "http" not in text, f"{action} must NOT contain a URL"
 
 
+def test_send_booking_has_no_email_ask():
+    # Sonia v1.1: the AI must never ask which email she booked with.
+    assert "email" not in scripts.render(Action.SEND_BOOKING).lower()
+    assert "correo" not in scripts.render(Action.SEND_BOOKING, None, "es").lower()
+
+
 def test_booking_link_default_and_override():
     assert "https://www.thefertilitysolution.com/free-call" in scripts.render(Action.SEND_BOOKING)
     custom = scripts.render(Action.SEND_BOOKING, {"booking_link": "https://example.com/book"})
@@ -85,13 +92,20 @@ def test_price_range_is_config_overridable():
 
 
 def test_closer_phone_numbers_present():
-    assert "+1 (415) 694-1799" in scripts.render(Action.POST_BOOKING_CONFIRM_NATALIA)
     assert "+1 (647) 992-6383" in scripts.render(Action.POST_BOOKING_CONFIRM_MONIKA)
+
+
+def test_manual_prep_template_matches_sonia_wording():
+    # Dormant template the team copies after a lead books (AI stays paused).
+    text = scripts.render(Action.POST_BOOKING_CONFIRM_NATALIA)
+    assert "thefertilitysolution.com/watch-replay" in text
+    assert "Natalia will text you the day before" in text
+    assert "email" not in text.lower()
 
 
 def test_explain_role_is_not_a_medical_provider_claim():
     text = scripts.render(Action.EXPLAIN_ROLE)
-    assert "not a doctor or fertility clinic" in text
+    assert "not a doctor or clinic" in text
     assert "Is that the kind of support you're looking for?" in text
 
 
@@ -111,6 +125,7 @@ REACHABLE_ACTIONS = {
     Action.EXPLAIN_ROLE, Action.EXPLAIN_ROLE_CONFIRM, Action.EXPLAIN_ROLE_TFS3,
     Action.FINANCIAL_CHECK, Action.FINANCIAL_DECLINE,
     Action.PARTNER_CHECK, Action.PARTNER_ASK_JOIN, Action.PARTNER_PUSHBACK,
+    Action.SOLO_NO_PARTNER_ACK,
     Action.SEND_BOOKING, Action.BOOKING_IS_IT_SONIA, Action.BOOKING_CALL_PROCESS,
     Action.ADVICE_DEFLECT, Action.ADVICE_DEFLECT_LATE,
     Action.ADVICE_DEFLECT_PUSH, Action.ADVICE_DEFLECT_PUSH_LATE,
@@ -119,9 +134,10 @@ REACHABLE_ACTIONS = {
     Action.PHONE_NUMBER_DEFLECT, Action.MASTERCLASS_SEND, Action.SOCIAL_PROOF,
     Action.PAYING_TWICE, Action.IVF_ONLY_OFFER, Action.TROUBLE_BOOKING,
     Action.NO_MONEY,
-    Action.ASK_BOTH_TUBES, Action.ASK_MENOPAUSE_REASON, Action.ASK_MENOPAUSE_AGE,
-    Action.OOS_BOTH_TUBES, Action.OOS_MENOPAUSE, Action.OOS_AGE_OVER_46,
-    Action.OOS_DEAF,
+    Action.ASK_BOTH_TUBES, Action.ONE_TUBE_ACK,
+    Action.ASK_MENOPAUSE_REASON, Action.ASK_MENOPAUSE_AGE,
+    Action.OOS_BOTH_TUBES, Action.OOS_MENOPAUSE, Action.OOS_NO_PERIOD_12M,
+    Action.OOS_AGE_OVER_46, Action.OOS_DEAF,
 }
 
 
@@ -170,3 +186,28 @@ def test_es_banks_key_parity():
     assert set(scripts.EMPATHY_VARIANTS_ES) == set(scripts.EMPATHY_VARIANTS)
     assert set(scripts.DISCOVERY_QUESTIONS_ES) == set(scripts.DISCOVERY_QUESTIONS)
     assert len(scripts.AFFIRMATIONS_ES) == len(scripts.AFFIRMATIONS)
+
+
+def test_no_banned_phrases_in_any_approved_content():
+    # The validator's Sonia-v1.1 backstop must never reject approved content
+    # (the fallback path re-validates scripts, so a hit here would silence a turn).
+    from app.services.brain.validator import _banned_phrase
+
+    for action in scripts.SCRIPTS:
+        assert _banned_phrase(scripts.render(action)) is None, action
+    for action in scripts.SCRIPTS_ES:
+        assert _banned_phrase(scripts.render(action, None, "es")) is None, f"ES {action}"
+    for bank in (scripts.EMPATHY_VARIANTS, scripts.EMPATHY_VARIANTS_ES,
+                 scripts.DISCOVERY_QUESTIONS, scripts.DISCOVERY_QUESTIONS_ES):
+        for variants in bank.values():
+            texts = variants if isinstance(variants, (list, tuple)) else [variants]
+            for t in texts:
+                assert _banned_phrase(t) is None, t
+    for t in list(scripts.AFFIRMATIONS) + list(scripts.AFFIRMATIONS_ES):
+        assert _banned_phrase(t) is None, t
+    for name in scripts.FOLLOWUPS:
+        assert _banned_phrase(scripts.render_followup(name)) is None, name
+    # The voice few-shots are imitated heavily -> they must be clean too.
+    from app.services.brain.voice import _EXAMPLES, _EXAMPLES_ES
+    for _, out in _EXAMPLES + _EXAMPLES_ES:
+        assert _banned_phrase(out) is None, out

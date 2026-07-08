@@ -43,7 +43,10 @@ _GATE_QUESTIONS = {
     Action.FINANCIAL_CHECK,
     Action.PARTNER_CHECK,
     Action.PARTNER_ASK_JOIN,
+    Action.PARTNER_PUSHBACK,
+    Action.SOLO_NO_PARTNER_ACK,
     Action.ASK_BOTH_TUBES,
+    Action.ONE_TUBE_ACK,
     Action.ASK_MENOPAUSE_REASON,
     Action.ASK_MENOPAUSE_AGE,
     Action.ASK_DISCOVERY,
@@ -66,6 +69,11 @@ _TAKEOVER_INTENTS = {"is_this_ai", "angry_or_challenging", "distress"}
 
 # Discovery questions in priority order; the first missing slot is asked next.
 _DISCOVERY_ORDER = ["trying_duration", "age", "treatment_path", "done_testing", "diagnosis"]
+
+# Situation facts that count as "newly shared" for the reflect-back rule
+# (Sonia v1.1: a multi-fact message must be reflected before the next question).
+_FACT_DELTA_KEYS = ("trying_duration", "age", "treatment_path", "what_tried",
+                    "done_testing", "diagnosis_detail")
 
 
 # --- Predicates --------------------------------------------------------------
@@ -104,6 +112,19 @@ def _financial_ok(s: dict) -> bool:
     return s.get("partner_is_decision_maker") is True and s.get("financial_ready") is not False
 
 
+def _role_ok(state: dict) -> bool:
+    """Role step satisfied: she heard (and accepted) the not-a-doctor role, OR
+    stated in her own words that she understands this is coaching, not medical
+    care (Sonia v1.1: such a lead must not be re-run through EXPLAIN_ROLE) -
+    and she never rejected the approach."""
+    s, f = state["slots"], state["flags"]
+    if s.get("open_to_holistic") is False:
+        return False
+    if s.get("understands_role") is True:
+        return True
+    return f.get("explained_role") is True and s.get("open_to_holistic") is True
+
+
 def booking_gate(state: dict) -> bool:
     """Phase-7 checklist. SEND_BOOKING is only reachable when ALL are true."""
     s, f = state["slots"], state["flags"]
@@ -111,8 +132,7 @@ def booking_gate(state: dict) -> bool:
         f.get("situation_shared") is True,
         _actively_ttc(s),
         _priority_ok(s),
-        f.get("explained_role") is True,
-        s.get("open_to_holistic") is True,
+        _role_ok(state),
         _financial_ok(s),
         f.get("oos_reason") is None,
         _partner_resolved(s),
@@ -123,10 +143,29 @@ def booking_gate(state: dict) -> bool:
 
 def merge(lead_state: dict, extraction: Extraction) -> dict:
     state = normalize_lead_state(lead_state)
-    for k, v in non_null_deltas(extraction.slot_deltas).items():
+    deltas = non_null_deltas(extraction.slot_deltas)
+    # "He won't join" turns are where the extractor over-infers that she is the
+    # sole decision maker. That fact must come as its own answer to the explicit
+    # PARTNER_PUSHBACK question, never ride along with a refusal (Sonia v1.1:
+    # no booking link until the decision-maker question is answered). Once we
+    # HAVE just asked that question, her decision-maker answer is trusted even
+    # if the extractor re-emits the earlier refusal alongside it.
+    if (deltas.get("partner_can_join") is False
+            and deltas.get("partner_is_decision_maker") is False
+            and state["flags"].get("last_prompt") != Action.PARTNER_PUSHBACK.value):
+        deltas.pop("partner_is_decision_maker")
+    for k, v in deltas.items():
         if k in state["slots"]:
             state["slots"][k] = v
-    if _actively_ttc(state["slots"]):
+    s = state["slots"]
+    # A partner fact without a partner_status means she referenced a partner
+    # (the extractor can only learn these from partner mentions) -> couple.
+    if s.get("partner_status") is None and (
+        s.get("partner_can_join") is not None
+        or s.get("partner_is_decision_maker") is not None
+    ):
+        s["partner_status"] = "couple"
+    if _actively_ttc(s):
         state["flags"]["situation_shared"] = True
     return state
 
@@ -148,6 +187,9 @@ def decide(
     cfg: Optional[dict] = None,
     ig_user_id: str = "",
 ) -> Decision:
+    # Captured BEFORE merge: "my doctor said IVF is my only option" can over-set
+    # ivf_interest this same turn, which must not skip the IVF_ONLY_OFFER.
+    prior_ivf_interest = (((lead_state or {}).get("slots")) or {}).get("ivf_interest")
     state = merge(lead_state, extraction)
     s, f, c = state["slots"], state["flags"], state["counters"]
     intent = extraction.intent
@@ -180,6 +222,17 @@ def decide(
         return _oos(state, Action.OOS_AGE_OVER_46, "age_over_46")
     if s.get("tubes_blocked") == "both":
         return _oos(state, Action.OOS_BOTH_TUBES, "both_tubes_blocked")
+    if s.get("no_period_over_year") is True:
+        # 12+ months without a period -> review carefully REGARDLESS of age
+        # (Sonia v1.1); never continue discovery or ask her age first.
+        return _oos(state, Action.OOS_NO_PERIOD_12M, "no_period_over_12m")
+    if extraction.slot_deltas.tubes_blocked == "one" and not (
+        s.get("treatment_path") or s.get("what_tried")
+    ):
+        # She just said one tube is blocked -> acknowledge the one-vs-both
+        # difference once and ask her treatment stage (Sonia v1.1). Delta-keyed
+        # so it never re-fires, and skipped when her stage is already known.
+        return _script(state, Action.ONE_TUBE_ACK, Phase.DISCOVERY)
 
     oos = extraction.oos_signal
     if oos == "deaf":
@@ -187,7 +240,7 @@ def decide(
     if oos == "age_over_46":  # LLM flagged it but no numeric age parsed
         return _oos(state, Action.OOS_AGE_OVER_46, "age_over_46")
     if oos == "blocked_tubes":
-        if s.get("tubes_blocked") is None:
+        if s.get("tubes_blocked") in (None, "unspecified"):
             return _script(state, Action.ASK_BOTH_TUBES, Phase.DISCOVERY)
         # one blocked -> continue discovery (fall through)
     if oos == "menopause_no_period":
@@ -205,13 +258,23 @@ def decide(
 
     # 4) Intent interrupts — answer, then stay put.
     if intent in _INTERRUPTS:
-        decision = _handle_interrupt(state, intent, cfg)
+        decision = _handle_interrupt(state, intent, cfg, prior_ivf_interest)
         if decision is not None:
             return _guard_repeats(state, decision)
         # ivf_only when already interested falls through to the funnel.
 
+    # 4b) She just said she is doing this on her own (solo / donor / single by
+    # choice) -> explicitly reassure her no partner is needed on the call, then
+    # ask her stage (Sonia v1.1). Delta-keyed; skipped once her stage is known.
+    if extraction.slot_deltas.partner_status in ("solo", "donor", "single_by_choice") and not (
+        s.get("treatment_path") or s.get("what_tried")
+    ) and not f.get("booking_sent"):
+        return _guard_repeats(state, _script(state, Action.SOLO_NO_PARTNER_ACK, Phase.DISCOVERY))
+
     # 5) The qualification waterfall.
     decision = _waterfall(state, cfg, ig_user_id, extraction.situation_type)
+    deltas = non_null_deltas(extraction.slot_deltas)
+    decision.meta["new_facts"] = [k for k in _FACT_DELTA_KEYS if k in deltas]
     return _guard_repeats(state, decision)
 
 
@@ -249,7 +312,8 @@ def _handle_menopause(state: dict) -> Optional[Decision]:
     return None  # young with a stated (benign) reason -> continue the funnel
 
 
-def _handle_interrupt(state: dict, intent: str, cfg: Optional[dict]) -> Optional[Decision]:
+def _handle_interrupt(state: dict, intent: str, cfg: Optional[dict],
+                      prior_ivf_interest: Optional[bool] = None) -> Optional[Decision]:
     s, f, c = state["slots"], state["flags"], state["counters"]
 
     if intent == "asks_price":
@@ -291,13 +355,18 @@ def _handle_interrupt(state: dict, intent: str, cfg: Optional[dict]) -> Optional
     if intent == "trouble_booking":
         return _script(state, Action.TROUBLE_BOOKING)
     if intent == "not_ready_no_money":
-        # First cost decline -> soft NO_MONEY; if she keeps engaging, step 0b hands off.
+        # First cost decline -> masterclass (Sonia v1.1: free-only leads get
+        # the free resource, never a bare goodbye); if she keeps engaging,
+        # step 0b hands off to a human.
         f["cost_declined"] = True
+        f["masterclass_sent"] = True
         return _script(state, Action.NO_MONEY)
     if intent == "objection":
         return _script(state, Action.SOCIAL_PROOF)
     if intent == "ivf_only":
-        if s.get("ivf_interest") is not True:
+        # Gate on the PRIOR state, not the merged one: this turn's extraction
+        # can over-read "doctor said IVF is my only option" as acceptance.
+        if prior_ivf_interest is not True:
             return _script(state, Action.IVF_ONLY_OFFER)
         return None  # already interested -> continue funnel
     return None
@@ -336,12 +405,14 @@ def _waterfall(
         # Re-engaged + probed and still not ready -> masterclass + soft goodbye, end.
         return _nurture_close(state)
 
-    # EXPLAIN ROLE — always explain once (she must hear the not-a-doctor role),
-    # even if she already said she wants a holistic approach.
-    if not f.get("explained_role"):
-        f["explained_role"] = True
-        return _script(state, Action.EXPLAIN_ROLE, Phase.EXPLAIN_ROLE)
-    if s.get("open_to_holistic") is not True:
+    # EXPLAIN ROLE — she must understand the not-a-doctor role. Her own words
+    # ("I understand this is coaching, not medical care") satisfy it without
+    # re-running the role step (Sonia v1.1: the one-message qualified lead);
+    # otherwise explain once, then confirm she wants this kind of support.
+    if not _role_ok(state):
+        if not f.get("explained_role"):
+            f["explained_role"] = True
+            return _script(state, Action.EXPLAIN_ROLE, Phase.EXPLAIN_ROLE)
         if s.get("open_to_holistic") is False:
             return _script(state, Action.SOCIAL_PROOF, Phase.EXPLAIN_ROLE)
         return _script(state, Action.EXPLAIN_ROLE_CONFIRM, Phase.EXPLAIN_ROLE)
