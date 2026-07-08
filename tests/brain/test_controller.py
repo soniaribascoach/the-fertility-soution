@@ -194,11 +194,55 @@ def test_persistent_low_priority_ends_with_nurture_close():
 
 def test_explain_role_fires_even_if_already_open_to_holistic():
     # She pre-stated she wants holistic (open_to_holistic True) but must still hear
-    # the not-a-doctor role once, or the gate (explained_role) can never pass.
+    # the not-a-doctor role once. The only escape hatch is understands_role=True
+    # (she stated in her own words she knows this is coaching, not medical care).
     slots = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf",
              "priority_score": 9, "open_to_holistic": True}
     d = decide(state(slots=slots), ext(intent="answers_question"))
     assert d.action == Action.EXPLAIN_ROLE
+
+
+def test_understands_role_skips_explain_role():
+    # Sonia v1.1: her own "I understand this is coaching, not medical care"
+    # satisfies the role step -> advance to financial, no EXPLAIN_ROLE re-run.
+    slots = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf",
+             "priority_score": 9, "understands_role": True}
+    d = decide(state(slots=slots), ext(intent="answers_question"))
+    assert d.action == Action.FINANCIAL_CHECK
+
+
+def test_understands_role_alone_does_not_book():
+    d = decide(empty_lead_state(), ext(intent="answers_question", understands_role=True))
+    assert d.action == Action.ASK_DISCOVERY
+
+
+def test_open_to_holistic_false_blocks_despite_understands_role():
+    slots = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf",
+             "priority_score": 9, "understands_role": True, "open_to_holistic": False,
+             "financial_ready": True, "partner_status": "solo"}
+    d = decide(state(slots=slots, flags={"explained_role": True, "situation_shared": True}),
+               ext(intent="answers_question"))
+    assert d.action == Action.SOCIAL_PROOF
+    assert d.action != Action.SEND_BOOKING
+
+
+def test_partner_mention_infers_couple_status():
+    # "my husband can join" sets partner_can_join without partner_status;
+    # merge() must infer couple so the partner gate can resolve.
+    d = decide(empty_lead_state(), ext(intent="answers_question", partner_can_join=True))
+    assert d.lead_state["slots"]["partner_status"] == "couple"
+
+
+def test_one_message_fully_qualified_lead_books():
+    # Sonia's headline v1.1 bug: every criterion stated in ONE message must
+    # send the booking link that same turn.
+    d = decide(empty_lead_state(), ext(
+        intent="shares_situation", age=38, trying_duration="18 months",
+        done_testing=True, treatment_path="natural", priority_score=10,
+        understands_role=True, financial_ready=True, partner_can_join=True,
+    ))
+    assert d.action == Action.SEND_BOOKING
+    assert d.qualified is True
 
 
 def test_financial_decline_blocks_booking():

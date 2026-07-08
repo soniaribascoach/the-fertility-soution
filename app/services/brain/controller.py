@@ -104,6 +104,19 @@ def _financial_ok(s: dict) -> bool:
     return s.get("partner_is_decision_maker") is True and s.get("financial_ready") is not False
 
 
+def _role_ok(state: dict) -> bool:
+    """Role step satisfied: she heard (and accepted) the not-a-doctor role, OR
+    stated in her own words that she understands this is coaching, not medical
+    care (Sonia v1.1: such a lead must not be re-run through EXPLAIN_ROLE) -
+    and she never rejected the approach."""
+    s, f = state["slots"], state["flags"]
+    if s.get("open_to_holistic") is False:
+        return False
+    if s.get("understands_role") is True:
+        return True
+    return f.get("explained_role") is True and s.get("open_to_holistic") is True
+
+
 def booking_gate(state: dict) -> bool:
     """Phase-7 checklist. SEND_BOOKING is only reachable when ALL are true."""
     s, f = state["slots"], state["flags"]
@@ -111,8 +124,7 @@ def booking_gate(state: dict) -> bool:
         f.get("situation_shared") is True,
         _actively_ttc(s),
         _priority_ok(s),
-        f.get("explained_role") is True,
-        s.get("open_to_holistic") is True,
+        _role_ok(state),
         _financial_ok(s),
         f.get("oos_reason") is None,
         _partner_resolved(s),
@@ -126,7 +138,15 @@ def merge(lead_state: dict, extraction: Extraction) -> dict:
     for k, v in non_null_deltas(extraction.slot_deltas).items():
         if k in state["slots"]:
             state["slots"][k] = v
-    if _actively_ttc(state["slots"]):
+    s = state["slots"]
+    # A partner fact without a partner_status means she referenced a partner
+    # (the extractor can only learn these from partner mentions) -> couple.
+    if s.get("partner_status") is None and (
+        s.get("partner_can_join") is not None
+        or s.get("partner_is_decision_maker") is not None
+    ):
+        s["partner_status"] = "couple"
+    if _actively_ttc(s):
         state["flags"]["situation_shared"] = True
     return state
 
@@ -336,12 +356,14 @@ def _waterfall(
         # Re-engaged + probed and still not ready -> masterclass + soft goodbye, end.
         return _nurture_close(state)
 
-    # EXPLAIN ROLE — always explain once (she must hear the not-a-doctor role),
-    # even if she already said she wants a holistic approach.
-    if not f.get("explained_role"):
-        f["explained_role"] = True
-        return _script(state, Action.EXPLAIN_ROLE, Phase.EXPLAIN_ROLE)
-    if s.get("open_to_holistic") is not True:
+    # EXPLAIN ROLE — she must understand the not-a-doctor role. Her own words
+    # ("I understand this is coaching, not medical care") satisfy it without
+    # re-running the role step (Sonia v1.1: the one-message qualified lead);
+    # otherwise explain once, then confirm she wants this kind of support.
+    if not _role_ok(state):
+        if not f.get("explained_role"):
+            f["explained_role"] = True
+            return _script(state, Action.EXPLAIN_ROLE, Phase.EXPLAIN_ROLE)
         if s.get("open_to_holistic") is False:
             return _script(state, Action.SOCIAL_PROOF, Phase.EXPLAIN_ROLE)
         return _script(state, Action.EXPLAIN_ROLE_CONFIRM, Phase.EXPLAIN_ROLE)

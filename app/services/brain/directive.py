@@ -181,13 +181,13 @@ def _price_tokens(cfg: Optional[dict], language: str = "en") -> list:
 
 
 def _still_needed(state: dict) -> list:
-    s, f = state["slots"], state["flags"]
+    s = state["slots"]
     needed = []
     if not ctrl._discovery_complete(s):
         needed.append("her situation (how long trying, age, what she has tried)")
     if not ctrl._priority_ok(s):
         needed.append("how much of a priority pregnancy is right now")
-    if f.get("explained_role") is not True or s.get("open_to_holistic") is not True:
+    if not ctrl._role_ok(state):
         needed.append("that she understands and wants the holistic coaching approach")
     if not ctrl._financial_ok(s):
         needed.append("that she is open to a paid program")

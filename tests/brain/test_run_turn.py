@@ -77,6 +77,25 @@ async def test_full_funnel_books_only_when_qualified(openai_client):
     assert state["flags"]["booking_sent"] is True
 
 
+async def test_one_message_fully_qualified_lead_books(openai_client):
+    # Sonia's headline v1.1 bug: her exact test paragraph states every
+    # criterion in one message and must get the booking link that same turn.
+    history = []
+    r = await _say(openai_client, history, None, "FERTILITY")
+    state = r.lead_state
+
+    r = await _say(openai_client, history, state, (
+        "I'm 38, we've been trying for 18 months, all testing looks normal, "
+        "we're trying naturally, pregnancy is a 10 priority, I understand this "
+        "is coaching and not medical care, I'm open to a paid program, and my "
+        "husband can join the call."
+    ))
+    assert r.action == Action.SEND_BOOKING.value, (
+        f"expected SEND_BOOKING, got {r.action}; slots={r.lead_state['slots']}"
+    )
+    assert BOOKING_URL in r.reply_text
+
+
 async def test_price_question_never_leaks_link_or_number(openai_client):
     history = []
     r = await _say(openai_client, history, None, "hi how much does your program cost?")
