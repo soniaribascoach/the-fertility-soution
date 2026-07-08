@@ -53,6 +53,12 @@ def test_only_url_allowed_actions_contain_links():
             assert "http" not in text, f"{action} must NOT contain a URL"
 
 
+def test_send_booking_has_no_email_ask():
+    # Sonia v1.1: the AI must never ask which email she booked with.
+    assert "email" not in scripts.render(Action.SEND_BOOKING).lower()
+    assert "correo" not in scripts.render(Action.SEND_BOOKING, None, "es").lower()
+
+
 def test_booking_link_default_and_override():
     assert "https://www.thefertilitysolution.com/free-call" in scripts.render(Action.SEND_BOOKING)
     custom = scripts.render(Action.SEND_BOOKING, {"booking_link": "https://example.com/book"})

@@ -97,9 +97,9 @@ _EXAMPLES = [
     (
         "CONVERSATION SO FAR (most recent last):\n"
         "Lead: yes he can join the call\n\n"
-        "GOAL: Invite her to book the call, include the booking link, and ask her to send the email she used.\n"
+        "GOAL: Invite her to book the call, include the booking link, and tell her to follow the next steps after booking so the call gets confirmed.\n"
         "REQUIRED: You MUST include exactly: https://www.thefertilitysolution.com/free-call . That is the only link allowed. No price. One question max.",
-        "Based on everything you've shared, I think it's worth having you and your partner speak with my team to see how I can help. Here's the link to book your call: https://www.thefertilitysolution.com/free-call. Once you grab a time, send me the email you used so we can confirm it on our end.",
+        "Based on everything you've shared, I think it's worth having you and your partner speak with my team to see how I can help. Here's the link to book your call: https://www.thefertilitysolution.com/free-call. Once you book, please follow the next steps carefully so we can make sure your call is confirmed.",
     ),
 ]
 
@@ -149,9 +149,9 @@ _EXAMPLES_ES = [
     (
         "CONVERSATION SO FAR (most recent last):\n"
         "Lead: sí, él puede estar en la llamada\n\n"
-        "GOAL: Invite her to book the call, include the booking link, and ask her to send the email she used.\n"
+        "GOAL: Invite her to book the call, include the booking link, and tell her to follow the next steps after booking so the call gets confirmed.\n"
         "REQUIRED: You MUST include exactly: https://www.thefertilitysolution.com/free-call . That is the only link allowed. No price. One question max.",
-        "Por todo lo que me has contado, creo que vale la pena que tú y tu pareja hablen con mi equipo para ver cómo puedo ayudarte. Aquí tienes el enlace para agendar tu llamada: https://www.thefertilitysolution.com/free-call. Cuando tomes un horario, envíame el correo que usaste para confirmarlo de nuestro lado.",
+        "Por todo lo que me has contado, creo que vale la pena que tú y tu pareja hablen con mi equipo para ver cómo puedo ayudarte. Aquí tienes el enlace para agendar tu llamada: https://www.thefertilitysolution.com/free-call. Cuando agendes, por favor sigue los siguientes pasos con atención para que podamos confirmar tu llamada.",
     ),
 ]
 

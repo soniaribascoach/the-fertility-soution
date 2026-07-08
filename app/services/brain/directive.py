@@ -85,7 +85,7 @@ _SPEC = {
     Action.PARTNER_ASK_JOIN: _ModeSpec("PARTNER", "Ask whether her partner would be able to join the call."),
     Action.PARTNER_PUSHBACK: _ModeSpec("PARTNER", "Explain the call is to see if you are a match, so all decision-makers need to attend; if she is the sole decision-maker she can come alone."),
 
-    Action.SEND_BOOKING: _ModeSpec("BOOK", "Invite her to book the call and include the booking link; ask her to send the email she used.", url_names=("booking_link",), require_urls=True),
+    Action.SEND_BOOKING: _ModeSpec("BOOK", "Invite her to book the call and include the booking link; tell her to follow the next steps after booking so the call gets confirmed. Do NOT ask for her email.", url_names=("booking_link",), require_urls=True),
     Action.BOOKING_IS_IT_SONIA: _ModeSpec("BOOK", "Explain the first call is with your team, and you will be her coach inside the program."),
     Action.BOOKING_CALL_PROCESS: _ModeSpec("BOOK", "Explain the first session is to get to know each other and see if you can help."),
     Action.BOOKING_WHO_NATALIA: _ModeSpec("BOOK", "Reassure her that her appointment is with your associate Natalia."),
@@ -161,10 +161,11 @@ _GUIDANCE = {
     ),
     Action.SEND_BOOKING: (
         "Warmly invite her to book the call and include the booking link (include the exact "
-        "link). Ask her to send the email she used so you can confirm it. Tailor the timing note "
-        "to HER situation using the facts you have: if she is solo / single / doing this alone, "
+        "link). Do NOT ask for her email. Close by asking her to follow the next steps "
+        "carefully after booking so the call gets confirmed. Tailor the timing note to HER "
+        "situation using the facts you have: if she is solo / single / doing this alone, "
         "simply invite her and do NOT mention a partner or 'both of you'; only if she has a "
-        "partner, ask her to pick a time when both can attend. Keep it concise.",
+        "partner, ask her to pick a time when both decision makers can attend. Keep it concise.",
         500,
     ),
 }

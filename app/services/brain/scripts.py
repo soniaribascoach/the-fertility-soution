@@ -156,7 +156,8 @@ SCRIPTS: dict[Action, str] = {
         "Here's the link to book your call: {booking_link}\n\n"
         "Please choose a time when both decision makers can attend if your partner is part "
         "of the decision. If you're doing this on your own, of course you can come alone.\n\n"
-        "Once you book, send me the email you used so we can confirm it on our end."
+        "Once you book, please follow the next steps carefully so we can make sure your "
+        "call is confirmed."
     ),
     Action.BOOKING_IS_IT_SONIA: (
         "The first call is with my team so we can understand your situation properly and see "
@@ -424,7 +425,8 @@ SCRIPTS_ES: dict[Action, str] = {
         "Aquí tienes el enlace para agendar tu llamada: {booking_link}\n\n"
         "Por favor elige un horario en el que puedan estar ambos si tu pareja es parte de la "
         "decisión. Si estás en esto por tu cuenta, por supuesto puedes venir sola.\n\n"
-        "Cuando agendes, envíame el correo que usaste para confirmarlo de nuestro lado."
+        "Cuando agendes, por favor sigue los siguientes pasos con atención para que podamos "
+        "confirmar tu llamada."
     ),
     Action.BOOKING_IS_IT_SONIA: (
         "La primera llamada es con mi equipo, para entender bien tu situación y ver si esto "
