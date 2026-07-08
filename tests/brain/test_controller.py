@@ -294,6 +294,20 @@ def test_partner_refusal_never_books_without_decision_maker_answer():
     assert d2.action == Action.SEND_BOOKING
 
 
+def test_decision_maker_answer_trusted_after_pushback_question():
+    # After PARTNER_PUSHBACK, "I'm the only decision maker" must book even if
+    # the extractor re-emits the earlier refusal (partner_can_join=False)
+    # alongside her answer.
+    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
+            "open_to_holistic": True, "financial_ready": True,
+            "partner_status": "couple", "partner_can_join": False}
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True,
+                                  "last_prompt": "PARTNER_PUSHBACK"})
+    d = decide(st, ext(intent="answers_question",
+                       partner_can_join=False, partner_is_decision_maker=False))
+    assert d.action == Action.SEND_BOOKING
+
+
 def test_partner_pushback_loop_guard_hands_off():
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
             "open_to_holistic": True, "financial_ready": True,

@@ -147,8 +147,12 @@ def merge(lead_state: dict, extraction: Extraction) -> dict:
     # "He won't join" turns are where the extractor over-infers that she is the
     # sole decision maker. That fact must come as its own answer to the explicit
     # PARTNER_PUSHBACK question, never ride along with a refusal (Sonia v1.1:
-    # no booking link until the decision-maker question is answered).
-    if deltas.get("partner_can_join") is False and deltas.get("partner_is_decision_maker") is False:
+    # no booking link until the decision-maker question is answered). Once we
+    # HAVE just asked that question, her decision-maker answer is trusted even
+    # if the extractor re-emits the earlier refusal alongside it.
+    if (deltas.get("partner_can_join") is False
+            and deltas.get("partner_is_decision_maker") is False
+            and state["flags"].get("last_prompt") != Action.PARTNER_PUSHBACK.value):
         deltas.pop("partner_is_decision_maker")
     for k, v in deltas.items():
         if k in state["slots"]:
