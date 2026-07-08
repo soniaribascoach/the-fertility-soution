@@ -70,7 +70,7 @@ _SPEC = {
     Action.LOW_PRIORITY_INFO_GATHERING: _ModeSpec("QUALIFY_PRIORITY", "Ask whether she is ready to focus on this now or is more in the information-gathering stage."),
     Action.NURTURE_CLOSE: _ModeSpec("FINANCIAL", "Warmly and briefly thank her for her honesty, suggest starting with the free masterclass for now, and let her know you're here when she's ready. Do not ask a question.", url_names=("register_link",), require_urls=True),
 
-    Action.EXPLAIN_ROLE: _ModeSpec("EXPLAIN_ROLE", "Confirm she is looking for fertility coaching support, framed naturally (see the substance guidance)."),
+    Action.EXPLAIN_ROLE: _ModeSpec("EXPLAIN_ROLE", "Answer plainly what a fertility coach does, clarify you're not a doctor or clinic, and ask if that's the support she's looking for (see the substance guidance).", disclaimer=True),
     Action.EXPLAIN_ROLE_CONFIRM: _ModeSpec("EXPLAIN_ROLE", "Ask if that is the kind of support she is looking for."),
     Action.EXPLAIN_ROLE_TFS_UPDATED: _ModeSpec("EXPLAIN_ROLE", "Describe how you help women conceive naturally and ask if she is interested."),
     Action.EXPLAIN_ROLE_TFS1: _ModeSpec("EXPLAIN_ROLE", "Briefly describe that you help women conceive naturally and ask if she is interested."),
@@ -135,7 +135,17 @@ _LONG_ACTIONS = {
 # the long verbatim script) so the Voice writes a fresh, natural message. The
 # full script remains the fallback. (reference_text, max_chars).
 _GUIDANCE = {
-    # EXPLAIN_ROLE is chosen dynamically (style A vs B) in build_directive.
+    Action.EXPLAIN_ROLE: (
+        "In a few short, plain sentences: a fertility coach helps her look at the full "
+        "picture around her fertility and build a personalized plan to support her body "
+        "before or during trying naturally, IUI, or IVF. Clarify you're not a doctor or "
+        "clinic (no prescribing, no IVF, no replacing medical care). Your work can include "
+        "things like nutrition, inflammation, hormones, egg and sperm quality, nervous "
+        "system regulation, sleep, stress, gut health, metabolic health, timing, and "
+        "lifestyle, depending on the person. End by asking if that's the kind of support "
+        "she's looking for. Never pitch or re-ask whether she has considered a coach.",
+        520,
+    ),
     Action.ASK_PRIORITY: (
         "Ask how much of a priority getting pregnant is for her right now. VARY the phrasing "
         "between messages: sometimes a 1 to 10 scale, other times simply 'is getting pregnant "
@@ -161,29 +171,6 @@ _GUIDANCE = {
 
 _FACT_KEYS = ("trying_duration", "age", "treatment_path", "what_tried", "done_testing",
               "diagnosis", "diagnosis_detail", "partner_status")
-
-# Two interchangeable ways to do the role step; the director picks one per lead so
-# both actually get used. (A) the not-a-doctor disclaimer; (B) Sonia's team's soft
-# coach question (5a). Per the client, an affirmative to either satisfies the step.
-_EXPLAIN_ROLE_A = (
-    "In 2-3 short, warm sentences: clarify you're a fertility coach, not a doctor or clinic "
-    "(no IVF, no prescribing), that your approach is holistic and personalized (nutrition, "
-    "hormones, stress, lifestyle), then ask if that's the kind of support she's looking for.",
-    520,
-)
-_EXPLAIN_ROLE_B = (
-    "Warmly and simply ask whether she has considered working with a fertility coach to help "
-    "elevate her chances, e.g. 'Okay, I understand. Have you considered working with a fertility "
-    "coach to help elevate your chances of getting pregnant?'. One or two short sentences.",
-    320,
-)
-
-
-def _explain_role_style(ig_user_id: str) -> tuple:
-    # Stable per-lead choice (not Python's randomized hash), roughly 50/50.
-    if ig_user_id and sum(map(ord, ig_user_id)) % 2 == 1:
-        return _EXPLAIN_ROLE_B
-    return _EXPLAIN_ROLE_A
 
 
 def _price_tokens(cfg: Optional[dict], language: str = "en") -> list:
@@ -229,8 +216,6 @@ def build_directive(decision, cfg: Optional[dict] = None, ig_user_id: str = "") 
     # Reference text: short guidance override, else the approved script (which
     # is also the fallback). Discovery's reference is the chosen next question.
     override = _GUIDANCE.get(action)
-    if action == Action.EXPLAIN_ROLE:
-        override = _explain_role_style(ig_user_id)
     if action == Action.ASK_DISCOVERY:
         brief = decision.composer_brief or {}
         reference_text = brief.get("next_question", "")

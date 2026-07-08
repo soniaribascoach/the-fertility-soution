@@ -91,7 +91,7 @@ def test_closer_phone_numbers_present():
 
 def test_explain_role_is_not_a_medical_provider_claim():
     text = scripts.render(Action.EXPLAIN_ROLE)
-    assert "not a doctor or fertility clinic" in text
+    assert "not a doctor or clinic" in text
     assert "Is that the kind of support you're looking for?" in text
 
 
@@ -191,3 +191,7 @@ def test_no_banned_phrases_in_any_approved_content():
         assert _banned_phrase(t) is None, t
     for name in scripts.FOLLOWUPS:
         assert _banned_phrase(scripts.render_followup(name)) is None, name
+    # The voice few-shots are imitated heavily -> they must be clean too.
+    from app.services.brain.voice import _EXAMPLES, _EXAMPLES_ES
+    for _, out in _EXAMPLES + _EXAMPLES_ES:
+        assert _banned_phrase(out) is None, out

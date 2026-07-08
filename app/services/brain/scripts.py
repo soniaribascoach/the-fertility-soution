@@ -79,20 +79,16 @@ SCRIPTS: dict[Action, str] = {
         "be here for you.\n\n{register_link}"
     ),
 
-    # Explain role (Phase 4)
+    # Explain role (Phase 4) — Sonia's v1.1 wording: answer what a coach DOES.
     Action.EXPLAIN_ROLE: (
-        "Just so it's clear, I'm a fertility coach, not a doctor or fertility clinic. "
-        "I don't perform IVF, prescribe medication, or replace medical care.\n\n"
-        "My work is a highly personalized, research-backed, holistic approach to fertility. "
-        "I look at the full picture of what may be affecting your ability to conceive and "
-        "what your body may need in order to feel safer, healthier, and more supported for "
-        "pregnancy.\n\n"
-        "Depending on the case, this can include things like nutrition, inflammation, "
-        "hormones, egg and sperm quality, nervous system regulation, sleep, lifestyle, "
-        "timing, stress, gut health, metabolic health, and much more. But it is not limited "
-        "to those things, because every woman and every couple is different.\n\n"
-        "That's why I like to understand your specific situation first before saying whether "
-        "I may be able to help.\n\n"
+        "A fertility coach helps you look at the full picture around your fertility and "
+        "build a personalized plan to support your body before or during trying naturally, "
+        "IUI, or IVF.\n\n"
+        "I'm not a doctor or clinic, so I don't prescribe medication, perform IVF, or "
+        "replace medical care.\n\n"
+        "My work can include things like nutrition, inflammation, hormones, egg and sperm "
+        "quality, nervous system regulation, sleep, stress, gut health, metabolic health, "
+        "timing, and lifestyle, depending on the person.\n\n"
         "Is that the kind of support you're looking for?"
     ),
     Action.EXPLAIN_ROLE_TFS_UPDATED: (
@@ -369,20 +365,16 @@ SCRIPTS_ES: dict[Action, str] = {
         "verdad en esto, aquí estaré para ti.\n\n{register_link}"
     ),
 
-    # Explain role (Phase 4)
+    # Explain role (Phase 4) — Sonia's v1.1 wording: answer what a coach DOES.
     Action.EXPLAIN_ROLE: (
-        "Para que quede claro, soy coach de fertilidad, no soy doctora ni una clínica de "
-        "fertilidad. No realizo FIV, no receto medicamentos ni reemplazo la atención médica.\n\n"
-        "Mi trabajo es un enfoque holístico de la fertilidad, altamente personalizado y "
-        "respaldado por la investigación. Miro el panorama completo de lo que puede estar "
-        "afectando tu capacidad de concebir y lo que tu cuerpo puede necesitar para sentirse "
-        "más seguro, más sano y mejor preparado para el embarazo.\n\n"
-        "Según el caso, esto puede incluir cosas como nutrición, inflamación, hormonas, "
-        "calidad de óvulos y esperma, regulación del sistema nervioso, sueño, estilo de vida, "
-        "tiempos, estrés, salud intestinal, salud metabólica y mucho más. Pero no se limita a "
-        "eso, porque cada mujer y cada pareja es diferente.\n\n"
-        "Por eso me gusta entender primero tu situación específica antes de decir si puedo "
-        "ayudarte.\n\n"
+        "Un coach de fertilidad te ayuda a mirar el panorama completo de tu fertilidad y a "
+        "crear un plan personalizado para apoyar a tu cuerpo antes o durante la búsqueda "
+        "natural, la IUI o la FIV.\n\n"
+        "Yo no soy doctora ni una clínica, así que no receto medicamentos, no realizo FIV "
+        "ni reemplazo la atención médica.\n\n"
+        "Mi trabajo puede incluir cosas como nutrición, inflamación, hormonas, calidad de "
+        "óvulos y esperma, regulación del sistema nervioso, sueño, estrés, salud intestinal, "
+        "salud metabólica, tiempos y estilo de vida, según cada persona.\n\n"
         "¿Es ese el tipo de apoyo que estás buscando?"
     ),
     Action.EXPLAIN_ROLE_TFS3: (

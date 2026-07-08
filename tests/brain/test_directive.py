@@ -52,13 +52,13 @@ def test_discovery_directive_carries_question_and_facts():
     assert d.still_needed  # agenda is non-empty early on
 
 
-def test_explain_role_disclaimer_is_optional():
-    # 5a ("have you considered working with a fertility coach...") is a like-for-like
-    # alternate, so the not-a-doctor disclaimer is no longer hard-required.
+def test_explain_role_disclaimer_required():
+    # Sonia v1.1: the role step must always answer plainly and carry the
+    # not-a-doctor disclaimer (the old style-B coach-question alternate is gone).
     slots = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9}
     d = _directive_for(state(slots=slots), ext(intent="answers_question"))
     assert d.mode == "EXPLAIN_ROLE"
-    assert d.pinned_text is None
+    assert d.pinned_text == "not a doctor"
 
 
 def test_price_reveal_allows_figure_and_requires_tokens():
@@ -120,8 +120,7 @@ def test_es_max_chars_bumped_and_disclaimer_key_spanish():
     en_d = _directive_for(state(slots={**slots, "language": None}),
                           ext(intent="answers_question"))
     assert d.max_chars == int(en_d.max_chars * 1.2)
-    if d.pinned_text:  # style A pins the disclaimer; B does not
-        assert d.pinned_text == "no soy doctora"
+    assert d.pinned_text == "no soy doctora"
 
 
 def test_es_discovery_brief_carries_spanish_question():
