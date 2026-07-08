@@ -215,7 +215,7 @@ def decide(
     if oos == "age_over_46":  # LLM flagged it but no numeric age parsed
         return _oos(state, Action.OOS_AGE_OVER_46, "age_over_46")
     if oos == "blocked_tubes":
-        if s.get("tubes_blocked") is None:
+        if s.get("tubes_blocked") in (None, "unspecified"):
             return _script(state, Action.ASK_BOTH_TUBES, Phase.DISCOVERY)
         # one blocked -> continue discovery (fall through)
     if oos == "menopause_no_period":

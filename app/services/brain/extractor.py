@@ -42,7 +42,7 @@ class SlotDeltas(BaseModel):
     partner_is_decision_maker: Optional[bool]
     partner_can_join: Optional[bool]
     email_collected: Optional[str]
-    tubes_blocked: Optional[Literal["none", "one", "both"]]
+    tubes_blocked: Optional[Literal["none", "one", "both", "unspecified"]]
     no_period_reason: Optional[str]
     ivf_interest: Optional[bool]
 
@@ -101,7 +101,7 @@ Field guidance:
   - partner_status: couple | solo | donor | single_by_choice. If the lead says the decision is their partner's, or that they need to ask/consult their partner / husband / wife / spouse, set partner_status=couple. If she says she is doing this alone / on her own / by herself / single mom by choice / using donor sperm, set partner_status to solo (or single_by_choice / donor). A phrase like "no, doing this alone" is a SOLO answer, NOT a refusal to pay - do not classify it as not_ready_no_money.
   - partner_is_decision_maker: true if the lead indicates their partner makes or shares the decision (e.g. "I'll have to ask my partner", "it's my partner's decision"). false ONLY when she explicitly states she is the only decision maker / decides alone. NEVER infer false from the partner being unwilling or unable to join the call ("he doesn't want to join" says nothing about who decides). partner_can_join: only if stated.
   - email_collected: an email address if they provide one.
-  - tubes_blocked: none | one | both — only if they mention blocked tubes.
+  - tubes_blocked: set ONLY from her explicit words. "both" requires an explicit count word like both / the two / ambas ("both my tubes are blocked" -> both). "one" when she says one tube. "unspecified" when she mentions blocked tubes WITHOUT saying whether it is one or both ("my tubes are blocked", "my doctor said my tubes are blocked" -> unspecified; the bot will ask which). "none" only if she says her tubes are clear/open.
   - no_period_reason: their stated reason for not menstruating, if discussing that.
   - ivf_interest: true if they accept help optimizing an IVF path.
 - intent: classify the LEAD's most recent message (one label). Use not_ready_no_money when the lead clearly cannot afford it, has no money, has a very tight budget, wants only free help, or is not ready to commit at all. If she says her budget is tight / she can't afford it AND also asks the price in the same message, still classify it as not_ready_no_money (the affordability concern dominates). Do NOT use not_ready_no_money for "I need to ask/consult my partner" or "it's my partner's decision" - classify those as answers_question and set partner_status=couple and partner_is_decision_maker=true.

@@ -44,6 +44,15 @@ async def test_detects_blocked_tubes_oos(openai_client):
     assert result.slot_deltas.tubes_blocked == "both"
 
 
+async def test_unspecified_blocked_tubes_not_read_as_both(openai_client):
+    # Sonia v1.1: "my tubes are blocked" without both/one must NOT be read as
+    # both; the controller has to ask which (ASK_BOTH_TUBES).
+    history = [{"role": "user", "content": "My doctor said my tubes are blocked."}]
+    result, _ = await extract(openai_client, history, _slots())
+    assert result.oos_signal == "blocked_tubes"
+    assert result.slot_deltas.tubes_blocked in (None, "unspecified")
+
+
 async def test_detects_is_this_ai_takeover(openai_client):
     history = [{"role": "user", "content": "wait, am I talking to a bot right now?"}]
     result, _ = await extract(openai_client, history, _slots())

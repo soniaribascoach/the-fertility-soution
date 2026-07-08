@@ -147,7 +147,7 @@ SLOT_KEYS = [
     "partner_can_join",
     "email_collected",          # the email string
     "closer_assigned",          # natalia | monika
-    "tubes_blocked",            # none | one | both
+    "tubes_blocked",            # none | one | both | unspecified (count unknown)
     "no_period_reason",         # free text (menopause assessment)
     "ivf_interest",             # True when they accept IVF-optimization help
     "language",                 # en | es (sticky; None means not yet observed -> en)

@@ -341,6 +341,12 @@ def test_blocked_tubes_clarify_then_oos():
     assert d_ask.action == Action.ASK_BOTH_TUBES
     assert d_ask.pause is False
 
+    # "my tubes are blocked" without a count -> still clarify, never assume both.
+    d_unspec = decide(empty_lead_state(),
+                      ext(oos_signal="blocked_tubes", tubes_blocked="unspecified"))
+    assert d_unspec.action == Action.ASK_BOTH_TUBES
+    assert d_unspec.pause is False
+
     d_oos = decide(empty_lead_state(), ext(oos_signal="blocked_tubes", tubes_blocked="both"))
     assert d_oos.action == Action.OOS_BOTH_TUBES
     assert d_oos.pause is True and d_oos.add_tag is True
