@@ -119,6 +119,7 @@ _SPEC = {
     # Out-of-scope declines are sensitive -> emitted verbatim (not generated).
     Action.OOS_BOTH_TUBES: _ModeSpec("OOS", "", generate=False),
     Action.OOS_MENOPAUSE: _ModeSpec("OOS", "", generate=False),
+    Action.OOS_NO_PERIOD_12M: _ModeSpec("OOS", "", generate=False),
     Action.OOS_AGE_OVER_46: _ModeSpec("OOS", "", generate=False),
     Action.OOS_DEAF: _ModeSpec("OOS", "", generate=False),
 }

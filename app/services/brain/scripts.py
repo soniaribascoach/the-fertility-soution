@@ -341,6 +341,12 @@ SCRIPTS: dict[Action, str] = {
         "outside the scope of what I can help with through coaching. I'm really sorry, and "
         "I wish you all the best."
     ),
+    # Sonia's v1.1 wording: 12+ months without a period, regardless of age.
+    Action.OOS_NO_PERIOD_12M: (
+        "Thank you for being transparent with me. Since you haven't had a period in over "
+        "12 months, I'd want this reviewed carefully before pointing you in the wrong "
+        "direction. This may be outside the scope of what I can help with through coaching."
+    ),
     Action.OOS_AGE_OVER_46: (
         "Thank you for sharing that with me. Because age can change what is realistically "
         "possible and what kind of support is appropriate, I want to review this carefully "
@@ -579,6 +585,12 @@ SCRIPTS_ES: dict[Action, str] = {
         "Gracias por ser tan transparente conmigo. Por lo que me cuentas, esto puede estar "
         "fuera del alcance de lo que puedo ayudar a través del coaching. Lo siento mucho y "
         "te deseo lo mejor."
+    ),
+    Action.OOS_NO_PERIOD_12M: (
+        "Gracias por ser tan transparente conmigo. Como no te llega el periodo desde hace "
+        "más de 12 meses, quiero revisar esto con cuidado antes de orientarte en una "
+        "dirección equivocada. Esto puede estar fuera del alcance de lo que puedo ayudar a "
+        "través del coaching."
     ),
     Action.OOS_AGE_OVER_46: (
         "Gracias por contármelo. Como la edad puede cambiar lo que es realista y qué tipo de "

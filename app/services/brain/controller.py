@@ -210,6 +210,10 @@ def decide(
         return _oos(state, Action.OOS_AGE_OVER_46, "age_over_46")
     if s.get("tubes_blocked") == "both":
         return _oos(state, Action.OOS_BOTH_TUBES, "both_tubes_blocked")
+    if s.get("no_period_over_year") is True:
+        # 12+ months without a period -> review carefully REGARDLESS of age
+        # (Sonia v1.1); never continue discovery or ask her age first.
+        return _oos(state, Action.OOS_NO_PERIOD_12M, "no_period_over_12m")
     if extraction.slot_deltas.tubes_blocked == "one" and not (
         s.get("treatment_path") or s.get("what_tried")
     ):

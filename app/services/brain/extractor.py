@@ -44,6 +44,7 @@ class SlotDeltas(BaseModel):
     email_collected: Optional[str]
     tubes_blocked: Optional[Literal["none", "one", "both", "unspecified"]]
     no_period_reason: Optional[str]
+    no_period_over_year: Optional[bool]
     ivf_interest: Optional[bool]
 
 
@@ -103,6 +104,7 @@ Field guidance:
   - email_collected: an email address if they provide one.
   - tubes_blocked: set ONLY from her explicit words. "both" requires an explicit count word like both / the two / ambas ("both my tubes are blocked" -> both). "one" when she says one tube. "unspecified" when she mentions blocked tubes WITHOUT saying whether it is one or both ("my tubes are blocked", "my doctor said my tubes are blocked" -> unspecified; the bot will ask which). "none" only if she says her tubes are clear/open.
   - no_period_reason: their stated reason for not menstruating, if discussing that.
+  - no_period_over_year: true ONLY if she states she has not had a period for 12 months or more (e.g. "no period in 14 months", "over a year", "two years without a period"). null if the gap is shorter, unstated, or she just mentions irregular periods.
   - ivf_interest: true if they accept help optimizing an IVF path.
 - intent: classify the LEAD's most recent message (one label). Use not_ready_no_money when the lead clearly cannot afford it, has no money, has a very tight budget, wants only free help, or is not ready to commit at all. If she says her budget is tight / she can't afford it AND also asks the price in the same message, still classify it as not_ready_no_money (the affordability concern dominates). Do NOT use not_ready_no_money for "I need to ask/consult my partner" or "it's my partner's decision" - classify those as answers_question and set partner_status=couple and partner_is_decision_maker=true.
 - situation_type (for empathy): "hopeless" for age worries, PCOS, tube issues, or feeling hopeless/broken; "misfortune" for miscarriage, loss, failed IVF/IUI, chemical pregnancy; "neutral" for sharing steps with a positive/neutral tone; "none" when there is no emotional content to acknowledge.

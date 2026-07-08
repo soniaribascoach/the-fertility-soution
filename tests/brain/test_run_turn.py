@@ -150,6 +150,17 @@ async def test_no_message_repeats_three_times_in_a_row(openai_client):
         assert not (a and a == b == c), f"reply repeated 3x in a row: {a!r}"
 
 
+async def test_no_period_14_months_reviewed_not_asked_age(openai_client):
+    # Sonia v1.1: no period in 14 months must trigger her review script and
+    # a human takeover, not continue discovery / ask her age.
+    history = []
+    r = await _say(openai_client, history, None, "I haven't had a period in 14 months")
+    assert r.action == Action.OOS_NO_PERIOD_12M.value, f"got {r.action}"
+    assert r.pause is True and r.add_tag is True
+    assert "12 months" in r.reply_text
+    assert "old" not in (r.reply_text or "").lower()
+
+
 async def test_donor_sperm_solo_lead_told_no_partner_needed(openai_client):
     # Sonia v1.1: a solo/donor lead must be told explicitly that no partner
     # is needed on the call, then asked her stage.

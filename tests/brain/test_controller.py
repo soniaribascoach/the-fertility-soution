@@ -387,6 +387,25 @@ def test_one_blocked_tube_acknowledged_then_continues():
     assert d3.action == Action.ASK_DISCOVERY
 
 
+def test_no_period_over_12_months_is_oos_regardless_of_age():
+    # Sonia v1.1: 14 months without a period must trigger the review branch
+    # and takeover, never continue discovery or ask her age first.
+    for age in (None, 33, 44):
+        d = decide(state(slots={"age": age} if age else None),
+                   ext(intent="shares_situation", oos_signal="menopause_no_period",
+                       no_period_over_year=True))
+        assert d.action == Action.OOS_NO_PERIOD_12M, f"age={age}: got {d.action}"
+        assert d.pause is True and d.add_tag is True
+        assert d.action != Action.ASK_MENOPAUSE_AGE
+
+
+def test_no_period_over_year_deterministic_without_llm_signal():
+    # Same lesson as the age-48 miss: the slot alone must trigger it.
+    d = decide(empty_lead_state(), ext(intent="answers_question", no_period_over_year=True))
+    assert d.action == Action.OOS_NO_PERIOD_12M
+    assert d.pause is True
+
+
 def test_age_over_46_pauses():
     d = decide(empty_lead_state(), ext(oos_signal="age_over_46", age=48))
     assert d.action == Action.OOS_AGE_OVER_46

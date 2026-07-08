@@ -92,6 +92,7 @@ class Action(str, Enum):
     ASK_MENOPAUSE_AGE = "ASK_MENOPAUSE_AGE"
     OOS_BOTH_TUBES = "OOS_BOTH_TUBES"
     OOS_MENOPAUSE = "OOS_MENOPAUSE"
+    OOS_NO_PERIOD_12M = "OOS_NO_PERIOD_12M"  # 12+ months no period -> review, any age
     OOS_AGE_OVER_46 = "OOS_AGE_OVER_46"
     OOS_DEAF = "OOS_DEAF"
 
@@ -151,6 +152,7 @@ SLOT_KEYS = [
     "closer_assigned",          # natalia | monika
     "tubes_blocked",            # none | one | both | unspecified (count unknown)
     "no_period_reason",         # free text (menopause assessment)
+    "no_period_over_year",      # True when she states 12+ months without a period
     "ivf_interest",             # True when they accept IVF-optimization help
     "language",                 # en | es (sticky; None means not yet observed -> en)
 ]
