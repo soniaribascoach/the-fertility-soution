@@ -178,6 +178,9 @@ def decide(
     cfg: Optional[dict] = None,
     ig_user_id: str = "",
 ) -> Decision:
+    # Captured BEFORE merge: "my doctor said IVF is my only option" can over-set
+    # ivf_interest this same turn, which must not skip the IVF_ONLY_OFFER.
+    prior_ivf_interest = (((lead_state or {}).get("slots")) or {}).get("ivf_interest")
     state = merge(lead_state, extraction)
     s, f, c = state["slots"], state["flags"], state["counters"]
     intent = extraction.intent
@@ -246,7 +249,7 @@ def decide(
 
     # 4) Intent interrupts — answer, then stay put.
     if intent in _INTERRUPTS:
-        decision = _handle_interrupt(state, intent, cfg)
+        decision = _handle_interrupt(state, intent, cfg, prior_ivf_interest)
         if decision is not None:
             return _guard_repeats(state, decision)
         # ivf_only when already interested falls through to the funnel.
@@ -298,7 +301,8 @@ def _handle_menopause(state: dict) -> Optional[Decision]:
     return None  # young with a stated (benign) reason -> continue the funnel
 
 
-def _handle_interrupt(state: dict, intent: str, cfg: Optional[dict]) -> Optional[Decision]:
+def _handle_interrupt(state: dict, intent: str, cfg: Optional[dict],
+                      prior_ivf_interest: Optional[bool] = None) -> Optional[Decision]:
     s, f, c = state["slots"], state["flags"], state["counters"]
 
     if intent == "asks_price":
@@ -346,7 +350,9 @@ def _handle_interrupt(state: dict, intent: str, cfg: Optional[dict]) -> Optional
     if intent == "objection":
         return _script(state, Action.SOCIAL_PROOF)
     if intent == "ivf_only":
-        if s.get("ivf_interest") is not True:
+        # Gate on the PRIOR state, not the merged one: this turn's extraction
+        # can over-read "doctor said IVF is my only option" as acceptance.
+        if prior_ivf_interest is not True:
             return _script(state, Action.IVF_ONLY_OFFER)
         return None  # already interested -> continue funnel
     return None

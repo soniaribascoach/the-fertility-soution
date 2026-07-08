@@ -288,11 +288,12 @@ SCRIPTS: dict[Action, str] = {
         "of education resources, and a great community of like-minded women who support each "
         "other through this journey."
     ),
+    # Sonia's v1.1 wording: validate the medical path, never imply alternatives.
     Action.IVF_ONLY_OFFER: (
-        "If IVF is the best path for you medically, I may still be able to help by optimizing "
-        "your chances of success. I support the full picture of fertility and IVF preparation "
-        "using a highly personalized, research-backed, holistic approach. Is that something "
-        "you're interested in?"
+        "If IVF is the best path medically, I wouldn't want to dismiss that.\n\n"
+        "I may still be able to help by supporting your body before and during IVF through "
+        "a personalized, holistic approach.\n\n"
+        "Is that the kind of support you're interested in?"
     ),
     Action.TROUBLE_BOOKING: (
         "Sorry about that. Did you see any error message? Can you please send a screenshot so "
@@ -541,10 +542,10 @@ SCRIPTS_ES: dict[Action, str] = {
         "meta que se apoyan entre sí durante este camino."
     ),
     Action.IVF_ONLY_OFFER: (
-        "Si la FIV es el mejor camino para ti médicamente, aún puedo ayudarte optimizando "
-        "tus probabilidades de éxito. Acompaño el panorama completo de la fertilidad y la "
-        "preparación para la FIV con un enfoque holístico, altamente personalizado y "
-        "respaldado por la investigación. ¿Es algo que te interesa?"
+        "Si la FIV es el mejor camino médicamente, no querría restarle importancia.\n\n"
+        "Aún puedo ayudarte apoyando a tu cuerpo antes y durante la FIV con un enfoque "
+        "holístico y personalizado.\n\n"
+        "¿Es ese el tipo de apoyo que te interesa?"
     ),
     Action.TROUBLE_BOOKING: (
         "Lo siento. ¿Viste algún mensaje de error? ¿Puedes enviarme una captura de pantalla "

@@ -150,6 +150,17 @@ async def test_no_message_repeats_three_times_in_a_row(openai_client):
         assert not (a and a == b == c), f"reply repeated 3x in a row: {a!r}"
 
 
+async def test_ivf_only_validated_never_offered_alternatives(openai_client):
+    # Sonia v1.1: never imply there are other options when a doctor said
+    # IVF is the only path; offer body support before/during IVF instead.
+    history = []
+    r = await _say(openai_client, history, None, "My doctor said IVF is my only option")
+    assert r.action == Action.IVF_ONLY_OFFER.value, f"got {r.action}"
+    text = (r.reply_text or "").lower()
+    assert "other options" not in text and "other paths" not in text, text
+    assert "ivf" in text
+
+
 async def test_no_period_14_months_reviewed_not_asked_age(openai_client):
     # Sonia v1.1: no period in 14 months must trigger her review script and
     # a human takeover, not continue discovery / ask her age.

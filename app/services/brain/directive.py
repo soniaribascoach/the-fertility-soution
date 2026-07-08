@@ -109,7 +109,7 @@ _SPEC = {
 
     Action.SOCIAL_PROOF: _ModeSpec("MISC", "Briefly share your track record to build trust; be selective, not salesy."),
     Action.PAYING_TWICE: _ModeSpec("MISC", "Explain your program offers much more than advice (nutrition, coaching, community)."),
-    Action.IVF_ONLY_OFFER: _ModeSpec("MISC", "Offer to help optimize her chances if IVF is her path, and ask if she is interested."),
+    Action.IVF_ONLY_OFFER: _ModeSpec("MISC", "If IVF is her medical path, validate it and NEVER suggest there are other options instead; offer to support her body before and during IVF, and ask if she is interested."),
     Action.PHONE_NUMBER_DEFLECT: _ModeSpec("MISC", "Explain you only take calls for confirmed appointments and can send the booking link when ready."),
     Action.MASTERCLASS_SEND: _ModeSpec("MISC", "Warmly share the masterclass link and ask what she thinks after watching.", url_names=("register_link",), require_urls=True),
     Action.TROUBLE_BOOKING: _ModeSpec("MISC", "Help troubleshoot the booking: ask about an error message or screenshot."),

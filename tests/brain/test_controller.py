@@ -632,3 +632,10 @@ def test_ivf_only_offer_then_continue():
     # Once interested, the offer is not repeated -> funnel resumes (discovery).
     d2 = decide(state(slots={"ivf_interest": True}), ext(intent="ivf_only"))
     assert d2.action == Action.ASK_DISCOVERY
+
+
+def test_ivf_only_offer_not_skipped_by_same_turn_over_read():
+    # Sonia v1.1 item 5: "doctor said IVF is my only option" must get the
+    # offer even if the extractor over-sets ivf_interest on that same turn.
+    d = decide(empty_lead_state(), ext(intent="ivf_only", ivf_interest=True))
+    assert d.action == Action.IVF_ONLY_OFFER
