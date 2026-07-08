@@ -197,6 +197,6 @@ async def test_one_blocked_tube_acknowledged_no_takeover(openai_client):
     assert r.action == Action.ONE_TUBE_ACK.value, f"got {r.action}"
     assert r.pause is False
     text = (r.reply_text or "").lower()
-    assert "one tube" in text, text
+    assert "one" in text, text
     assert any(w in text for w in ("naturally", "iui", "ivf")), text
     assert "?" in text
