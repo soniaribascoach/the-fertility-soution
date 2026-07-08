@@ -91,8 +91,15 @@ def test_price_range_is_config_overridable():
 
 
 def test_closer_phone_numbers_present():
-    assert "+1 (415) 694-1799" in scripts.render(Action.POST_BOOKING_CONFIRM_NATALIA)
     assert "+1 (647) 992-6383" in scripts.render(Action.POST_BOOKING_CONFIRM_MONIKA)
+
+
+def test_manual_prep_template_matches_sonia_wording():
+    # Dormant template the team copies after a lead books (AI stays paused).
+    text = scripts.render(Action.POST_BOOKING_CONFIRM_NATALIA)
+    assert "thefertilitysolution.com/watch-replay" in text
+    assert "Natalia will text you the day before" in text
+    assert "email" not in text.lower()
 
 
 def test_explain_role_is_not_a_medical_provider_claim():

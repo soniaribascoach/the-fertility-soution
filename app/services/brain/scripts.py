@@ -191,14 +191,16 @@ SCRIPTS: dict[Action, str] = {
         "Can I have your email address so I can verify and make sure your schedule shows on "
         "our end?"
     ),
+    # Dormant: the AI pauses at SEND_BOOKING, so the TEAM sends this prep
+    # message manually after the lead books (Sonia's v1.1 wording).
     Action.POST_BOOKING_CONFIRM_NATALIA: (
-        "Great! You'll be speaking with my associate, Natalia! Please make sure to confirm "
-        "via text message when you receive a text confirmation request from this number "
-        "{natalia_phone}\n\n"
-        "Before the call, it's very important to watch this short masterclass so you have a "
-        "good sense of how I help my clients in your situation: {watch_replay}\n\n"
-        "You'll also see some client case studies and it will ensure that you're fully "
-        "informed before our call, deal?"
+        "Perfect, I'm so glad you booked.\n\n"
+        "Before the call, please watch this short masterclass so you have a clear sense of "
+        "how I help my clients and can come into the call fully informed:\n\n"
+        "{watch_replay}\n\n"
+        "Natalia will text you the day before your appointment to confirm the meeting. "
+        "Please make sure you reply to her and confirm, because we only hold confirmed "
+        "appointments on the calendar."
     ),
     Action.POST_BOOKING_CONFIRM_MONIKA: (
         "Great! You'll be speaking with my associate, Monika! Please make sure to confirm "

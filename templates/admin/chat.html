@@ -302,17 +302,27 @@
 
   function appendTakeoverBanner(reason) {
     if (emptyEl) emptyEl.style.display = 'none';
-    const detail = reason === 'media'
-      ? 'Media message detected — voice note, image, or file.'
-      : 'Message matched a configured trigger phrase.';
+    // Intentional handoffs get a green banner so they never read as errors.
+    const LABELS = {
+      keyword: ['Human takeover triggered', 'Message matched a configured trigger phrase.', 'warn'],
+      human_handover: ['Human takeover triggered', 'Message matched a configured trigger phrase.', 'warn'],
+      media: ['Human takeover triggered', 'Media message detected — voice note, image, or file.', 'warn'],
+      qualified_link_sent: ['Qualified / booking link sent', 'Intentional team handoff, not an error. The team confirms the booking and sends the prep message.', 'ok'],
+      not_ready_nurture: ['Nurture close / masterclass sent', 'Intentional soft close, not an error. Team follows up when she is ready.', 'ok'],
+    };
+    const [title, detail, tone] = LABELS[reason] ||
+      ['Human takeover triggered', 'Reason: ' + (reason || 'unknown'), 'warn'];
+    const c = tone === 'ok'
+      ? { bg: '#f0fdf4', border: '#86efac', title: '#166534', detail: '#15803d', icon: '✅' }
+      : { bg: '#fffbeb', border: '#fcd34d', title: '#92400e', detail: '#b45309', icon: '⚠️' };
     const banner = document.createElement('div');
     banner.className = 'msg-in';
-    banner.style.cssText = 'display:flex; align-items:flex-start; gap:10px; background:#fffbeb; border:1px solid #fcd34d; border-radius:14px; padding:12px 16px; margin:0 0 2px;';
+    banner.style.cssText = 'display:flex; align-items:flex-start; gap:10px; background:' + c.bg + '; border:1px solid ' + c.border + '; border-radius:14px; padding:12px 16px; margin:0 0 2px;';
     banner.innerHTML =
-      '<span style="font-size:16px; line-height:1.4; flex-shrink:0;">⚠️</span>' +
+      '<span style="font-size:16px; line-height:1.4; flex-shrink:0;">' + c.icon + '</span>' +
       '<div>' +
-        '<div style="font-family:\'DM Sans\',sans-serif; font-size:13px; font-weight:600; color:#92400e; line-height:1.4;">Human takeover triggered</div>' +
-        '<div style="font-family:\'DM Sans\',sans-serif; font-size:12px; color:#b45309; margin-top:2px;">' + detail + '</div>' +
+        '<div style="font-family:\'DM Sans\',sans-serif; font-size:13px; font-weight:600; color:' + c.title + '; line-height:1.4;">' + title + '</div>' +
+        '<div style="font-family:\'DM Sans\',sans-serif; font-size:12px; color:' + c.detail + '; margin-top:2px;">' + detail + '</div>' +
       '</div>';
     messages.insertBefore(banner, typingEl);
     scrollToBottom();

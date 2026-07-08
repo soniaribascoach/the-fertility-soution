@@ -122,11 +122,17 @@
       </tr>
     </thead>
     <tbody class="divide-y divide-slate-50">
+      {% set reason_labels = {
+        "qualified_link_sent": ("Qualified · booking link sent · team handoff", "ok"),
+        "not_ready_nurture": ("Nurture close · masterclass sent", "ok"),
+        "human_handover": ("Matched trigger phrase", "warn"),
+      } %}
       {% for lead in paused_leads %}
+      {% set label, tone = reason_labels.get(lead.pause_reason, (lead.pause_reason or "—", "warn")) %}
       <tr class="hover:bg-slate-50/50 transition-colors">
         <td class="px-6 py-3.5 text-sm font-semibold text-slate-800">{{ lead.instagram_user_id }}</td>
         <td class="px-4 py-3.5">
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">{{ lead.pause_reason or "—" }}</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ 'bg-emerald-50 text-emerald-700' if tone == 'ok' else 'bg-amber-50 text-amber-700' }}">{{ label }}</span>
         </td>
         <td class="px-4 py-3.5 text-xs text-slate-500">{{ lead.phase or "—" }}</td>
         <td class="px-4 py-3.5 text-xs text-slate-400">{{ lead.paused_at.strftime("%d %b %Y, %H:%M") if lead.paused_at else "—" }}</td>
