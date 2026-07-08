@@ -124,3 +124,34 @@ def test_spanish_length_budget_uses_directive_max_chars():
     assert len(text) > 400
     assert validate_generated(_gen_directive(max_chars=480), text).ok
     assert "too_long" in validate_generated(_gen_directive(max_chars=400), text).violations
+
+
+# --- Banned phrases (Sonia v1.1 regression backstop) ---------------------------
+
+def test_banned_phrase_rejected_in_generated():
+    d = _gen_directive(language="en")
+    r = validate_generated(d, "Working with a coach can help elevate your chances. How old are you?")
+    assert not r.ok and any(v.startswith("banned_phrase:") for v in r.violations)
+
+
+def test_banned_phrase_matching_is_case_and_whitespace_insensitive():
+    d = _gen_directive(language="en")
+    r = validate_generated(d, "I can help Elevate  your\nchances of getting pregnant. How old are you?")
+    assert not r.ok and any(v.startswith("banned_phrase:") for v in r.violations)
+
+
+def test_banned_phrase_spanish_accent_folded():
+    r = validate_generated(_gen_directive(), "puedo ayudarte a elevár tus posibilidades. ¿Cuántos años tienes?")
+    assert not r.ok and any(v.startswith("banned_phrase:") for v in r.violations)
+
+
+def test_banned_phrase_rejected_in_composed_discovery():
+    r = validate(Action.ASK_DISCOVERY,
+                 "Please take care of yourself in the meantime. How old are you?")
+    assert not r.ok and any(v.startswith("banned_phrase:") for v in r.violations)
+
+
+def test_grounded_text_passes_banned_phrase_check():
+    d = _gen_directive(language="en")
+    r = validate_generated(d, "Two years is a long time to carry this. How old are you?")
+    assert r.ok, r.violations

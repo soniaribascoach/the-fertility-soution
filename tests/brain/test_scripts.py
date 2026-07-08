@@ -170,3 +170,24 @@ def test_es_banks_key_parity():
     assert set(scripts.EMPATHY_VARIANTS_ES) == set(scripts.EMPATHY_VARIANTS)
     assert set(scripts.DISCOVERY_QUESTIONS_ES) == set(scripts.DISCOVERY_QUESTIONS)
     assert len(scripts.AFFIRMATIONS_ES) == len(scripts.AFFIRMATIONS)
+
+
+def test_no_banned_phrases_in_any_approved_content():
+    # The validator's Sonia-v1.1 backstop must never reject approved content
+    # (the fallback path re-validates scripts, so a hit here would silence a turn).
+    from app.services.brain.validator import _banned_phrase
+
+    for action in scripts.SCRIPTS:
+        assert _banned_phrase(scripts.render(action)) is None, action
+    for action in scripts.SCRIPTS_ES:
+        assert _banned_phrase(scripts.render(action, None, "es")) is None, f"ES {action}"
+    for bank in (scripts.EMPATHY_VARIANTS, scripts.EMPATHY_VARIANTS_ES,
+                 scripts.DISCOVERY_QUESTIONS, scripts.DISCOVERY_QUESTIONS_ES):
+        for variants in bank.values():
+            texts = variants if isinstance(variants, (list, tuple)) else [variants]
+            for t in texts:
+                assert _banned_phrase(t) is None, t
+    for t in list(scripts.AFFIRMATIONS) + list(scripts.AFFIRMATIONS_ES):
+        assert _banned_phrase(t) is None, t
+    for name in scripts.FOLLOWUPS:
+        assert _banned_phrase(scripts.render_followup(name)) is None, name
