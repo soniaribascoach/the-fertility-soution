@@ -344,8 +344,11 @@ def _handle_interrupt(state: dict, intent: str, cfg: Optional[dict],
     if intent == "trouble_booking":
         return _script(state, Action.TROUBLE_BOOKING)
     if intent == "not_ready_no_money":
-        # First cost decline -> soft NO_MONEY; if she keeps engaging, step 0b hands off.
+        # First cost decline -> masterclass (Sonia v1.1: free-only leads get
+        # the free resource, never a bare goodbye); if she keeps engaging,
+        # step 0b hands off to a human.
         f["cost_declined"] = True
+        f["masterclass_sent"] = True
         return _script(state, Action.NO_MONEY)
     if intent == "objection":
         return _script(state, Action.SOCIAL_PROOF)

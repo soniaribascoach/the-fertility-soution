@@ -309,9 +309,12 @@ SCRIPTS: dict[Action, str] = {
         "Thanks for the follow! :) I appreciate it. Just wanted to know what brings you here. "
         "Are you on a journey to conceiving?"
     ),
+    # Sonia's v1.1 wording: free-only leads get the masterclass, not a goodbye.
     Action.NO_MONEY: (
-        "Thank you for being honest, if you ever find yourself fully ready to commit to this, "
-        "I'll be here for you."
+        "Of course. If you're only looking for free support right now, the best place to "
+        "start is my free masterclass. It will give you a clearer understanding of how I "
+        "look at fertility and what may be affecting your body.\n\n"
+        "You can watch it here:\n{register_link}"
     ),
 
     # Out-of-scope clarifying questions
@@ -554,8 +557,10 @@ SCRIPTS_ES: dict[Action, str] = {
         "Si no viste esa página, por favor vuelve a agendar."
     ),
     Action.NO_MONEY: (
-        "Gracias por ser honesta. Si en algún momento te sientes totalmente lista para "
-        "comprometerte con esto, aquí estaré para ti."
+        "Claro. Si por ahora solo buscas apoyo gratuito, el mejor lugar para empezar es mi "
+        "masterclass gratuita. Te dará una idea más clara de cómo veo la fertilidad y de lo "
+        "que puede estar afectando a tu cuerpo.\n\n"
+        "Puedes verla aquí:\n{register_link}"
     ),
 
     # Out-of-scope clarifying questions

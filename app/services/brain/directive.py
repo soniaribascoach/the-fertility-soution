@@ -80,7 +80,7 @@ _SPEC = {
 
     Action.FINANCIAL_CHECK: _ModeSpec("FINANCIAL", "Gently note it is a paid program and ask if she is open to that if it feels aligned."),
     Action.FINANCIAL_DECLINE: _ModeSpec("FINANCIAL", "Warmly suggest starting with the free masterclass for now.", url_names=("register_link",), require_urls=True),
-    Action.NO_MONEY: _ModeSpec("FINANCIAL", "Warmly thank her for her honesty and let her know you're here when she's ready. Do NOT ask a question or invite her to keep chatting."),
+    Action.NO_MONEY: _ModeSpec("FINANCIAL", "Warmly point her to the free masterclass as the best place to start right now, and include the link. Do NOT ask a question or invite her to keep chatting.", url_names=("register_link",), require_urls=True),
 
     Action.PARTNER_CHECK: _ModeSpec("PARTNER", "Note fertility is a team decision and ask if she is doing this with a partner or on her own."),
     Action.PARTNER_ASK_JOIN: _ModeSpec("PARTNER", "Ask whether her partner would be able to join the call."),

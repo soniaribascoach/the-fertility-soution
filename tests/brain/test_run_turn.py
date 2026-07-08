@@ -150,6 +150,19 @@ async def test_no_message_repeats_three_times_in_a_row(openai_client):
         assert not (a and a == b == c), f"reply repeated 3x in a row: {a!r}"
 
 
+@pytest.mark.parametrize("message", [
+    "I can't afford anything right now, but can you still help me?",
+    "I only want free advice",
+])
+async def test_free_only_leads_get_the_masterclass(openai_client, message):
+    # Sonia v1.1: free-resource leads must receive the free masterclass link,
+    # not a generic goodbye.
+    history = []
+    r = await _say(openai_client, history, None, message)
+    assert r.action in (Action.NO_MONEY.value, Action.MASTERCLASS_SEND.value), f"got {r.action}"
+    assert "thefertilitysolution.com/register" in (r.reply_text or ""), r.reply_text
+
+
 async def test_ivf_only_validated_never_offered_alternatives(openai_client):
     # Sonia v1.1: never imply there are other options when a doctor said
     # IVF is the only path; offer body support before/during IVF instead.
