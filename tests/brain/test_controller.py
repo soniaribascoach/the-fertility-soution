@@ -353,9 +353,21 @@ def test_blocked_tubes_clarify_then_oos():
     assert d_oos.lead_state["phase"] == Phase.OOS.value
 
 
-def test_one_blocked_tube_continues():
+def test_one_blocked_tube_acknowledged_then_continues():
+    # Sonia v1.1: one tube -> acknowledge the one-vs-both difference + stage
+    # question (never the generic first question), and no takeover.
     d = decide(empty_lead_state(), ext(oos_signal="blocked_tubes", tubes_blocked="one"))
-    assert d.action == Action.ASK_DISCOVERY
+    assert d.action == Action.ONE_TUBE_ACK
+    assert d.pause is False
+
+    # Stage already known -> no ack detour, the funnel just continues.
+    st = state(slots={"what_tried": "2 IUIs"})
+    d2 = decide(st, ext(oos_signal="blocked_tubes", tubes_blocked="one"))
+    assert d2.action == Action.ASK_DISCOVERY
+
+    # Ack fires only on the delta turn -> next turn continues the funnel.
+    d3 = decide(d.lead_state, ext(intent="answers_question", treatment_path="iui"))
+    assert d3.action == Action.ASK_DISCOVERY
 
 
 def test_age_over_46_pauses():

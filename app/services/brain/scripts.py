@@ -308,6 +308,12 @@ SCRIPTS: dict[Action, str] = {
 
     # Out-of-scope clarifying questions
     Action.ASK_BOTH_TUBES: "Are both tubes blocked, or only one?",
+    Action.ONE_TUBE_ACK: (
+        "Thank you for sharing that. If only one tube is blocked, that is different from "
+        "both tubes being blocked.\n\n"
+        "Are you currently trying naturally, doing IUI, considering IVF, or still deciding "
+        "your next step?"
+    ),
     Action.ASK_MENOPAUSE_REASON: (
         "Thank you for sharing that. Can I ask what's the reason you're no longer getting "
         "your period?"
@@ -534,6 +540,12 @@ SCRIPTS_ES: dict[Action, str] = {
 
     # Out-of-scope clarifying questions
     Action.ASK_BOTH_TUBES: "¿Están bloqueadas ambas trompas, o solo una?",
+    Action.ONE_TUBE_ACK: (
+        "Gracias por contarme. Si solo una trompa está bloqueada, es diferente a tener "
+        "ambas trompas bloqueadas.\n\n"
+        "¿Estás intentando de forma natural, haciendo IUI, considerando FIV, o todavía "
+        "decidiendo tu siguiente paso?"
+    ),
     Action.ASK_MENOPAUSE_REASON: (
         "Gracias por contarme. ¿Puedo preguntarte cuál es la razón por la que ya no te llega "
         "el periodo?"

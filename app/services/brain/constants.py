@@ -86,6 +86,7 @@ class Action(str, Enum):
 
     # Out-of-scope clarifying questions + terminal messages
     ASK_BOTH_TUBES = "ASK_BOTH_TUBES"
+    ONE_TUBE_ACK = "ONE_TUBE_ACK"  # one tube blocked -> acknowledge + stage question
     ASK_MENOPAUSE_REASON = "ASK_MENOPAUSE_REASON"
     ASK_MENOPAUSE_AGE = "ASK_MENOPAUSE_AGE"
     OOS_BOTH_TUBES = "OOS_BOTH_TUBES"

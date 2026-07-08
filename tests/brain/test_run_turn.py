@@ -187,3 +187,16 @@ async def test_both_tubes_blocked_triggers_takeover(openai_client):
     assert r.action == Action.OOS_BOTH_TUBES.value
     assert r.pause is True
     assert r.add_tag is True
+
+
+async def test_one_blocked_tube_acknowledged_no_takeover(openai_client):
+    # Sonia v1.1: one blocked tube -> acknowledge the one-vs-both difference
+    # and ask the treatment-stage question; no takeover, no generic re-start.
+    history = []
+    r = await _say(openai_client, history, None, "One of my tubes is blocked")
+    assert r.action == Action.ONE_TUBE_ACK.value, f"got {r.action}"
+    assert r.pause is False
+    text = (r.reply_text or "").lower()
+    assert "one tube" in text, text
+    assert any(w in text for w in ("naturally", "iui", "ivf")), text
+    assert "?" in text

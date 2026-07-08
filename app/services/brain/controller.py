@@ -45,6 +45,7 @@ _GATE_QUESTIONS = {
     Action.PARTNER_ASK_JOIN,
     Action.PARTNER_PUSHBACK,
     Action.ASK_BOTH_TUBES,
+    Action.ONE_TUBE_ACK,
     Action.ASK_MENOPAUSE_REASON,
     Action.ASK_MENOPAUSE_AGE,
     Action.ASK_DISCOVERY,
@@ -208,6 +209,13 @@ def decide(
         return _oos(state, Action.OOS_AGE_OVER_46, "age_over_46")
     if s.get("tubes_blocked") == "both":
         return _oos(state, Action.OOS_BOTH_TUBES, "both_tubes_blocked")
+    if extraction.slot_deltas.tubes_blocked == "one" and not (
+        s.get("treatment_path") or s.get("what_tried")
+    ):
+        # She just said one tube is blocked -> acknowledge the one-vs-both
+        # difference once and ask her treatment stage (Sonia v1.1). Delta-keyed
+        # so it never re-fires, and skipped when her stage is already known.
+        return _script(state, Action.ONE_TUBE_ACK, Phase.DISCOVERY)
 
     oos = extraction.oos_signal
     if oos == "deaf":

@@ -61,6 +61,7 @@ _DISCLAIMER_KEY_ES = "no soy doctora"  # exact phrase in the ES EXPLAIN_ROLE scr
 _SPEC = {
     Action.ASK_DISCOVERY: _ModeSpec("DISCOVERY", "Acknowledge what she just shared, then ask the one discovery question you are given."),
     Action.ASK_BOTH_TUBES: _ModeSpec("DISCOVERY", "Gently ask whether both tubes are blocked or only one."),
+    Action.ONE_TUBE_ACK: _ModeSpec("DISCOVERY", "Acknowledge that one blocked tube is different from both being blocked, then ask whether she is trying naturally, doing IUI, considering IVF, or still deciding."),
     Action.ASK_MENOPAUSE_REASON: _ModeSpec("DISCOVERY", "Gently ask the reason she is no longer getting her period."),
     Action.ASK_MENOPAUSE_AGE: _ModeSpec("DISCOVERY", "Gently ask her age."),
 
