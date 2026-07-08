@@ -277,6 +277,36 @@ def test_partner_join_then_pushback_then_resolved():
     assert d_ok.action == Action.SEND_BOOKING
 
 
+def test_partner_refusal_never_books_without_decision_maker_answer():
+    # Sonia v1.1: "my husband doesn't want to join" sent the booking link.
+    # Even if the extractor over-infers sole-decision-maker on the refusal
+    # turn, merge() drops that delta and the bot asks the question first.
+    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
+            "open_to_holistic": True, "financial_ready": True}
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
+    d = decide(st, ext(intent="answers_question", partner_status="couple",
+                       partner_can_join=False, partner_is_decision_maker=False))
+    assert d.action == Action.PARTNER_PUSHBACK
+    assert d.lead_state["slots"]["partner_is_decision_maker"] is None
+
+    # Her explicit follow-up answer resolves it -> booking.
+    d2 = decide(d.lead_state, ext(intent="answers_question", partner_is_decision_maker=False))
+    assert d2.action == Action.SEND_BOOKING
+
+
+def test_partner_pushback_loop_guard_hands_off():
+    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
+            "open_to_holistic": True, "financial_ready": True,
+            "partner_status": "couple", "partner_can_join": False}
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
+    d1 = decide(st, ext(intent="answers_question"))
+    assert d1.action == Action.PARTNER_PUSHBACK
+    d2 = decide(d1.lead_state, ext(intent="answers_question"))
+    assert d2.action == Action.PARTNER_PUSHBACK
+    d3 = decide(d2.lead_state, ext(intent="answers_question"))
+    assert d3.action == Action.HUMAN_TAKEOVER
+
+
 def test_solo_lead_skips_partner_and_books():
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
             "open_to_holistic": True, "financial_ready": True, "partner_status": "single_by_choice"}

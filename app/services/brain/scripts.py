@@ -141,12 +141,14 @@ SCRIPTS: dict[Action, str] = {
         "this with a partner, or are you navigating this on your own?"
     ),
     Action.PARTNER_ASK_JOIN: "Would your partner be able to join you on the call?",
+    # Sonia's v1.1 wording (gender-generalized; asks the decision-maker
+    # question instead of ending on a statement).
     Action.PARTNER_PUSHBACK: (
-        "We will use this meeting to determine if we are a match to work together to help you "
-        "get pregnant. Which is why we need all the decision-makers there. If your partner is "
-        "a decision-maker, we need him there. If you are the only decision maker and you can "
-        "make your own investment decisions in your pregnancy, you're welcome to come alone "
-        "to the meeting, ready to make powerful decisions for you and your family."
+        "That's okay. If you are the only decision maker, you can absolutely come alone. "
+        "But if your partner is involved in the decision, I really need them on the call "
+        "too so we don't waste their time or yours.\n\n"
+        "Are you the only person making the decision about getting support, or would they "
+        "need to be aligned too?"
     ),
 
     # Booking (Phase 7)
@@ -412,12 +414,11 @@ SCRIPTS_ES: dict[Action, str] = {
     ),
     Action.PARTNER_ASK_JOIN: "¿Tu pareja podría acompañarte en la llamada?",
     Action.PARTNER_PUSHBACK: (
-        "Usaremos esta reunión para ver si somos un buen equipo para trabajar juntas y "
-        "ayudarte a quedar embarazada. Por eso necesitamos que estén todas las personas que "
-        "toman la decisión. Si tu pareja decide contigo, lo necesitamos ahí. Si tú eres la "
-        "única que toma la decisión y puedes decidir sobre esta inversión en tu embarazo, "
-        "eres bienvenida a venir sola, lista para tomar decisiones poderosas para ti y tu "
-        "familia."
+        "Está bien. Si tú eres la única persona que toma la decisión, por supuesto puedes "
+        "venir sola. Pero si tu pareja es parte de la decisión, de verdad necesito que "
+        "también esté en la llamada para no perder su tiempo ni el tuyo.\n\n"
+        "¿Eres tú la única persona que decide sobre buscar este apoyo, o tu pareja también "
+        "tendría que estar de acuerdo?"
     ),
 
     # Booking (Phase 7)

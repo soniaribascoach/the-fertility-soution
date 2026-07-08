@@ -83,7 +83,7 @@ _SPEC = {
 
     Action.PARTNER_CHECK: _ModeSpec("PARTNER", "Note fertility is a team decision and ask if she is doing this with a partner or on her own."),
     Action.PARTNER_ASK_JOIN: _ModeSpec("PARTNER", "Ask whether her partner would be able to join the call."),
-    Action.PARTNER_PUSHBACK: _ModeSpec("PARTNER", "Explain the call is to see if you are a match, so all decision-makers need to attend; if she is the sole decision-maker she can come alone."),
+    Action.PARTNER_PUSHBACK: _ModeSpec("PARTNER", "Reassure her she can come alone IF she is the only decision maker, then ask directly whether she alone decides or her partner needs to be aligned too. Do not send or promise the booking link."),
 
     Action.SEND_BOOKING: _ModeSpec("BOOK", "Invite her to book the call and include the booking link; tell her to follow the next steps after booking so the call gets confirmed. Do NOT ask for her email.", url_names=("booking_link",), require_urls=True),
     Action.BOOKING_IS_IT_SONIA: _ModeSpec("BOOK", "Explain the first call is with your team, and you will be her coach inside the program."),
@@ -128,7 +128,6 @@ _LONG_ACTIONS = {
     Action.EXPLAIN_ROLE_TFS_UPDATED, Action.EXPLAIN_ROLE_TFS3,
     Action.SEND_BOOKING, Action.POST_BOOKING_CONFIRM_NATALIA,
     Action.POST_BOOKING_CONFIRM_MONIKA, Action.BOOKING_CALL_PROCESS,
-    Action.PARTNER_PUSHBACK,
 }
 
 # Guidance overrides: use SHORT, varied key-points as the reference (instead of

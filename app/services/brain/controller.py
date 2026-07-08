@@ -43,6 +43,7 @@ _GATE_QUESTIONS = {
     Action.FINANCIAL_CHECK,
     Action.PARTNER_CHECK,
     Action.PARTNER_ASK_JOIN,
+    Action.PARTNER_PUSHBACK,
     Action.ASK_BOTH_TUBES,
     Action.ASK_MENOPAUSE_REASON,
     Action.ASK_MENOPAUSE_AGE,
@@ -135,7 +136,14 @@ def booking_gate(state: dict) -> bool:
 
 def merge(lead_state: dict, extraction: Extraction) -> dict:
     state = normalize_lead_state(lead_state)
-    for k, v in non_null_deltas(extraction.slot_deltas).items():
+    deltas = non_null_deltas(extraction.slot_deltas)
+    # "He won't join" turns are where the extractor over-infers that she is the
+    # sole decision maker. That fact must come as its own answer to the explicit
+    # PARTNER_PUSHBACK question, never ride along with a refusal (Sonia v1.1:
+    # no booking link until the decision-maker question is answered).
+    if deltas.get("partner_can_join") is False and deltas.get("partner_is_decision_maker") is False:
+        deltas.pop("partner_is_decision_maker")
+    for k, v in deltas.items():
         if k in state["slots"]:
             state["slots"][k] = v
     s = state["slots"]

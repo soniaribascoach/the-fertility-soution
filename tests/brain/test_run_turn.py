@@ -150,6 +150,32 @@ async def test_no_message_repeats_three_times_in_a_row(openai_client):
         assert not (a and a == b == c), f"reply repeated 3x in a row: {a!r}"
 
 
+async def test_partner_refusal_clarifies_decision_maker_before_link(openai_client):
+    # Sonia v1.1: "husband doesn't want to join" must trigger the sole-
+    # decision-maker question, never the booking link.
+    history = []
+    r = await _say(openai_client, history, None, "FERTILITY")
+    state = r.lead_state
+    for msg in (
+        "I'm 36, we've been trying for 3 years, did 2 IUIs that failed",
+        "it's a 10, top priority",
+        "yes that's exactly the support I'm looking for, and I'm open to a paid program",
+    ):
+        r = await _say(openai_client, history, state, msg)
+        state = r.lead_state
+        assert BOOKING_URL not in (r.reply_text or "")
+
+    r = await _say(openai_client, history, state,
+                   "I'm married but my husband doesn't want to join the call")
+    state = r.lead_state
+    assert BOOKING_URL not in (r.reply_text or ""), f"link sent on refusal: {r.reply_text}"
+
+    r = await _say(openai_client, history, state,
+                   "I'm the only decision maker, I decide about this myself")
+    assert r.action == Action.SEND_BOOKING.value, f"expected booking, got {r.action}"
+    assert BOOKING_URL in r.reply_text
+
+
 async def test_both_tubes_blocked_triggers_takeover(openai_client):
     history = []
     state = None
