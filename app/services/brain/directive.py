@@ -249,13 +249,24 @@ def build_directive(decision, cfg: Optional[dict] = None, ig_user_id: str = "") 
     if action == Action.ASK_DISCOVERY and decision.composer_brief:
         known_facts = decision.composer_brief.get("facts_to_reflect", known_facts)
 
+    # Multi-fact turns (Sonia v1.1): before the priority question, reflect back
+    # what she just shared in one sentence so she knows she was heard.
+    objective = spec.objective
+    reflect_first = (action == Action.ASK_PRIORITY
+                     and len((getattr(decision, "meta", None) or {}).get("new_facts", [])) >= 2)
+    if reflect_first:
+        objective = ("She just shared several new details at once. First reflect them back "
+                     "briefly in one sentence so she knows you got them, then: " + objective)
+
     max_chars = override[1] if override else (900 if action in _LONG_ACTIONS else 400)
+    if reflect_first:
+        max_chars += 120  # room for the reflection sentence
     if language == "es":
         max_chars = int(max_chars * 1.2)  # Spanish runs ~15-20% longer
 
     disclaimer_key = _DISCLAIMER_KEY_ES if language == "es" else _DISCLAIMER_KEY
     return TurnDirective(
-        mode=spec.mode, action=action, generate=True, objective=spec.objective,
+        mode=spec.mode, action=action, generate=True, objective=objective,
         reference_text=reference_text, known_facts=known_facts,
         still_needed=_still_needed(state), must_include=must_include,
         allow_urls=allow_urls, allow_price_figure=spec.price,

@@ -77,6 +77,22 @@ async def test_full_funnel_books_only_when_qualified(openai_client):
     assert state["flags"]["booking_sent"] is True
 
 
+async def test_multi_fact_message_reflected_before_priority_question(openai_client):
+    # Sonia v1.1: "I'm 39, trying 2 years, 2 failed IUIs" must be reflected
+    # back before the priority question, not skipped over.
+    history = []
+    r = await _say(openai_client, history, None, "FERTILITY")
+    state = r.lead_state
+
+    r = await _say(openai_client, history, state,
+                   "I'm 39, we've been trying for 2 years, and I've done 2 failed IUIs.")
+    assert r.action == Action.ASK_PRIORITY.value, f"got {r.action}"
+    text = (r.reply_text or "").lower()
+    reflected = sum(1 for token in ("39", "2 years", "iui") if token in text)
+    assert reflected >= 2, f"only {reflected} facts reflected: {r.reply_text}"
+    assert text.count("?") == 1
+
+
 async def test_one_message_fully_qualified_lead_books(openai_client):
     # Sonia's headline v1.1 bug: her exact test paragraph states every
     # criterion in one message and must get the booking link that same turn.

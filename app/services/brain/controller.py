@@ -70,6 +70,11 @@ _TAKEOVER_INTENTS = {"is_this_ai", "angry_or_challenging", "distress"}
 # Discovery questions in priority order; the first missing slot is asked next.
 _DISCOVERY_ORDER = ["trying_duration", "age", "treatment_path", "done_testing", "diagnosis"]
 
+# Situation facts that count as "newly shared" for the reflect-back rule
+# (Sonia v1.1: a multi-fact message must be reflected before the next question).
+_FACT_DELTA_KEYS = ("trying_duration", "age", "treatment_path", "what_tried",
+                    "done_testing", "diagnosis_detail")
+
 
 # --- Predicates --------------------------------------------------------------
 
@@ -264,6 +269,8 @@ def decide(
 
     # 5) The qualification waterfall.
     decision = _waterfall(state, cfg, ig_user_id, extraction.situation_type)
+    deltas = non_null_deltas(extraction.slot_deltas)
+    decision.meta["new_facts"] = [k for k in _FACT_DELTA_KEYS if k in deltas]
     return _guard_repeats(state, decision)
 
 
