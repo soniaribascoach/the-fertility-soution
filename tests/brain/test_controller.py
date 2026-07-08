@@ -314,6 +314,23 @@ def test_solo_lead_skips_partner_and_books():
     assert d.action == Action.SEND_BOOKING
 
 
+def test_solo_disclosure_gets_no_partner_needed_ack():
+    # Sonia v1.1: "doing this on my own with donor sperm" -> explicitly say no
+    # partner is needed on the call, then the stage question.
+    d = decide(empty_lead_state(), ext(intent="shares_situation", partner_status="donor"))
+    assert d.action == Action.SOLO_NO_PARTNER_ACK
+    assert d.lead_state["slots"]["partner_status"] == "donor"
+
+    # Stage already known -> no ack detour.
+    st = state(slots={"what_tried": "IUI twice"})
+    d2 = decide(st, ext(intent="shares_situation", partner_status="solo"))
+    assert d2.action != Action.SOLO_NO_PARTNER_ACK
+
+    # Fires only on the delta turn; the next answer continues discovery.
+    d3 = decide(d.lead_state, ext(intent="answers_question", treatment_path="iui"))
+    assert d3.action == Action.ASK_DISCOVERY
+
+
 # --- Post-booking ------------------------------------------------------------
 
 def test_booking_link_is_terminal_qualified_handoff():

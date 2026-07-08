@@ -44,6 +44,7 @@ _GATE_QUESTIONS = {
     Action.PARTNER_CHECK,
     Action.PARTNER_ASK_JOIN,
     Action.PARTNER_PUSHBACK,
+    Action.SOLO_NO_PARTNER_ACK,
     Action.ASK_BOTH_TUBES,
     Action.ONE_TUBE_ACK,
     Action.ASK_MENOPAUSE_REASON,
@@ -245,6 +246,14 @@ def decide(
         if decision is not None:
             return _guard_repeats(state, decision)
         # ivf_only when already interested falls through to the funnel.
+
+    # 4b) She just said she is doing this on her own (solo / donor / single by
+    # choice) -> explicitly reassure her no partner is needed on the call, then
+    # ask her stage (Sonia v1.1). Delta-keyed; skipped once her stage is known.
+    if extraction.slot_deltas.partner_status in ("solo", "donor", "single_by_choice") and not (
+        s.get("treatment_path") or s.get("what_tried")
+    ) and not f.get("booking_sent"):
+        return _guard_repeats(state, _script(state, Action.SOLO_NO_PARTNER_ACK, Phase.DISCOVERY))
 
     # 5) The qualification waterfall.
     decision = _waterfall(state, cfg, ig_user_id, extraction.situation_type)

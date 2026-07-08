@@ -150,6 +150,17 @@ async def test_no_message_repeats_three_times_in_a_row(openai_client):
         assert not (a and a == b == c), f"reply repeated 3x in a row: {a!r}"
 
 
+async def test_donor_sperm_solo_lead_told_no_partner_needed(openai_client):
+    # Sonia v1.1: a solo/donor lead must be told explicitly that no partner
+    # is needed on the call, then asked her stage.
+    history = []
+    r = await _say(openai_client, history, None, "I'm doing this on my own with donor sperm")
+    assert r.action == Action.SOLO_NO_PARTNER_ACK.value, f"got {r.action}"
+    text = (r.reply_text or "").lower()
+    assert "partner" in text, text
+    assert any(w in text for w in ("naturally", "iui", "ivf")), text
+
+
 async def test_partner_refusal_clarifies_decision_maker_before_link(openai_client):
     # Sonia v1.1: "husband doesn't want to join" must trigger the sole-
     # decision-maker question, never the booking link.

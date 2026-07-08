@@ -84,6 +84,7 @@ _SPEC = {
 
     Action.PARTNER_CHECK: _ModeSpec("PARTNER", "Note fertility is a team decision and ask if she is doing this with a partner or on her own."),
     Action.PARTNER_ASK_JOIN: _ModeSpec("PARTNER", "Ask whether her partner would be able to join the call."),
+    Action.SOLO_NO_PARTNER_ACK: _ModeSpec("DISCOVERY", "Reassure her that since she is doing this on her own she would not need a partner on the call, then ask her current stage (trying naturally, IUI, preparing for IVF, or still deciding)."),
     Action.PARTNER_PUSHBACK: _ModeSpec("PARTNER", "Reassure her she can come alone IF she is the only decision maker, then ask directly whether she alone decides or her partner needs to be aligned too. Do not send or promise the booking link."),
 
     Action.SEND_BOOKING: _ModeSpec("BOOK", "Invite her to book the call and include the booking link; tell her to follow the next steps after booking so the call gets confirmed. Do NOT ask for her email.", url_names=("booking_link",), require_urls=True),

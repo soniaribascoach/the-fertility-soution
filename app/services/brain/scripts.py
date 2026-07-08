@@ -141,6 +141,13 @@ SCRIPTS: dict[Action, str] = {
         "this with a partner, or are you navigating this on your own?"
     ),
     Action.PARTNER_ASK_JOIN: "Would your partner be able to join you on the call?",
+    # Sonia's v1.1 wording, generalized beyond donor sperm to any solo path.
+    Action.SOLO_NO_PARTNER_ACK: (
+        "Got it. Since you're navigating this on your own, you would not need a partner on "
+        "the call.\n\n"
+        "Are you currently trying naturally, doing IUI, preparing for IVF, or still "
+        "deciding your next step?"
+    ),
     # Sonia's v1.1 wording (gender-generalized; asks the decision-maker
     # question instead of ending on a statement).
     Action.PARTNER_PUSHBACK: (
@@ -419,6 +426,12 @@ SCRIPTS_ES: dict[Action, str] = {
         "esto con tu pareja, o lo estás llevando por tu cuenta?"
     ),
     Action.PARTNER_ASK_JOIN: "¿Tu pareja podría acompañarte en la llamada?",
+    Action.SOLO_NO_PARTNER_ACK: (
+        "Entendido. Como estás llevando esto por tu cuenta, no necesitarías una pareja en "
+        "la llamada.\n\n"
+        "¿Estás intentando de forma natural, haciendo IUI, preparándote para FIV, o todavía "
+        "decidiendo tu siguiente paso?"
+    ),
     Action.PARTNER_PUSHBACK: (
         "Está bien. Si tú eres la única persona que toma la decisión, por supuesto puedes "
         "venir sola. Pero si tu pareja es parte de la decisión, de verdad necesito que "

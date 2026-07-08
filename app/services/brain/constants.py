@@ -52,6 +52,7 @@ class Action(str, Enum):
     PARTNER_CHECK = "PARTNER_CHECK"
     PARTNER_ASK_JOIN = "PARTNER_ASK_JOIN"
     PARTNER_PUSHBACK = "PARTNER_PUSHBACK"
+    SOLO_NO_PARTNER_ACK = "SOLO_NO_PARTNER_ACK"  # solo/donor -> no partner needed + stage question
 
     # Booking
     SEND_BOOKING = "SEND_BOOKING"
