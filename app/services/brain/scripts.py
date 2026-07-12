@@ -168,6 +168,18 @@ SCRIPTS: dict[Action, str] = {
         "Once you book, please follow the next steps carefully so we can make sure your "
         "call is confirmed."
     ),
+    # Partner shares the decision but will not join. Sonia v1.2: set the standard
+    # clearly, concede gracefully, then send the link anyway.
+    Action.SEND_BOOKING_TOGETHER: (
+        "Because fertility is such an important journey, we always encourage couples to "
+        "attend the initial strategy call together whenever possible. We find that the "
+        "strongest outcomes happen when both partners hear the same information, ask "
+        "questions together, and make decisions as a team. We really hope you'll be able to "
+        "choose a time when you can both attend.\n\n"
+        "If that is absolutely impossible, that's okay too. Let's make the best of the call "
+        "and support you as fully as possible from there.\n\n"
+        "Here's the link to book your call: {booking_link}"
+    ),
     Action.BOOKING_IS_IT_SONIA: (
         "The first call is with my team so we can understand your situation properly and see "
         "if this is the right fit. If we all decide we're a great match to work together, "
@@ -459,6 +471,16 @@ SCRIPTS_ES: dict[Action, str] = {
         "decisión. Si estás en esto por tu cuenta, por supuesto puedes venir sola.\n\n"
         "Cuando agendes, por favor sigue los siguientes pasos con atención para que podamos "
         "confirmar tu llamada."
+    ),
+    Action.SEND_BOOKING_TOGETHER: (
+        "Como la fertilidad es un camino tan importante, siempre recomendamos que las parejas "
+        "asistan juntas a la primera llamada de estrategia siempre que sea posible. Vemos que "
+        "los mejores resultados se dan cuando ambos escuchan la misma información, hacen "
+        "preguntas juntos y toman las decisiones en equipo. Ojalá puedan elegir un horario en "
+        "el que puedan estar los dos.\n\n"
+        "Si de verdad es imposible, también está bien. Aprovechemos al máximo la llamada y te "
+        "apoyaremos todo lo que podamos desde ahí.\n\n"
+        "Aquí tienes el enlace para agendar tu llamada: {booking_link}"
     ),
     Action.BOOKING_IS_IT_SONIA: (
         "La primera llamada es con mi equipo, para entender bien tu situación y ver si esto "

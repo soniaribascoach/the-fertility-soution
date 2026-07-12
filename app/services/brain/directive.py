@@ -88,6 +88,7 @@ _SPEC = {
     Action.PARTNER_PUSHBACK: _ModeSpec("PARTNER", "Reassure her she can come alone IF she is the only decision maker, then ask directly whether she alone decides or her partner needs to be aligned too. Do not send or promise the booking link."),
 
     Action.SEND_BOOKING: _ModeSpec("BOOK", "Invite her to book the call and include the booking link; tell her to follow the next steps after booking so the call gets confirmed. Do NOT ask for her email.", url_names=("booking_link",), require_urls=True),
+    Action.SEND_BOOKING_TOGETHER: _ModeSpec("BOOK", "Her partner shares the decision but cannot join. Warmly explain that you always encourage couples to attend the strategy call together because the strongest outcomes happen when both partners hear the same information and decide as a team, and say you hope she can pick a time when both can attend. Then reassure her that if it is truly impossible that is okay too, and you will make the best of the call. Then include the booking link. Do NOT withhold the link, do NOT guilt her, and do NOT ask for her email.", url_names=("booking_link",), require_urls=True),
     Action.BOOKING_IS_IT_SONIA: _ModeSpec("BOOK", "Explain the first call is with your team, and you will be her coach inside the program."),
     Action.BOOKING_CALL_PROCESS: _ModeSpec("BOOK", "Explain the first session is to get to know each other and see if you can help."),
     Action.BOOKING_WHO_NATALIA: _ModeSpec("BOOK", "Reassure her that her appointment is with your associate Natalia."),

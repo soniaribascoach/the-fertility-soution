@@ -92,8 +92,33 @@ def _partner_resolved(s: dict) -> bool:
     if status in ("solo", "donor", "single_by_choice"):
         return True
     if status == "couple":
-        return s.get("partner_can_join") is True or s.get("partner_is_decision_maker") is False
+        if s.get("partner_can_join") is True:
+            return True
+        # She alone decides -> she can come alone.
+        if s.get("partner_is_decision_maker") is False:
+            return True
+        # The partner shares the decision but cannot join. Sonia v1.2: we book her
+        # anyway and set the couples expectation (SEND_BOOKING_TOGETHER) rather
+        # than withholding the link. Only resolved once she has ANSWERED the
+        # decision-maker question, so a bare refusal still gets PARTNER_PUSHBACK.
+        return (
+            s.get("partner_is_decision_maker") is True
+            and s.get("partner_can_join") is False
+        )
     return False
+
+
+def _booking_action(s: dict) -> Action:
+    """Which booking script to send. A couple whose partner shares the decision
+    but will not join hears the couples expectation first; everyone else (solo,
+    sole decision-maker, or a partner who IS joining) gets the plain link."""
+    if (
+        s.get("partner_status") == "couple"
+        and s.get("partner_is_decision_maker") is True
+        and s.get("partner_can_join") is False
+    ):
+        return Action.SEND_BOOKING_TOGETHER
+    return Action.SEND_BOOKING
 
 
 def _discovery_complete(s: dict) -> bool:
@@ -444,7 +469,7 @@ def _waterfall(
     if booking_gate(state):
         f["booking_sent"] = True
         f["handed_off"] = True
-        decision = _script(state, Action.SEND_BOOKING, Phase.POST_BOOKING)
+        decision = _script(state, _booking_action(s), Phase.POST_BOOKING)
         decision.pause = True
         decision.pause_reason = "qualified_link_sent"
         decision.add_tag = True

@@ -265,9 +265,10 @@ def test_partner_join_then_pushback_then_resolved():
                    ext(intent="answers_question"))
     assert d_ask.action == Action.PARTNER_ASK_JOIN
 
+    # He won't join and we do not yet know who decides -> ask, don't book.
     d_push = decide(
-        state(slots={**base, "partner_status": "couple", "partner_can_join": False,
-                     "partner_is_decision_maker": True}, flags=flags),
+        state(slots={**base, "partner_status": "couple", "partner_can_join": False},
+              flags=flags),
         ext(intent="answers_question"))
     assert d_push.action == Action.PARTNER_PUSHBACK
 
@@ -275,6 +276,30 @@ def test_partner_join_then_pushback_then_resolved():
         state(slots={**base, "partner_status": "couple", "partner_can_join": True}, flags=flags),
         ext(intent="answers_question"))
     assert d_ok.action == Action.SEND_BOOKING
+
+
+def test_decision_maker_who_cannot_join_books_with_couples_expectation():
+    # Sonia v1.2: the partner shares the decision but refuses to join. We no
+    # longer withhold the link -> set the couples expectation, then send it.
+    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
+            "open_to_holistic": True, "financial_ready": True, "partner_status": "couple",
+            "partner_can_join": False, "partner_is_decision_maker": True}
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True,
+                                  "last_prompt": "PARTNER_PUSHBACK"})
+    d = decide(st, ext(intent="answers_question"))
+    assert d.action == Action.SEND_BOOKING_TOGETHER
+    assert "{booking_link}" in scripts.SCRIPTS[Action.SEND_BOOKING_TOGETHER]
+
+
+def test_sole_decision_maker_who_cannot_join_gets_the_plain_link():
+    # The couples expectation is only for couples who decide together. A woman
+    # who decides alone must not be lectured about bringing her partner.
+    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
+            "open_to_holistic": True, "financial_ready": True, "partner_status": "couple",
+            "partner_can_join": False, "partner_is_decision_maker": False}
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
+    d = decide(st, ext(intent="answers_question"))
+    assert d.action == Action.SEND_BOOKING
 
 
 def test_partner_refusal_never_books_without_decision_maker_answer():

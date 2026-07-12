@@ -56,6 +56,9 @@ class Action(str, Enum):
 
     # Booking
     SEND_BOOKING = "SEND_BOOKING"
+    # Partner shares the decision but cannot join -> set the couples expectation,
+    # then send the link anyway (Sonia v1.2: no friction, but state the standard).
+    SEND_BOOKING_TOGETHER = "SEND_BOOKING_TOGETHER"
     BOOKING_IS_IT_SONIA = "BOOKING_IS_IT_SONIA"
     BOOKING_CALL_PROCESS = "BOOKING_CALL_PROCESS"
     BOOKING_WHO_NATALIA = "BOOKING_WHO_NATALIA"

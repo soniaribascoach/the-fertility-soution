@@ -8,6 +8,7 @@ from app.services.brain import scripts
 # Actions whose verbatim text legitimately contains a URL.
 URL_ALLOWED = {
     Action.SEND_BOOKING,
+    Action.SEND_BOOKING_TOGETHER,
     Action.FINANCIAL_DECLINE,
     Action.EXPLAIN_ROLE_TFS3,
     Action.MASTERCLASS_SEND,
@@ -55,9 +56,21 @@ def test_only_url_allowed_actions_contain_links():
 
 
 def test_send_booking_has_no_email_ask():
-    # Sonia v1.1: the AI must never ask which email she booked with.
-    assert "email" not in scripts.render(Action.SEND_BOOKING).lower()
-    assert "correo" not in scripts.render(Action.SEND_BOOKING, None, "es").lower()
+    # The email is asked for AFTER she says she booked (POST_BOOKING_ASK_EMAIL),
+    # never on the turn that hands her the link.
+    for action in (Action.SEND_BOOKING, Action.SEND_BOOKING_TOGETHER):
+        assert "email" not in scripts.render(action).lower()
+        assert "correo" not in scripts.render(action, None, "es").lower()
+
+
+def test_booking_together_sets_expectation_then_still_sends_the_link():
+    # Sonia v1.2: encourage couples to attend together, concede gracefully if
+    # impossible, and send the link regardless. The concession is what keeps
+    # this from reading as friction, so assert it is actually there.
+    for lang, concession in (("en", "okay too"), ("es", "también está bien")):
+        text = scripts.render(Action.SEND_BOOKING_TOGETHER, None, lang)
+        assert "https://www.thefertilitysolution.com/free-call" in text
+        assert concession in text.lower()
 
 
 def test_booking_link_default_and_override():
@@ -126,7 +139,8 @@ REACHABLE_ACTIONS = {
     Action.FINANCIAL_CHECK, Action.FINANCIAL_DECLINE,
     Action.PARTNER_CHECK, Action.PARTNER_ASK_JOIN, Action.PARTNER_PUSHBACK,
     Action.SOLO_NO_PARTNER_ACK,
-    Action.SEND_BOOKING, Action.BOOKING_IS_IT_SONIA, Action.BOOKING_CALL_PROCESS,
+    Action.SEND_BOOKING, Action.SEND_BOOKING_TOGETHER,
+    Action.BOOKING_IS_IT_SONIA, Action.BOOKING_CALL_PROCESS,
     Action.ADVICE_DEFLECT, Action.ADVICE_DEFLECT_LATE,
     Action.ADVICE_DEFLECT_PUSH, Action.ADVICE_DEFLECT_PUSH_LATE,
     Action.PRICE_DEFLECT, Action.PRICE_DEFLECT_LATE,
