@@ -150,15 +150,6 @@ SCRIPTS: dict[Action, str] = {
         "Are you currently trying naturally, doing IUI, preparing for IVF, or still "
         "deciding your next step?"
     ),
-    # Sonia's v1.1 wording (gender-generalized; asks the decision-maker
-    # question instead of ending on a statement).
-    Action.PARTNER_PUSHBACK: (
-        "That's okay. If you are the only decision maker, you can absolutely come alone. "
-        "But if your partner is involved in the decision, I really need them on the call "
-        "too so we don't waste their time or yours.\n\n"
-        "Are you the only person making the decision about getting support, or would they "
-        "need to be aligned too?"
-    ),
 
     # Booking (Phase 7)
     Action.SEND_BOOKING: (
@@ -452,13 +443,6 @@ SCRIPTS_ES: dict[Action, str] = {
         "la llamada.\n\n"
         "¿Estás intentando de forma natural, haciendo IUI, preparándote para FIV, o todavía "
         "decidiendo tu siguiente paso?"
-    ),
-    Action.PARTNER_PUSHBACK: (
-        "Está bien. Si tú eres la única persona que toma la decisión, por supuesto puedes "
-        "venir sola. Pero si tu pareja es parte de la decisión, de verdad necesito que "
-        "también esté en la llamada para no perder su tiempo ni el tuyo.\n\n"
-        "¿Eres tú la única persona que decide sobre buscar este apoyo, o tu pareja también "
-        "tendría que estar de acuerdo?"
     ),
 
     # Booking (Phase 7)

@@ -259,7 +259,10 @@ def test_financial_decline_blocks_booking():
 
 # --- Partner -----------------------------------------------------------------
 
-def test_partner_join_then_pushback_then_resolved():
+def test_partner_flow_asks_at_most_two_questions():
+    # Sonia v1.2: is there a partner, and can he come. That is all. We no longer
+    # go on to quiz her about who decides - both answers send the link, so the
+    # extra question was pure friction.
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
             "open_to_holistic": True, "financial_ready": True}
     flags = {"explained_role": True}
@@ -268,115 +271,78 @@ def test_partner_join_then_pushback_then_resolved():
                    ext(intent="answers_question"))
     assert d_ask.action == Action.PARTNER_ASK_JOIN
 
-    # He won't join and we do not yet know who decides -> ask, don't book.
-    d_push = decide(
+    # He can't come -> book her with the couples expectation, no third question.
+    d_no = decide(
         state(slots={**base, "partner_status": "couple", "partner_can_join": False},
               flags=flags),
         ext(intent="answers_question"))
-    assert d_push.action == Action.PARTNER_PUSHBACK
+    assert d_no.action == Action.SEND_BOOKING_TOGETHER
 
+    # He can come -> plain link.
     d_ok = decide(
         state(slots={**base, "partner_status": "couple", "partner_can_join": True}, flags=flags),
         ext(intent="answers_question"))
     assert d_ok.action == Action.SEND_BOOKING
 
 
-def test_refusal_turn_cannot_establish_a_shared_decision_either():
-    # The mirror of the v1.1 guard. "My husband won't join" makes the extractor
-    # over-infer who decides in BOTH directions; a True over-infer would fire the
-    # couples message (with the link!) on the refusal turn itself, without ever
-    # asking. A refusal may never establish the fact, whichever way it points.
+def test_partner_who_cannot_join_books_in_one_turn():
+    # "My husband is supportive but too busy to join" -> straight to the couples
+    # message + link. No decision-maker question, because a supportive partner is
+    # ASSUMED to share the decision.
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
             "open_to_holistic": True, "financial_ready": True}
     st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
     d = decide(st, ext(intent="answers_question", partner_status="couple",
-                       partner_can_join=False, partner_is_decision_maker=True))
-    assert d.action == Action.PARTNER_PUSHBACK
-    assert d.lead_state["slots"]["partner_is_decision_maker"] is None
-
-    # Her explicit answer to the question is what unlocks the couples message.
-    d2 = decide(d.lead_state, ext(intent="answers_question", partner_is_decision_maker=True))
-    assert d2.action == Action.SEND_BOOKING_TOGETHER
-
-
-def test_known_shared_decision_survives_a_later_refusal():
-    # "We already know both are decision makers": the fact was established earlier,
-    # so a later "he can't make it" books her straight into the couples message.
-    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
-            "open_to_holistic": True, "financial_ready": True,
-            "partner_status": "couple", "partner_is_decision_maker": True}
-    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
-    d = decide(st, ext(intent="answers_question", partner_can_join=False,
-                       partner_is_decision_maker=True))
-    assert d.action == Action.SEND_BOOKING_TOGETHER
-
-
-def test_decision_maker_who_cannot_join_books_with_couples_expectation():
-    # Sonia v1.2: the partner shares the decision but refuses to join. We no
-    # longer withhold the link -> set the couples expectation, then send it.
-    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
-            "open_to_holistic": True, "financial_ready": True, "partner_status": "couple",
-            "partner_can_join": False, "partner_is_decision_maker": True}
-    st = state(slots=base, flags={"explained_role": True, "situation_shared": True,
-                                  "last_prompt": "PARTNER_PUSHBACK"})
-    d = decide(st, ext(intent="answers_question"))
+                       partner_can_join=False))
     assert d.action == Action.SEND_BOOKING_TOGETHER
     assert "{booking_link}" in scripts.SCRIPTS[Action.SEND_BOOKING_TOGETHER]
 
 
-def test_sole_decision_maker_who_cannot_join_gets_the_plain_link():
-    # The couples expectation is only for couples who decide together. A woman
-    # who decides alone must not be lectured about bringing her partner.
-    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
-            "open_to_holistic": True, "financial_ready": True, "partner_status": "couple",
-            "partner_can_join": False, "partner_is_decision_maker": False}
-    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
-    d = decide(st, ext(intent="answers_question"))
-    assert d.action == Action.SEND_BOOKING
-
-
-def test_partner_refusal_never_books_without_decision_maker_answer():
-    # Sonia v1.1: "my husband doesn't want to join" sent the booking link.
-    # Even if the extractor over-infers sole-decision-maker on the refusal
-    # turn, merge() drops that delta and the bot asks the question first.
+def test_refusal_turn_never_sets_who_decides_either_way():
+    # The extractor over-infers who decides from "he can't make it", in BOTH
+    # directions. A refusal says nothing about who decides, so the delta is
+    # dropped and the slot stays null -> she gets the couples message.
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
             "open_to_holistic": True, "financial_ready": True}
-    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
-    d = decide(st, ext(intent="answers_question", partner_status="couple",
-                       partner_can_join=False, partner_is_decision_maker=False))
-    assert d.action == Action.PARTNER_PUSHBACK
-    assert d.lead_state["slots"]["partner_is_decision_maker"] is None
-
-    # Her explicit follow-up answer resolves it -> booking.
-    d2 = decide(d.lead_state, ext(intent="answers_question", partner_is_decision_maker=False))
-    assert d2.action == Action.SEND_BOOKING
+    for inferred in (True, False):
+        st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
+        d = decide(st, ext(intent="answers_question", partner_status="couple",
+                           partner_can_join=False, partner_is_decision_maker=inferred))
+        assert d.lead_state["slots"]["partner_is_decision_maker"] is None, inferred
+        assert d.action == Action.SEND_BOOKING_TOGETHER, inferred
 
 
-def test_decision_maker_answer_trusted_after_pushback_question():
-    # After PARTNER_PUSHBACK, "I'm the only decision maker" must book even if
-    # the extractor re-emits the earlier refusal (partner_can_join=False)
-    # alongside her answer.
+def test_she_decides_alone_gets_the_plain_link():
+    # Said on an EARLIER turn ("I decide about this myself"), so it survives the
+    # refusal-turn guard. She is not lectured about bringing a partner.
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
-            "open_to_holistic": True, "financial_ready": True,
-            "partner_status": "couple", "partner_can_join": False}
-    st = state(slots=base, flags={"explained_role": True, "situation_shared": True,
-                                  "last_prompt": "PARTNER_PUSHBACK"})
-    d = decide(st, ext(intent="answers_question",
-                       partner_can_join=False, partner_is_decision_maker=False))
+            "open_to_holistic": True, "financial_ready": True, "partner_status": "couple",
+            "partner_is_decision_maker": False}
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
+    d = decide(st, ext(intent="answers_question", partner_can_join=False))
     assert d.action == Action.SEND_BOOKING
 
 
-def test_partner_pushback_loop_guard_hands_off():
+def test_known_shared_decision_still_books_together():
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
             "open_to_holistic": True, "financial_ready": True,
-            "partner_status": "couple", "partner_can_join": False}
+            "partner_status": "couple", "partner_is_decision_maker": True}
     st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
-    d1 = decide(st, ext(intent="answers_question"))
-    assert d1.action == Action.PARTNER_PUSHBACK
-    d2 = decide(d1.lead_state, ext(intent="answers_question"))
-    assert d2.action == Action.PARTNER_PUSHBACK
-    d3 = decide(d2.lead_state, ext(intent="answers_question"))
-    assert d3.action == Action.HUMAN_TAKEOVER
+    d = decide(st, ext(intent="answers_question", partner_can_join=False))
+    assert d.action == Action.SEND_BOOKING_TOGETHER
+
+
+def test_couple_is_still_asked_the_financial_question():
+    # Guard against the trap in defaulting "partner shares the decision": if that
+    # were written into the SLOT, _financial_ok would treat the money as decided
+    # on the call and skip the paid-program question for every couple.
+    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
+            "open_to_holistic": True}  # financial_ready NOT set
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
+    d = decide(st, ext(intent="answers_question", partner_status="couple",
+                       partner_can_join=False))
+    assert d.action == Action.FINANCIAL_CHECK
+    assert d.lead_state["slots"]["partner_is_decision_maker"] is None
 
 
 def test_solo_lead_skips_partner_and_books():

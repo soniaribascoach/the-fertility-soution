@@ -155,18 +155,22 @@ Default assumption: the prospect has a partner. Ask before booking:
 
 > "Because fertility is usually a team decision, I strongly recommend that both partners join the call so everyone is aligned from the beginning. Are you doing this with a partner, or are you navigating this on your own?"
 
-**If has partner:** Ask if partner can join. Use PDF script if they push back:
-> "We will use this meeting to determine if we are a match to work together to help you get pregnant. Which is why we need all the decision-makers there. If your partner is a decision-maker, we need him there. If you are the only decision maker and you can make your own investment decisions in your pregnancy, you're welcome to come alone to the meeting, ready to make powerful decisions for you and your family."
+**If has partner:** Ask only whether the partner can join.
 
-- Lead confirms she **is the only decision-maker** → proceed if otherwise qualified (plain booking message)
-- Partner is decision-maker and **won't attend** → **v1.2 (supersedes v1.1): send the link anyway**, prefaced by the couples expectation below. We state the standard rather than create friction. The decision-maker question is still asked first: a refusal alone never establishes who decides.
+- Partner **can** join → plain booking message.
+- Partner **cannot** join → **v1.2: send the link anyway**, prefaced by the couples expectation
+  below. We do **not** ask who makes the decision: both answers send the link, so the question was
+  friction. A partner is ASSUMED to share the decision unless she volunteers otherwise.
+- She **volunteers** that she is the only decision maker → plain booking message (come alone).
 
-**v1.2 — Partner is a decision-maker but refuses to join (`SEND_BOOKING_TOGETHER`):**
+**v1.2 — Partner will not attend (`SEND_BOOKING_TOGETHER`):**
 > "Because fertility is such an important journey, we always encourage couples to attend the initial strategy call together whenever possible. We find that the strongest outcomes happen when both partners hear the same information, ask questions together, and make decisions as a team. We really hope you'll be able to choose a time when you can both attend.
 >
 > If that is absolutely impossible, that's okay too. Let's make the best of the call and support you as fully as possible from there.
 >
 > Here's the link to book your call: https://www.thefertilitysolution.com/free-call"
+
+*(The old `PARTNER_PUSHBACK` decision-maker question is retired.)*
 
 **If solo (single mom by choice, donor sperm, not partnered):** Do not require partner. Proceed if otherwise qualified.
 

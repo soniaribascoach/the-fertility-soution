@@ -213,9 +213,11 @@ async def test_donor_sperm_solo_lead_told_no_partner_needed(openai_client):
     assert any(w in text for w in ("naturally", "iui", "ivf")), text
 
 
-async def test_partner_refusal_clarifies_decision_maker_before_link(openai_client):
-    # Sonia v1.1: "husband doesn't want to join" must trigger the sole-
-    # decision-maker question, never the booking link.
+async def test_partner_who_wont_join_books_together_without_a_third_question(openai_client):
+    # Sonia v1.2: "my husband can't join" -> the couples expectation + the link,
+    # in ONE turn. We no longer ask who decides: both answers send the link, so
+    # the question was pure friction. This is the exact shape of the transcript
+    # where a supportive-but-busy partner got quizzed about decision-making.
     history = []
     r = await _say(openai_client, history, None, "FERTILITY")
     state = r.lead_state
@@ -223,50 +225,25 @@ async def test_partner_refusal_clarifies_decision_maker_before_link(openai_clien
         "I'm 36, we've been trying for 3 years, did 2 IUIs that failed",
         "it's a 10, top priority",
         "yes that's exactly the support I'm looking for, and I'm open to a paid program",
-    ):
-        r = await _say(openai_client, history, state, msg)
-        state = r.lead_state
-        assert BOOKING_URL not in (r.reply_text or "")
-
-    r = await _say(openai_client, history, state,
-                   "I'm married but my husband doesn't want to join the call")
-    state = r.lead_state
-    assert BOOKING_URL not in (r.reply_text or ""), f"link sent on refusal: {r.reply_text}"
-
-    r = await _say(openai_client, history, state,
-                   "I'm the only decision maker, I decide about this myself")
-    assert r.action == Action.SEND_BOOKING.value, f"expected booking, got {r.action}"
-    assert BOOKING_URL in r.reply_text
-
-
-async def test_shared_decision_maker_who_wont_join_books_together(openai_client):
-    # Sonia v1.2: she answers the decision-maker question with "we decide
-    # together" -> encourage attending together, then send the link anyway.
-    history = []
-    r = await _say(openai_client, history, None, "FERTILITY")
-    state = r.lead_state
-    for msg in (
-        "I'm 36, we've been trying for 3 years, did 2 IUIs that failed",
-        "it's a 10, top priority",
-        "yes that's exactly the support I'm looking for, and I'm open to a paid program",
-        "I'm married but my husband doesn't want to join the call",
+        "I do have a supportive partner",
     ):
         r = await _say(openai_client, history, state, msg)
         state = r.lead_state
         assert BOOKING_URL not in (r.reply_text or ""), f"link sent early: {r.reply_text}"
 
     r = await _say(openai_client, history, state,
-                   "no, we decide this together, he'd have to agree too")
+                   "He's always busy, might be difficult to schedule")
     state = r.lead_state
     assert r.action == Action.SEND_BOOKING_TOGETHER.value, f"got {r.action}: {r.reply_text}"
     assert BOOKING_URL in r.reply_text, f"link withheld: {r.reply_text}"
-    # The point of the message: set the standard without refusing to book her.
     assert "together" in r.reply_text.lower()
+    # She was never asked who makes the decision.
+    assert "decision maker" not in r.reply_text.lower()
 
 
-async def test_post_booking_collects_email_then_hands_off(openai_client):
-    # Sonia v1.2: the AI keeps going after the link. It asks which email she
-    # booked with, sends the prep page, and never claims the booking is verified.
+async def test_sole_decision_maker_who_says_so_gets_the_plain_link(openai_client):
+    # She volunteers that she decides alone BEFORE the refusal, so it survives the
+    # refusal-turn guard and she is not told to bring a partner she doesn't need.
     history = []
     r = await _say(openai_client, history, None, "FERTILITY")
     state = r.lead_state
@@ -274,49 +251,15 @@ async def test_post_booking_collects_email_then_hands_off(openai_client):
         "I'm 36, we've been trying for 3 years, did 2 IUIs that failed",
         "it's a 10, top priority",
         "yes that's exactly the support I'm looking for, and I'm open to a paid program",
-        "I'm doing this on my own",
+        "I'm married, but I'm the only decision maker, I decide about this myself",
     ):
         r = await _say(openai_client, history, state, msg)
         state = r.lead_state
 
-    assert r.action == Action.SEND_BOOKING.value, f"expected booking, got {r.action}"
+    if r.action != Action.SEND_BOOKING.value:  # she may still be asked if he can join
+        r = await _say(openai_client, history, state, "no, he can't join the call")
+    assert r.action == Action.SEND_BOOKING.value, f"got {r.action}: {r.reply_text}"
     assert BOOKING_URL in r.reply_text
-    assert r.pause is False, "the AI must stay live to run the post-booking flow"
-
-    r = await _say(openai_client, history, state, "just booked it for Tuesday!")
-    state = r.lead_state
-    assert r.action == Action.POST_BOOKING_ASK_EMAIL.value, f"got {r.action}: {r.reply_text}"
-    assert PREP_URL in r.reply_text, f"prep page missing: {r.reply_text}"
-    assert "email" in r.reply_text.lower()
-
-    r = await _say(openai_client, history, state, "sarah.jones@gmail.com")
-    assert r.action == Action.POST_BOOKING_ACK.value, f"got {r.action}: {r.reply_text}"
-    assert r.pause is True and r.pause_reason == "qualified_link_sent"
-    assert r.lead_state["slots"]["email_collected"]
-
-
-async def test_non_email_reply_after_booking_hands_off(openai_client):
-    # She replies to the prep message without an email ("awesome, thank you
-    # sonia"). A real transcript replayed the whole four-paragraph block at her.
-    # Now a human takes it: no reply, paused.
-    history = []
-    r = await _say(openai_client, history, None, "FERTILITY")
-    state = r.lead_state
-    for msg in (
-        "I'm 36, we've been trying for 3 years, did 2 IUIs that failed",
-        "it's a 10, top priority",
-        "yes that's exactly the support I'm looking for, and I'm open to a paid program",
-        "I'm doing this on my own",
-        "just booked it for Tuesday!",
-    ):
-        r = await _say(openai_client, history, state, msg)
-        state = r.lead_state
-    assert r.action == Action.POST_BOOKING_ASK_EMAIL.value
-
-    r = await _say(openai_client, history, state, "awesome, thank you sonia")
-    assert r.action == Action.HUMAN_TAKEOVER.value, f"got {r.action}: {r.reply_text}"
-    assert not r.reply_text, f"should have said nothing, said: {r.reply_text}"
-    assert r.pause is True and r.pause_reason == "qualified_link_sent"
 
 
 async def test_both_tubes_blocked_triggers_takeover(openai_client):

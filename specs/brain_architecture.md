@@ -137,11 +137,20 @@ with a fertility coach to help elevate your chances?" — a "yes" to either sati
 (sets `financial_ready=True`), so it isn't re-asked. "I'll ask my partner" → `partner_is_decision_maker`
 (the money decision happens on the call).
 
-**Partner** — assume couple unless told otherwise. Couple → ask if partner can join. If he
-won't attend, ask who decides (`PARTNER_PUSHBACK`, no booking yet). She alone decides → plain
-`SEND_BOOKING`. The partner shares the decision → `SEND_BOOKING_TOGETHER`: encourage them to
-attend together, concede gracefully if impossible, and send the link anyway (Sonia v1.2 — we
-state the standard rather than withhold the link). Solo/donor/single-by-choice → proceed.
+**Partner** — at most TWO questions: is there a partner (`PARTNER_CHECK`), and can he come
+(`PARTNER_ASK_JOIN`). If he cannot, we do **not** go on to ask who decides: we ASSUME he shares the
+decision and send `SEND_BOOKING_TOGETHER` (encourage attending together, concede gracefully, send
+the link anyway). Sonia v1.2 — the decision-maker answer no longer gates the link, so asking for it
+was pure friction. She only gets the plain `SEND_BOOKING` if she VOLUNTEERED that she decides alone
+on an earlier turn. A refusal turn never sets `partner_is_decision_maker` (the extractor over-infers
+it in both directions), so the delta is dropped and the slot stays null.
+
+> **Trap:** do not default the SLOT to `True`. `_financial_ok` reads
+> `partner_is_decision_maker is True` as "the money is decided on the call" and would skip the
+> paid-program question for every couple. The assumption lives in `_shares_decision_but_absent`
+> (which booking message), never in the slot.
+
+Solo/donor/single-by-choice → no partner needed, proceed.
 
 **The booking gate** (`booking_gate`) — `SEND_BOOKING` is only reachable when **ALL** are true:
 `situation_shared`, actively TTC, priority ok (score ≥ 8 **or** `strong_readiness`),

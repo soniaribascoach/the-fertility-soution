@@ -43,7 +43,6 @@ _GATE_QUESTIONS = {
     Action.FINANCIAL_CHECK,
     Action.PARTNER_CHECK,
     Action.PARTNER_ASK_JOIN,
-    Action.PARTNER_PUSHBACK,
     Action.SOLO_NO_PARTNER_ACK,
     Action.ASK_BOTH_TUBES,
     Action.ONE_TUBE_ACK,
@@ -92,29 +91,32 @@ def _partner_resolved(s: dict) -> bool:
     if status in ("solo", "donor", "single_by_choice"):
         return True
     if status == "couple":
-        # He is coming, or she alone decides so she can come alone.
-        if s.get("partner_can_join") is True or s.get("partner_is_decision_maker") is False:
-            return True
-        # He shares the decision and will not come. Sonia v1.2: book her anyway,
-        # with the couples expectation set (_booking_action -> SEND_BOOKING_TOGETHER).
-        # Requires an explicit answer to the decision-maker question, so a bare
-        # "he won't join" is still unresolved -> PARTNER_PUSHBACK asks it.
-        return _shares_decision_but_absent(s)
+        # Resolved once we know whether he is coming, either way: if he is not,
+        # she books with the couples expectation set rather than being quizzed
+        # about who decides (Sonia v1.2 - the answer no longer gates the link, so
+        # asking for it is friction). She alone deciding also resolves it.
+        return (
+            s.get("partner_can_join") is not None
+            or s.get("partner_is_decision_maker") is False
+        )
     return False
 
 
 def _shares_decision_but_absent(s: dict) -> bool:
+    """A partner who will not attend is ASSUMED to share the decision unless she
+    has told us otherwise. We never ask: both answers send the link, so the only
+    thing riding on it is which message wraps it."""
     return (
         s.get("partner_status") == "couple"
-        and s.get("partner_is_decision_maker") is True
         and s.get("partner_can_join") is False
+        and s.get("partner_is_decision_maker") is not False
     )
 
 
 def _booking_action(s: dict) -> Action:
-    """Which booking script to send. A couple whose partner shares the decision
-    but will not join hears the couples expectation first; everyone else (solo,
-    sole decision-maker, or a partner who IS joining) gets the plain link."""
+    """Which booking script to send. A couple whose partner will not join hears
+    the couples expectation first; everyone else (solo, a partner who IS joining,
+    or a woman who says she decides alone) gets the plain link."""
     if _shares_decision_but_absent(s):
         return Action.SEND_BOOKING_TOGETHER
     return Action.SEND_BOOKING
@@ -168,18 +170,15 @@ def booking_gate(state: dict) -> bool:
 def merge(lead_state: dict, extraction: Extraction) -> dict:
     state = normalize_lead_state(lead_state)
     deltas = non_null_deltas(extraction.slot_deltas)
-    # "He won't join" turns are where the extractor over-infers who decides — in
-    # BOTH directions: "my husband won't come" reads as either sole-decision-maker
-    # (False) or, just because a husband exists, as a shared decision (True).
-    # Either way it decides which booking message she gets, so a refusal turn may
-    # never ESTABLISH the fact; it has to come as her own answer to the explicit
-    # PARTNER_PUSHBACK question. A value already in state survives (we only drop
-    # the delta), which is what "we already know both are decision makers" means.
-    # Once we HAVE just asked the question, her answer is trusted even if the
-    # extractor re-emits the earlier refusal alongside it.
+    # "He won't join" is where the extractor over-infers who decides, in BOTH
+    # directions: it reads "my husband can't make it" as either sole-decision-maker
+    # (False) or, merely because a husband exists, as a shared decision (True). A
+    # refusal says nothing about who decides, so it may not set the fact either
+    # way. Dropping the delta leaves it null, which we treat as "he shares the
+    # decision" -> the couples message. Only a value she volunteered on an EARLIER
+    # turn ("I decide this myself") survives and gets her the plain link.
     if (deltas.get("partner_can_join") is False
-            and deltas.get("partner_is_decision_maker") is not None
-            and state["flags"].get("last_prompt") != Action.PARTNER_PUSHBACK.value):
+            and deltas.get("partner_is_decision_maker") is not None):
         deltas.pop("partner_is_decision_maker")
     for k, v in deltas.items():
         if k in state["slots"]:
@@ -462,13 +461,13 @@ def _waterfall(
         if s.get("partner_is_decision_maker") is not True:
             return _script(state, Action.FINANCIAL_CHECK, Phase.FINANCIAL)
 
-    # PARTNER
+    # PARTNER. Two questions at most: is there a partner, and can he come? If he
+    # cannot, we do NOT go on to ask who decides - we assume he shares it and
+    # book her with the couples expectation set (_booking_action).
     if not _partner_resolved(s):
         if s.get("partner_status") is None:
             f["asked_partner"] = True
             return _script(state, Action.PARTNER_CHECK, Phase.PARTNER)
-        if s.get("partner_can_join") is False:
-            return _script(state, Action.PARTNER_PUSHBACK, Phase.PARTNER)
         f["asked_partner_join"] = True
         return _script(state, Action.PARTNER_ASK_JOIN, Phase.PARTNER)
 
