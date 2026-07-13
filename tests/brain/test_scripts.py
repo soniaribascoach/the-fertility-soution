@@ -12,8 +12,7 @@ URL_ALLOWED = {
     Action.FINANCIAL_DECLINE,
     Action.EXPLAIN_ROLE_TFS3,
     Action.MASTERCLASS_SEND,
-    Action.POST_BOOKING_CONFIRM_NATALIA,
-    Action.POST_BOOKING_CONFIRM_MONIKA,
+    Action.POST_BOOKING_ASK_EMAIL,
     Action.NURTURE_CLOSE,
     Action.NO_MONEY,
 }
@@ -104,16 +103,28 @@ def test_price_range_is_config_overridable():
     assert "$2,000 to $10,000" in custom
 
 
-def test_closer_phone_numbers_present():
-    assert "+1 (647) 992-6383" in scripts.render(Action.POST_BOOKING_CONFIRM_MONIKA)
+def test_post_booking_asks_for_the_email_and_sends_the_prep_page():
+    # Sonia v1.2. The old dormant prep templates (POST_BOOKING_CONFIRM_NATALIA /
+    # _MONIKA, sent by hand) are replaced by this single message from the AI.
+    for lang, prep, email_word in (("en", "prepare", "email"), ("es", "prepararte", "correo")):
+        text = scripts.render(Action.POST_BOOKING_ASK_EMAIL, None, lang)
+        assert "https://www.thefertilitysolution.com/call-scheduled" in text
+        assert email_word in text.lower()
+        assert prep in text.lower()
 
 
-def test_manual_prep_template_matches_sonia_wording():
-    # Dormant template the team copies after a lead books (AI stays paused).
-    text = scripts.render(Action.POST_BOOKING_CONFIRM_NATALIA)
-    assert "thefertilitysolution.com/watch-replay" in text
-    assert "Natalia will text you the day before" in text
-    assert "email" not in text.lower()
+def test_post_booking_never_confirms_the_booking():
+    # The AI cannot see the calendar. It may say it will CHECK, never that the
+    # appointment IS confirmed.
+    for lang in ("en", "es"):
+        ack = scripts.render(Action.POST_BOOKING_ACK, None, lang).lower()
+        assert "confirmed" not in ack and "confirmada" not in ack
+
+
+def test_prep_link_is_config_overridable():
+    custom = scripts.render(Action.POST_BOOKING_ASK_EMAIL, {"prep_link": "https://example.com/prep"})
+    assert "https://example.com/prep" in custom
+    assert "thefertilitysolution.com/call-scheduled" not in custom
 
 
 def test_explain_role_is_not_a_medical_provider_claim():
@@ -130,8 +141,8 @@ def test_render_unknown_action_raises():
 # --- Spanish registry ---------------------------------------------------------
 
 # Every scripted action the controller can actually reach must have a Spanish
-# version. Dormant actions (POST_BOOKING_*, BOOKING_WHO_*, unused explain-role
-# variants, OLD_CONVO, COLD_OUTREACH) intentionally fall back to English.
+# version. Dormant actions (BOOKING_WHO_*, unused explain-role variants,
+# OLD_CONVO, COLD_OUTREACH) intentionally fall back to English.
 REACHABLE_ACTIONS = {
     Action.ASK_PRIORITY, Action.REENGAGE_LOW_PRIORITY,
     Action.LOW_PRIORITY_INFO_GATHERING, Action.NURTURE_CLOSE,
@@ -141,6 +152,7 @@ REACHABLE_ACTIONS = {
     Action.SOLO_NO_PARTNER_ACK,
     Action.SEND_BOOKING, Action.SEND_BOOKING_TOGETHER,
     Action.BOOKING_IS_IT_SONIA, Action.BOOKING_CALL_PROCESS,
+    Action.POST_BOOKING_ASK_EMAIL, Action.POST_BOOKING_ACK,
     Action.ADVICE_DEFLECT, Action.ADVICE_DEFLECT_LATE,
     Action.ADVICE_DEFLECT_PUSH, Action.ADVICE_DEFLECT_PUSH_LATE,
     Action.PRICE_DEFLECT, Action.PRICE_DEFLECT_LATE,

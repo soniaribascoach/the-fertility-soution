@@ -33,7 +33,7 @@ templates.env.globals["app_version"] = APP_VERSION
 CONFIG_KEYS = [
     "phase1_cta_keywords", "phase1_opening_message",
     "medical_deflection_es",
-    "booking_link", "score_threshold", "prompt_scoring_rules",
+    "booking_link", "prep_link", "score_threshold", "prompt_scoring_rules",
     "prompt_about", "prompt_services", "prompt_tone", "prompt_flow",
     "prompt_hard_rules", "prompt_opening_variants", "prompt_qualification_questions",
     "prompt_pattern_responses", "prompt_objection_handling", "prompt_authority_proof",
@@ -220,6 +220,7 @@ async def config_save(
         phase1_opening_message: str = Form(""),
         medical_deflection_es: str = Form(""),
         booking_link: str = Form(""),
+        prep_link: str = Form(""),
         score_threshold: str = Form(""),
         prompt_scoring_rules: str = Form(""),
         prompt_about: str = Form(""),
@@ -245,6 +246,7 @@ async def config_save(
     await set_config(db, "phase1_opening_message", phase1_opening_message)
     await set_config(db, "medical_deflection_es", medical_deflection_es)
     await set_config(db, "booking_link", booking_link)
+    await set_config(db, "prep_link", prep_link)
     await set_config(db, "score_threshold", score_threshold)
     await set_config(db, "prompt_scoring_rules", prompt_scoring_rules)
     await set_config(db, "prompt_about", prompt_about)

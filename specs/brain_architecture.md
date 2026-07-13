@@ -137,18 +137,28 @@ with a fertility coach to help elevate your chances?" — a "yes" to either sati
 (sets `financial_ready=True`), so it isn't re-asked. "I'll ask my partner" → `partner_is_decision_maker`
 (the money decision happens on the call).
 
-**Partner** — assume couple unless told otherwise. Couple → ask if partner can join; if the
-partner is the decision-maker and won't attend → pushback (no booking). Solo/donor/single-by-choice → proceed.
+**Partner** — assume couple unless told otherwise. Couple → ask if partner can join. If he
+won't attend, ask who decides (`PARTNER_PUSHBACK`, no booking yet). She alone decides → plain
+`SEND_BOOKING`. The partner shares the decision → `SEND_BOOKING_TOGETHER`: encourage them to
+attend together, concede gracefully if impossible, and send the link anyway (Sonia v1.2 — we
+state the standard rather than withhold the link). Solo/donor/single-by-choice → proceed.
 
 **The booking gate** (`booking_gate`) — `SEND_BOOKING` is only reachable when **ALL** are true:
 `situation_shared`, actively TTC, priority ok (score ≥ 8 **or** `strong_readiness`),
 `explained_role`, `open_to_holistic`, `_financial_ok`, no `oos_reason`, partner resolved.
 `_financial_ok` = `financial_ready is True` **OR** (`partner_is_decision_maker` and not explicitly declined).
 
-**Booking is terminal.** `SEND_BOOKING` sends the link + asks for the email, then immediately
-**pauses + tags "qualified / link sent" + `handed_off=True`** → the AI goes silent. A human
-verifies the email and sends prep (the AI can't verify emails). The `POST_BOOKING_*` scripts
-exist but are no longer reached.
+**Booking tags but does not end the conversation** (Sonia v1.2). `SEND_BOOKING` sends the link,
+sets `booking_sent`, and tags **qualified** — but it does **not** pause or hand off, so the AI
+stays live. It never re-sends the link (`booking_sent` guards the branch; the gate would
+otherwise still pass on every later turn).
+
+**Post-booking.** She says she booked → `POST_BOOKING_ASK_EMAIL`: ask which email she booked
+with, send the prep page (`prep_link`), and set the reply-to-the-text expectation. She gives the
+email → `POST_BOOKING_ACK`, then **pause + tag + `handed_off=True`** with reason
+`booked_pending_verification`. The AI never *confirms* a booking: it cannot see the calendar, so
+a human verifies. Post-link messages that are neither "booked" nor an interrupt return
+`AWAIT_BOOKING` — silent but **unpaused**, so a later "I booked" is still caught.
 
 ---
 
@@ -359,7 +369,6 @@ checks pause, locks batch, then **if `brain_version == funnel`** → `_run_brain
 
 - Voice tone caps out at `gpt-4o-mini`'s ability; upgrade the voice model for richer tone.
 - "Contradictory info" / "complex medical case" takeovers rely on LLM judgment (no deterministic test).
-- The `POST_BOOKING_*` scripts are dormant (booking hands off before them) — a human does post-booking.
 - **To add a funnel step:** add the `Action` (constants) + script (`scripts.py`) + wire it in `controller._waterfall` + a `_ModeSpec`/`_GUIDANCE` entry (`directive.py`) + tests.
 - **To change wording:** edit `scripts.py` (fallback/verbatim) and/or `_GUIDANCE` (voice reference); the voice paraphrases the reference.
 - **To add a hard rule:** add a check in `validate_generated` (`validator.py`).

@@ -13,6 +13,7 @@ from app.services.brain.constants import Action, Phase
 pytestmark = pytest.mark.live
 
 BOOKING_URL = "thefertilitysolution.com/free-call"
+PREP_URL = "thefertilitysolution.com/call-scheduled"
 
 CFG = {
     "phase1_cta_keywords": "AMH\nBABY\nFERTILITY\nIVF",
@@ -236,6 +237,62 @@ async def test_partner_refusal_clarifies_decision_maker_before_link(openai_clien
                    "I'm the only decision maker, I decide about this myself")
     assert r.action == Action.SEND_BOOKING.value, f"expected booking, got {r.action}"
     assert BOOKING_URL in r.reply_text
+
+
+async def test_shared_decision_maker_who_wont_join_books_together(openai_client):
+    # Sonia v1.2: she answers the decision-maker question with "we decide
+    # together" -> encourage attending together, then send the link anyway.
+    history = []
+    r = await _say(openai_client, history, None, "FERTILITY")
+    state = r.lead_state
+    for msg in (
+        "I'm 36, we've been trying for 3 years, did 2 IUIs that failed",
+        "it's a 10, top priority",
+        "yes that's exactly the support I'm looking for, and I'm open to a paid program",
+        "I'm married but my husband doesn't want to join the call",
+    ):
+        r = await _say(openai_client, history, state, msg)
+        state = r.lead_state
+        assert BOOKING_URL not in (r.reply_text or ""), f"link sent early: {r.reply_text}"
+
+    r = await _say(openai_client, history, state,
+                   "no, we decide this together, he'd have to agree too")
+    state = r.lead_state
+    assert r.action == Action.SEND_BOOKING_TOGETHER.value, f"got {r.action}: {r.reply_text}"
+    assert BOOKING_URL in r.reply_text, f"link withheld: {r.reply_text}"
+    # The point of the message: set the standard without refusing to book her.
+    assert "together" in r.reply_text.lower()
+
+
+async def test_post_booking_collects_email_then_hands_off(openai_client):
+    # Sonia v1.2: the AI keeps going after the link. It asks which email she
+    # booked with, sends the prep page, and never claims the booking is verified.
+    history = []
+    r = await _say(openai_client, history, None, "FERTILITY")
+    state = r.lead_state
+    for msg in (
+        "I'm 36, we've been trying for 3 years, did 2 IUIs that failed",
+        "it's a 10, top priority",
+        "yes that's exactly the support I'm looking for, and I'm open to a paid program",
+        "I'm doing this on my own",
+    ):
+        r = await _say(openai_client, history, state, msg)
+        state = r.lead_state
+
+    assert r.action == Action.SEND_BOOKING.value, f"expected booking, got {r.action}"
+    assert BOOKING_URL in r.reply_text
+    assert r.pause is False, "the AI must stay live to run the post-booking flow"
+
+    r = await _say(openai_client, history, state, "just booked it for Tuesday!")
+    state = r.lead_state
+    assert r.action == Action.POST_BOOKING_ASK_EMAIL.value, f"got {r.action}: {r.reply_text}"
+    assert PREP_URL in r.reply_text, f"prep page missing: {r.reply_text}"
+    assert "email" in r.reply_text.lower()
+
+    r = await _say(openai_client, history, state, "sarah.jones@gmail.com")
+    assert r.action == Action.POST_BOOKING_ACK.value, f"got {r.action}: {r.reply_text}"
+    assert r.pause is True and r.pause_reason == "booked_pending_verification"
+    assert r.lead_state["slots"]["email_collected"]
 
 
 async def test_both_tubes_blocked_triggers_takeover(openai_client):

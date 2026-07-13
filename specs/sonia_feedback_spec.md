@@ -158,8 +158,15 @@ Default assumption: the prospect has a partner. Ask before booking:
 **If has partner:** Ask if partner can join. Use PDF script if they push back:
 > "We will use this meeting to determine if we are a match to work together to help you get pregnant. Which is why we need all the decision-makers there. If your partner is a decision-maker, we need him there. If you are the only decision maker and you can make your own investment decisions in your pregnancy, you're welcome to come alone to the meeting, ready to make powerful decisions for you and your family."
 
-- Partner is decision-maker and **won't attend** → do not send booking link yet
-- Lead confirms she **is the only decision-maker** → proceed if otherwise qualified
+- Lead confirms she **is the only decision-maker** → proceed if otherwise qualified (plain booking message)
+- Partner is decision-maker and **won't attend** → **v1.2 (supersedes v1.1): send the link anyway**, prefaced by the couples expectation below. We state the standard rather than create friction. The decision-maker question is still asked first: a refusal alone never establishes who decides.
+
+**v1.2 — Partner is a decision-maker but refuses to join (`SEND_BOOKING_TOGETHER`):**
+> "Because fertility is such an important journey, we always encourage couples to attend the initial strategy call together whenever possible. We find that the strongest outcomes happen when both partners hear the same information, ask questions together, and make decisions as a team. We really hope you'll be able to choose a time when you can both attend.
+>
+> If that is absolutely impossible, that's okay too. Let's make the best of the call and support you as fully as possible from there.
+>
+> Here's the link to book your call: https://www.thefertilitysolution.com/free-call"
 
 **If solo (single mom by choice, donor sperm, not partnered):** Do not require partner. Proceed if otherwise qualified.
 
@@ -211,27 +218,30 @@ Default assumption: the prospect has a partner. Ask before booking:
 
 ### Phase 8 — Post-Booking Confirmation
 
-**Step 1 — Ask for email:**
-> "Can I have your email address so I can verify and make sure your schedule shows on our end?"
+**v1.2 (supersedes v1.1).** The AI no longer goes silent when the link is sent: it stays live,
+catches "I booked", and runs the sequence below. It never *confirms* the appointment, because it
+cannot see the calendar. A human verifies once the email is in.
 
-**Step 2 — After email received, send booking confirmation:**
+**Step 1 — She says she booked (`POST_BOOKING_ASK_EMAIL`, one message):**
+> "Amazing! Could you please remind me of the email address you used to book? That way I can check on my end and confirm that everything looks good.
+>
+> In the meantime, please take a look at this page, which will help you prepare for our strategy call and make sure you get the most value out of our time together:
+>
+> https://www.thefertilitysolution.com/call-scheduled
+>
+> My team will also text you the day before the meeting to confirm your attendance. We do ask that you reply to that text so we know you are definitely attending and that we are truly keeping that space for you. If we do not hear back from you, the meeting will not be confirmed.
+>
+> Does that all make sense? If so, I'm excited for you to take the next step, and we'll be here to support you throughout the process."
 
-*Natalia:*
-> "Great! You'll be speaking with my associate, Natalia! Please make sure to confirm via text message when you receive a text confirmation request from this number +1 (415) 694-1799
->
-> Before the call, it's very important to watch this short masterclass so you have a good sense of how I help my clients in your situation: https://www.thefertilitysolution.com/watch-replay
->
-> You'll also see some client case studies and it will ensure that you're fully informed before our call, deal?"
+**Step 2 — She gives the email (`POST_BOOKING_ACK`), then pause + tag for a human:**
+> "Perfect, thank you. I'll check that on my end and make sure everything looks good. We're really looking forward to speaking with you."
 
-*Monika:*
-> "Great! You'll be speaking with my associate, Monika! Please make sure to confirm via text message when you receive a text confirmation request from this number +1 (647) 992-6383
->
-> Before the call, it's very important to watch this short masterclass so you have a good sense of how I help my clients in your situation: https://www.thefertilitysolution.com/watch-replay
->
-> You'll also see some client case studies and it will ensure that you're fully informed before our call, deal?"
+Pause reason: `booked_pending_verification`. The old per-closer prep templates
+(`POST_BOOKING_CONFIRM_NATALIA` / `_MONIKA`, sent by hand) are retired: the message above
+replaces them, and it names no closer ("my team will text you").
 
 **Internal steps after booking (manual, not AI):**
-- Send Reminder Video
+- Verify the appointment against the calendar using the email she gave
 - Change Lead Stage → Touch Base
 - Add today's date
 - Add Label: Natalia / Monika

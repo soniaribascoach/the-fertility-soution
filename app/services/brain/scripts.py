@@ -14,6 +14,7 @@ from app.services.brain.constants import Action
 
 _PLACEHOLDER_DEFAULTS = {
     "booking_link": "https://www.thefertilitysolution.com/free-call",
+    "prep_link": "https://www.thefertilitysolution.com/call-scheduled",
     "register_link": "https://www.thefertilitysolution.com/register",
     "watch_replay": "https://www.thefertilitysolution.com/watch-replay",
     "website": "https://www.soniaribas.com/",
@@ -27,6 +28,7 @@ _PLACEHOLDER_DEFAULTS = {
 # config key -> placeholder name (lets admins override any of the above)
 _CONFIG_OVERRIDES = {
     "booking_link": "booking_link",
+    "prep_link": "prep_link",
     "masterclass_register_link": "register_link",
     "masterclass_replay_link": "watch_replay",
     "website_link": "website",
@@ -207,30 +209,27 @@ SCRIPTS: dict[Action, str] = {
         "hold your hand through the fertility coaching process."
     ),
 
-    # Post-booking (Phase 8)
+    # Post-booking (Phase 8). Sonia v1.2: the AI can't see the calendar, so it
+    # never CONFIRMS the booking. It asks for the email, hands over the prep
+    # page, and sets the reply-to-the-text expectation.
     Action.POST_BOOKING_ASK_EMAIL: (
-        "Can I have your email address so I can verify and make sure your schedule shows on "
-        "our end?"
+        "Amazing! Could you please remind me of the email address you used to book? That way "
+        "I can check on my end and confirm that everything looks good.\n\n"
+        "In the meantime, please take a look at this page, which will help you prepare for "
+        "our strategy call and make sure you get the most value out of our time together:\n\n"
+        "{prep_link}\n\n"
+        "My team will also text you the day before the meeting to confirm your attendance. "
+        "We do ask that you reply to that text so we know you are definitely attending and "
+        "that we are truly keeping that space for you. If we do not hear back from you, the "
+        "meeting will not be confirmed.\n\n"
+        "Does that all make sense? If so, I'm excited for you to take the next step, and "
+        "we'll be here to support you throughout the process."
     ),
-    # Dormant: the AI pauses at SEND_BOOKING, so the TEAM sends this prep
-    # message manually after the lead books (Sonia's v1.1 wording).
-    Action.POST_BOOKING_CONFIRM_NATALIA: (
-        "Perfect, I'm so glad you booked.\n\n"
-        "Before the call, please watch this short masterclass so you have a clear sense of "
-        "how I help my clients and can come into the call fully informed:\n\n"
-        "{watch_replay}\n\n"
-        "Natalia will text you the day before your appointment to confirm the meeting. "
-        "Please make sure you reply to her and confirm, because we only hold confirmed "
-        "appointments on the calendar."
-    ),
-    Action.POST_BOOKING_CONFIRM_MONIKA: (
-        "Great! You'll be speaking with my associate, Monika! Please make sure to confirm "
-        "via text message when you receive a text confirmation request from this number "
-        "{monika_phone}\n\n"
-        "Before the call, it's very important to watch this short masterclass so you have a "
-        "good sense of how I help my clients in your situation: {watch_replay}\n\n"
-        "You'll also see some client case studies and it will ensure that you're fully "
-        "informed before our call, deal?"
+    # She gave the email. Acknowledge WITHOUT claiming the booking is verified,
+    # then a human checks the calendar.
+    Action.POST_BOOKING_ACK: (
+        "Perfect, thank you. I'll check that on my end and make sure everything looks good. "
+        "We're really looking forward to speaking with you."
     ),
 
     # Advice / price / misc deflections
@@ -497,6 +496,25 @@ SCRIPTS_ES: dict[Action, str] = {
         "En la sesión te diré si puedo cambiar tu vida o no. Si puedo, te daré opciones y "
         "toda la información para que tomes una decisión totalmente informada sobre si "
         "quieres trabajar conmigo o no."
+    ),
+
+    # Post-booking (Phase 8)
+    Action.POST_BOOKING_ASK_EMAIL: (
+        "¡Qué bien! ¿Me puedes recordar el correo electrónico que usaste para agendar? Así "
+        "lo reviso de mi lado y confirmo que todo esté correcto.\n\n"
+        "Mientras tanto, échale un vistazo a esta página, que te ayudará a prepararte para "
+        "nuestra llamada de estrategia y a aprovechar al máximo nuestro tiempo juntas:\n\n"
+        "{prep_link}\n\n"
+        "Mi equipo también te enviará un mensaje de texto el día antes de la reunión para "
+        "confirmar tu asistencia. Te pedimos que respondas a ese mensaje para saber que "
+        "definitivamente vas a asistir y que de verdad estamos reservando ese espacio para "
+        "ti. Si no recibimos tu respuesta, la reunión no quedará confirmada.\n\n"
+        "¿Tiene sentido todo esto? Si es así, me emociona mucho que des este siguiente paso, "
+        "y aquí estaremos para apoyarte durante todo el proceso."
+    ),
+    Action.POST_BOOKING_ACK: (
+        "Perfecto, gracias. Lo reviso de mi lado y me aseguro de que todo esté correcto. "
+        "Tenemos muchas ganas de hablar contigo."
     ),
 
     # Advice / price / misc deflections

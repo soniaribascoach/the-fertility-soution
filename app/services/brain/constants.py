@@ -64,10 +64,14 @@ class Action(str, Enum):
     BOOKING_WHO_NATALIA = "BOOKING_WHO_NATALIA"
     BOOKING_WHO_MONIKA = "BOOKING_WHO_MONIKA"
 
-    # Post-booking
+    # Post-booking. She said she booked -> ask for the email she used, send the
+    # prep page, set the text-confirmation expectation. Then ack and hand to a
+    # human, who verifies the appointment against the calendar (the AI cannot).
     POST_BOOKING_ASK_EMAIL = "POST_BOOKING_ASK_EMAIL"
-    POST_BOOKING_CONFIRM_NATALIA = "POST_BOOKING_CONFIRM_NATALIA"
-    POST_BOOKING_CONFIRM_MONIKA = "POST_BOOKING_CONFIRM_MONIKA"
+    POST_BOOKING_ACK = "POST_BOOKING_ACK"
+    # Link is out, she has not said she booked, and nothing else applies -> stay
+    # silent but STAY LIVE, so a later "I booked" is still caught.
+    AWAIT_BOOKING = "AWAIT_BOOKING"
 
     # Advice / price / misc deflections
     ADVICE_DEFLECT = "ADVICE_DEFLECT"                    # early (re-asks discovery)

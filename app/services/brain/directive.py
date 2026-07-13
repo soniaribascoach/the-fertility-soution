@@ -94,9 +94,8 @@ _SPEC = {
     Action.BOOKING_WHO_NATALIA: _ModeSpec("BOOK", "Reassure her that her appointment is with your associate Natalia."),
     Action.BOOKING_WHO_MONIKA: _ModeSpec("BOOK", "Reassure her that her appointment is with your associate Monika."),
 
-    Action.POST_BOOKING_ASK_EMAIL: _ModeSpec("POST_BOOK", "Ask for the email address she used to book so you can verify it."),
-    Action.POST_BOOKING_CONFIRM_NATALIA: _ModeSpec("POST_BOOK", "Confirm she will speak with Natalia, give the confirmation phone number, and ask her to watch the masterclass first.", url_names=("watch_replay", "natalia_phone"), require_urls=True),
-    Action.POST_BOOKING_CONFIRM_MONIKA: _ModeSpec("POST_BOOK", "Confirm she will speak with Monika, give the confirmation phone number, and ask her to watch the masterclass first.", url_names=("watch_replay", "monika_phone"), require_urls=True),
+    Action.POST_BOOKING_ASK_EMAIL: _ModeSpec("POST_BOOK", "She says she booked. Warmly ask her to remind you of the email address she used to book, so you can check on your end that everything looks good. Share the prep page link so she gets the most out of the call. Tell her the team will text her the day before to confirm attendance, that she MUST reply to that text, and that the meeting is not confirmed if you do not hear back. Close by asking whether that all makes sense. Do NOT state that her booking IS confirmed or verified: you have not checked yet.", url_names=("prep_link",), require_urls=True),
+    Action.POST_BOOKING_ACK: _ModeSpec("POST_BOOK", "Warmly thank her for the email and say you will check it on your end to make sure everything looks good. Do NOT claim the booking is confirmed or verified, and do NOT ask a question."),
 
     Action.PRICE_DEFLECT: _ModeSpec("DEFLECT_PRICE", "Explain price depends on the level of support so you do not give a number yet, and redirect to understanding her situation. Do NOT state any price."),
     Action.PRICE_DEFLECT_LATE: _ModeSpec("DEFLECT_PRICE", "Explain price depends on the level of support so you do not give a number yet, and redirect to fit. Do NOT state any price or re-ask facts she already shared."),
@@ -130,8 +129,8 @@ _DEFAULT_SPEC = _ModeSpec("MISC", "Respond warmly and briefly, staying on the co
 # Actions whose approved content is legitimately multi-sentence.
 _LONG_ACTIONS = {
     Action.EXPLAIN_ROLE_TFS_UPDATED, Action.EXPLAIN_ROLE_TFS3,
-    Action.SEND_BOOKING, Action.POST_BOOKING_CONFIRM_NATALIA,
-    Action.POST_BOOKING_CONFIRM_MONIKA, Action.BOOKING_CALL_PROCESS,
+    Action.SEND_BOOKING, Action.SEND_BOOKING_TOGETHER,
+    Action.POST_BOOKING_ASK_EMAIL, Action.BOOKING_CALL_PROCESS,
 }
 
 # Guidance overrides: use SHORT, varied key-points as the reference (instead of
@@ -205,10 +204,13 @@ def build_directive(decision, cfg: Optional[dict] = None, ig_user_id: str = "") 
     state = decision.lead_state
     language = state["slots"].get("language") or "en"
 
-    # Human takeover (incl. unsupported language) sends nothing.
-    if action in (Action.HUMAN_TAKEOVER, Action.UNSUPPORTED_LANGUAGE):
+    # Silent turns send nothing: a human takeover (incl. unsupported language), or
+    # AWAIT_BOOKING, where the link is out and we are simply waiting for her to
+    # book (live, unpaused, so a later "I booked" is still caught).
+    if action in (Action.HUMAN_TAKEOVER, Action.UNSUPPORTED_LANGUAGE, Action.AWAIT_BOOKING):
         return TurnDirective(
-            mode="TAKEOVER", action=action, generate=False, objective="",
+            mode="AWAIT" if action == Action.AWAIT_BOOKING else "TAKEOVER",
+            action=action, generate=False, objective="",
             reference_text="", pinned_text=None, send_message=False,
             pause=decision.pause, pause_reason=decision.pause_reason,
             add_tag=decision.add_tag, lead_state=state, language=language,
