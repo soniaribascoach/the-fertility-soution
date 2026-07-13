@@ -68,6 +68,9 @@ class Action(str, Enum):
     # prep page, set the text-confirmation expectation. Then ack and hand to a
     # human, who verifies the appointment against the calendar (the AI cannot).
     POST_BOOKING_ASK_EMAIL = "POST_BOOKING_ASK_EMAIL"
+    # She replied to the above without giving the email ("thank you!", "makes
+    # sense"). Nudge for JUST the email; never replay the whole prep message.
+    POST_BOOKING_ASK_EMAIL_AGAIN = "POST_BOOKING_ASK_EMAIL_AGAIN"
     POST_BOOKING_ACK = "POST_BOOKING_ACK"
     # Link is out, she has not said she booked, and nothing else applies -> stay
     # silent but STAY LIVE, so a later "I booked" is still caught.

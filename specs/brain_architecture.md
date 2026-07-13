@@ -154,11 +154,15 @@ stays live. It never re-sends the link (`booking_sent` guards the branch; the ga
 otherwise still pass on every later turn).
 
 **Post-booking.** She says she booked → `POST_BOOKING_ASK_EMAIL`: ask which email she booked
-with, send the prep page (`prep_link`), and set the reply-to-the-text expectation. She gives the
-email → `POST_BOOKING_ACK`, then **pause + tag + `handed_off=True`** with reason
+with, send the prep page (`prep_link`), and set the reply-to-the-text expectation. Sent **once** —
+any later reply without an email gets `POST_BOOKING_ASK_EMAIL_AGAIN`, a one-line nudge, because
+replaying that four-paragraph block reads like a broken bot (a live transcript did exactly that).
+Two nudges with no email → the repeat guard hands her to a human. She gives the email →
+`POST_BOOKING_ACK`, then **pause + tag + `handed_off=True`** with reason
 `booked_pending_verification`. The AI never *confirms* a booking: it cannot see the calendar, so
-a human verifies. Post-link messages that are neither "booked" nor an interrupt return
-`AWAIT_BOOKING` — silent but **unpaused**, so a later "I booked" is still caught.
+a human verifies. An email at any point after the link is treated as proof she booked, even if
+the extractor missed the `booked` intent. Post-link messages that are neither "booked" nor an
+interrupt return `AWAIT_BOOKING` — silent but **unpaused**, so a later "I booked" is still caught.
 
 ---
 

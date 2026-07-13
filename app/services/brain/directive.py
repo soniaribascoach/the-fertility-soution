@@ -95,6 +95,7 @@ _SPEC = {
     Action.BOOKING_WHO_MONIKA: _ModeSpec("BOOK", "Reassure her that her appointment is with your associate Monika."),
 
     Action.POST_BOOKING_ASK_EMAIL: _ModeSpec("POST_BOOK", "She says she booked. Warmly ask her to remind you of the email address she used to book, so you can check on your end that everything looks good. Share the prep page link so she gets the most out of the call. Tell her the team will text her the day before to confirm attendance, that she MUST reply to that text, and that the meeting is not confirmed if you do not hear back. Close by asking whether that all makes sense. Do NOT state that her booking IS confirmed or verified: you have not checked yet.", url_names=("prep_link",), require_urls=True),
+    Action.POST_BOOKING_ASK_EMAIL_AGAIN: _ModeSpec("POST_BOOK", "She replied but did not give her email. In ONE short, warm sentence ask her for the email address she used to book, so you can check it on your end. Do NOT repeat the prep page, the text-confirmation instructions, or anything else you already told her."),
     Action.POST_BOOKING_ACK: _ModeSpec("POST_BOOK", "Warmly thank her for the email and say you will check it on your end to make sure everything looks good. Do NOT claim the booking is confirmed or verified, and do NOT ask a question."),
 
     Action.PRICE_DEFLECT: _ModeSpec("DEFLECT_PRICE", "Explain price depends on the level of support so you do not give a number yet, and redirect to understanding her situation. Do NOT state any price."),

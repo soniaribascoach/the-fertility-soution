@@ -289,6 +289,15 @@ async def test_post_booking_collects_email_then_hands_off(openai_client):
     assert PREP_URL in r.reply_text, f"prep page missing: {r.reply_text}"
     assert "email" in r.reply_text.lower()
 
+    # She thanks us without giving the email. She must NOT get the whole prep
+    # message a second time (a real transcript did exactly that).
+    prep_msg = r.reply_text
+    r = await _say(openai_client, history, state, "awesome, thank you sonia")
+    state = r.lead_state
+    assert r.action == Action.POST_BOOKING_ASK_EMAIL_AGAIN.value, f"got {r.action}"
+    assert PREP_URL not in (r.reply_text or ""), f"prep page re-sent: {r.reply_text}"
+    assert len(r.reply_text) < len(prep_msg) / 2, f"replayed the block: {r.reply_text}"
+
     r = await _say(openai_client, history, state, "sarah.jones@gmail.com")
     assert r.action == Action.POST_BOOKING_ACK.value, f"got {r.action}: {r.reply_text}"
     assert r.pause is True and r.pause_reason == "booked_pending_verification"

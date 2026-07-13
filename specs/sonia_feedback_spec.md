@@ -233,6 +233,13 @@ cannot see the calendar. A human verifies once the email is in.
 >
 > Does that all make sense? If so, I'm excited for you to take the next step, and we'll be here to support you throughout the process."
 
+**Step 1b — She replies without giving the email (`POST_BOOKING_ASK_EMAIL_AGAIN`):**
+One short line, never a replay of the message above (a live transcript had her say "awesome,
+thank you sonia" and get the whole four-paragraph block a second time):
+> "Whenever you get a moment, could you send me the email address you used to book? I just want to check on my end that everything looks good."
+
+After two nudges with no email, hand to a human rather than nagging.
+
 **Step 2 — She gives the email (`POST_BOOKING_ACK`), then pause + tag for a human:**
 > "Perfect, thank you. I'll check that on my end and make sure everything looks good. We're really looking forward to speaking with you."
 

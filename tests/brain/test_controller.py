@@ -488,16 +488,40 @@ def test_post_link_chatter_stays_silent_but_live():
     assert d3.action == Action.POST_BOOKING_ASK_EMAIL
 
 
-def test_never_asked_email_loop_guard_hands_off():
-    # She says "booked" but never produces an email -> the 3-repeat guard fires
-    # instead of asking forever.
+def test_thanks_after_booking_never_replays_the_whole_prep_message():
+    # Live transcript bug: she said "awesome, thank you sonia" and got the entire
+    # four-paragraph email/prep message a second time, verbatim. A reply without
+    # an email gets a one-line nudge, never a replay.
     d = decide(qualified_state(), ext(intent="ready_to_book"))
     d2 = decide(d.lead_state, ext(intent="booked"))
     assert d2.action == Action.POST_BOOKING_ASK_EMAIL
+
     d3 = decide(d2.lead_state, ext(intent="other"))
-    assert d3.action == Action.POST_BOOKING_ASK_EMAIL
+    assert d3.action == Action.POST_BOOKING_ASK_EMAIL_AGAIN
+    nudge = scripts.render(Action.POST_BOOKING_ASK_EMAIL_AGAIN)
+    assert "call-scheduled" not in nudge  # no prep page a second time
+    assert len(nudge) < 200               # a nudge, not the block
+
+    # Even a second "booked" must not replay it.
+    d4 = decide(d2.lead_state, ext(intent="booked"))
+    assert d4.action != Action.POST_BOOKING_ASK_EMAIL
+
+
+def test_never_asked_email_loop_guard_hands_off():
+    # She books but never produces an email -> nudge twice, then hand to a human
+    # rather than nagging forever.
+    d = decide(qualified_state(), ext(intent="ready_to_book"))
+    d2 = decide(d.lead_state, ext(intent="booked"))
+    d3 = decide(d2.lead_state, ext(intent="other"))
+    assert d3.action == Action.POST_BOOKING_ASK_EMAIL_AGAIN
     d4 = decide(d3.lead_state, ext(intent="other"))
-    assert d4.action == Action.HUMAN_TAKEOVER
+    assert d4.action == Action.POST_BOOKING_ASK_EMAIL_AGAIN
+    d5 = decide(d4.lead_state, ext(intent="other"))
+    assert d5.action == Action.HUMAN_TAKEOVER
+
+    # ...but her email still lands even after the nudges.
+    d5b = decide(d4.lead_state, ext(intent="gives_email", email_collected="s@g.com"))
+    assert d5b.action == Action.POST_BOOKING_ACK
 
 
 def test_after_handoff_stays_silent():

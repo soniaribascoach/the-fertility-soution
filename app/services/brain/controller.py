@@ -51,6 +51,7 @@ _GATE_QUESTIONS = {
     Action.ASK_MENOPAUSE_AGE,
     Action.ASK_DISCOVERY,
     Action.POST_BOOKING_ASK_EMAIL,
+    Action.POST_BOOKING_ASK_EMAIL_AGAIN,
 }
 
 
@@ -548,10 +549,15 @@ def _post_booking(state: dict, intent: str) -> Decision:
     if s.get("email_collected"):
         return _booked_handoff(state)
 
-    # She says she booked (or we already asked and are still waiting on the email).
-    # decide() applies _guard_repeats to whatever the waterfall returns, so asking
-    # a third time in a row hands her to a human instead of looping.
-    if intent == "booked" or in_post_booking:
+    # Already asked, and she replied without an email ("thank you!", "makes
+    # sense"). Nudge for JUST the email. Replaying the whole prep block reads
+    # like a broken bot. decide() applies _guard_repeats, so two nudges in a row
+    # hand her to a human rather than looping forever.
+    if in_post_booking:
+        return _script(state, Action.POST_BOOKING_ASK_EMAIL_AGAIN, Phase.POST_BOOKING)
+
+    # She just told us she booked -> the full prep message, once.
+    if intent == "booked":
         return _script(state, Action.POST_BOOKING_ASK_EMAIL, Phase.POST_BOOKING)
 
     # Link sent, nothing to say yet. Stay silent but do NOT pause: a pause here

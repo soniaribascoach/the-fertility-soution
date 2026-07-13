@@ -225,6 +225,12 @@ SCRIPTS: dict[Action, str] = {
         "Does that all make sense? If so, I'm excited for you to take the next step, and "
         "we'll be here to support you throughout the process."
     ),
+    # She answered the message above but gave no email. Ask for just the email:
+    # re-sending the full prep block reads like a bot repeating itself.
+    Action.POST_BOOKING_ASK_EMAIL_AGAIN: (
+        "Whenever you get a moment, could you send me the email address you used to book? "
+        "I just want to check on my end that everything looks good."
+    ),
     # She gave the email. Acknowledge WITHOUT claiming the booking is verified,
     # then a human checks the calendar.
     Action.POST_BOOKING_ACK: (
@@ -511,6 +517,10 @@ SCRIPTS_ES: dict[Action, str] = {
         "ti. Si no recibimos tu respuesta, la reunión no quedará confirmada.\n\n"
         "¿Tiene sentido todo esto? Si es así, me emociona mucho que des este siguiente paso, "
         "y aquí estaremos para apoyarte durante todo el proceso."
+    ),
+    Action.POST_BOOKING_ASK_EMAIL_AGAIN: (
+        "Cuando tengas un momento, ¿me puedes enviar el correo electrónico que usaste para "
+        "agendar? Solo quiero revisar de mi lado que todo esté correcto."
     ),
     Action.POST_BOOKING_ACK: (
         "Perfecto, gracias. Lo reviso de mi lado y me aseguro de que todo esté correcto. "
