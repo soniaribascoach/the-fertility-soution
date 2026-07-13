@@ -123,7 +123,7 @@ async def test_spanish_full_funnel_books_only_when_qualified(openai_client):
     r = await _say(openai_client, history, state, "sara.jimenez@gmail.com")
     assert r.action == Action.POST_BOOKING_ACK.value, f"got {r.action}: {r.reply_text}"
     assert _looks_spanish(r.reply_text), r.reply_text
-    assert r.pause_reason == "booked_pending_verification"
+    assert r.pause_reason == "qualified_link_sent"
 
 
 async def test_language_switch_mid_conversation_sticks(openai_client):

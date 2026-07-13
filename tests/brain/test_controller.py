@@ -447,15 +447,14 @@ def test_says_booked_gets_email_ask_with_prep_page():
     assert "{prep_link}" in scripts.SCRIPTS[Action.POST_BOOKING_ASK_EMAIL]
 
 
-def test_email_after_booking_acks_then_hands_off_for_verification():
+def test_email_after_booking_confirms_then_hands_off():
     d = decide(qualified_state(), ext(intent="ready_to_book"))
     d2 = decide(d.lead_state, ext(intent="booked"))
     d3 = decide(d2.lead_state, ext(intent="gives_email", email_collected="sarah@gmail.com"))
     assert d3.action == Action.POST_BOOKING_ACK
-    assert d3.pause is True and d3.pause_reason == "booked_pending_verification"
-    assert d3.add_tag is True
-    # The qualified tag already fired at link-send; re-tagging double-tags her.
-    assert d3.qualified is False
+    # Tagged as the existing booking-link-sent state, not a new one.
+    assert d3.pause is True and d3.pause_reason == "qualified_link_sent"
+    assert d3.add_tag is True and d3.qualified is True
     assert d3.lead_state["flags"]["handed_off"] is True
     assert d3.lead_state["slots"]["email_collected"] == "sarah@gmail.com"
 
@@ -465,63 +464,50 @@ def test_email_after_booking_acks_then_hands_off_for_verification():
 
 
 def test_email_alone_is_enough_even_if_booked_intent_is_missed():
-    # Backstop. The extractor once read "just booked it for Tuesday!" as small
-    # talk, which left her on a silent AWAIT_BOOKING with no human notified. An
-    # email after the link is proof she booked, whatever the intent label says.
+    # Backstop: the extractor once read "just booked it for Tuesday!" as small
+    # talk. Her email is proof she booked, whatever the intent label says.
     d = decide(qualified_state(), ext(intent="ready_to_book"))
     d2 = decide(d.lead_state, ext(intent="other", email_collected="sarah@gmail.com"))
     assert d2.action == Action.POST_BOOKING_ACK
-    assert d2.pause is True and d2.pause_reason == "booked_pending_verification"
+    assert d2.pause is True and d2.pause_reason == "qualified_link_sent"
 
 
-def test_post_link_chatter_stays_silent_but_live():
-    # She has the link but has not booked. Say nothing, but do NOT pause: a pause
-    # would make the worker skip her later "I booked" and kill the whole flow.
+def test_any_other_message_after_the_link_hands_off():
+    # Sonia v1.2: once she has the link the AI only handles "I booked" and the
+    # email. Anything else pauses for a human rather than chatting on.
     d = decide(qualified_state(), ext(intent="ready_to_book"))
-    d2 = decide(d.lead_state, ext(intent="other"))
-    assert d2.action == Action.AWAIT_BOOKING
-    assert d2.send_message is False
-    assert d2.pause is False
+    for intent in ("other", "shares_situation", "answers_question"):
+        d2 = decide(d.lead_state, ext(intent=intent))
+        assert d2.action == Action.HUMAN_TAKEOVER, intent
+        assert d2.send_message is False and d2.pause is True
+        assert d2.pause_reason == "qualified_link_sent"
 
-    # ...and the later "I booked" is still caught.
-    d3 = decide(d2.lead_state, ext(intent="booked"))
-    assert d3.action == Action.POST_BOOKING_ASK_EMAIL
+
+def test_interrupts_after_the_link_hand_off_instead_of_deflecting():
+    # Price / call-process questions are answered BEFORE the link. After it, a
+    # human takes them (the interrupt handler is deliberately bypassed).
+    d = decide(qualified_state(), ext(intent="ready_to_book"))
+    for intent in ("asks_price", "asks_call_process", "asks_is_it_sonia", "trouble_booking"):
+        d2 = decide(d.lead_state, ext(intent=intent))
+        assert d2.action == Action.HUMAN_TAKEOVER, intent
+        assert d2.pause is True
 
 
 def test_thanks_after_booking_never_replays_the_whole_prep_message():
     # Live transcript bug: she said "awesome, thank you sonia" and got the entire
-    # four-paragraph email/prep message a second time, verbatim. A reply without
-    # an email gets a one-line nudge, never a replay.
+    # four-paragraph email/prep message a second time, verbatim. Now she gets a
+    # human instead, and the long message is never sent twice.
     d = decide(qualified_state(), ext(intent="ready_to_book"))
     d2 = decide(d.lead_state, ext(intent="booked"))
     assert d2.action == Action.POST_BOOKING_ASK_EMAIL
 
     d3 = decide(d2.lead_state, ext(intent="other"))
-    assert d3.action == Action.POST_BOOKING_ASK_EMAIL_AGAIN
-    nudge = scripts.render(Action.POST_BOOKING_ASK_EMAIL_AGAIN)
-    assert "call-scheduled" not in nudge  # no prep page a second time
-    assert len(nudge) < 200               # a nudge, not the block
+    assert d3.action == Action.HUMAN_TAKEOVER
+    assert d3.send_message is False and d3.pause is True
 
-    # Even a second "booked" must not replay it.
+    # Not even a second "booked" replays it.
     d4 = decide(d2.lead_state, ext(intent="booked"))
     assert d4.action != Action.POST_BOOKING_ASK_EMAIL
-
-
-def test_never_asked_email_loop_guard_hands_off():
-    # She books but never produces an email -> nudge twice, then hand to a human
-    # rather than nagging forever.
-    d = decide(qualified_state(), ext(intent="ready_to_book"))
-    d2 = decide(d.lead_state, ext(intent="booked"))
-    d3 = decide(d2.lead_state, ext(intent="other"))
-    assert d3.action == Action.POST_BOOKING_ASK_EMAIL_AGAIN
-    d4 = decide(d3.lead_state, ext(intent="other"))
-    assert d4.action == Action.POST_BOOKING_ASK_EMAIL_AGAIN
-    d5 = decide(d4.lead_state, ext(intent="other"))
-    assert d5.action == Action.HUMAN_TAKEOVER
-
-    # ...but her email still lands even after the nudges.
-    d5b = decide(d4.lead_state, ext(intent="gives_email", email_collected="s@g.com"))
-    assert d5b.action == Action.POST_BOOKING_ACK
 
 
 def test_after_handoff_stays_silent():

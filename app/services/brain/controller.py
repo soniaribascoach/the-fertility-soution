@@ -50,8 +50,6 @@ _GATE_QUESTIONS = {
     Action.ASK_MENOPAUSE_REASON,
     Action.ASK_MENOPAUSE_AGE,
     Action.ASK_DISCOVERY,
-    Action.POST_BOOKING_ASK_EMAIL,
-    Action.POST_BOOKING_ASK_EMAIL_AGAIN,
 }
 
 
@@ -285,6 +283,13 @@ def decide(
     if extraction.takeover:
         return _takeover(state, extraction.takeover_reason or "complex_case")
 
+    # 3b) The booking link is out. From here the AI handles exactly two turns it
+    # can handle safely - "I booked" and the email she booked with - and hands
+    # everything else to a human. Deliberately ABOVE the interrupts: once she has
+    # the link we stop deflecting price/call questions and let a person take it.
+    if f.get("booking_sent"):
+        return _post_booking(state, intent)
+
     # 4) Intent interrupts — answer, then stay put.
     if intent in _INTERRUPTS:
         decision = _handle_interrupt(state, intent, cfg, prior_ivf_interest)
@@ -301,7 +306,7 @@ def decide(
         return _guard_repeats(state, _script(state, Action.SOLO_NO_PARTNER_ACK, Phase.DISCOVERY))
 
     # 5) The qualification waterfall.
-    decision = _waterfall(state, cfg, ig_user_id, extraction.situation_type, intent)
+    decision = _waterfall(state, cfg, ig_user_id, extraction.situation_type)
     deltas = non_null_deltas(extraction.slot_deltas)
     decision.meta["new_facts"] = [k for k in _FACT_DELTA_KEYS if k in deltas]
     return _guard_repeats(state, decision)
@@ -402,17 +407,9 @@ def _handle_interrupt(state: dict, intent: str, cfg: Optional[dict],
 
 
 def _waterfall(
-    state: dict, cfg: Optional[dict], ig_user_id: str, situation_type: str = "none",
-    intent: str = "other",
+    state: dict, cfg: Optional[dict], ig_user_id: str, situation_type: str = "none"
 ) -> Decision:
     s, f, c = state["slots"], state["flags"], state["counters"]
-
-    # POST-BOOKING -> the link is already out, so she is qualified and done with
-    # the funnel. Never re-run qualification and never re-send the link (the gate
-    # still passes every turn, so without this she would get it again and again).
-    # Catch "I booked" and run the post-booking sequence instead.
-    if f.get("booking_sent"):
-        return _post_booking(state, intent)
 
     # DISCOVERY
     if not _discovery_complete(s):
@@ -536,48 +533,38 @@ def _oos(state: dict, action: Action, reason: str) -> Decision:
 
 
 def _post_booking(state: dict, intent: str) -> Decision:
-    """The booking link is out. Sonia v1.2: keep the AI live so it can catch
-    "I booked", collect the email she booked with, and set the prep/confirmation
-    expectations. It never CONFIRMS the appointment: it cannot see the calendar,
-    so a human verifies once we have the email."""
-    s, f = state["slots"], state["flags"]
-    in_post_booking = state["phase"] == Phase.POST_BOOKING.value
+    """The booking link is out. Sonia v1.2: the AI only handles the two turns it
+    can handle safely - "I booked" (send the prep message) and her email (confirm
+    receipt, then hand over). ANY other message is a human's job, so it pauses:
+    no price deflections, no nudging, no small talk once she has the link."""
+    s = state["slots"]
 
-    # An email after the link is proof enough that she booked, whether or not we
-    # ever asked. Backstop: if the extractor misses the "booked" intent, this
-    # still lands her with a human instead of leaving her on silent AWAIT_BOOKING.
+    # Her email is proof she booked, whether or not the extractor caught the
+    # "booked" intent and whether or not we ever got to ask for it.
     if s.get("email_collected"):
         return _booked_handoff(state)
 
-    # Already asked, and she replied without an email ("thank you!", "makes
-    # sense"). Nudge for JUST the email. Replaying the whole prep block reads
-    # like a broken bot. decide() applies _guard_repeats, so two nudges in a row
-    # hand her to a human rather than looping forever.
-    if in_post_booking:
-        return _script(state, Action.POST_BOOKING_ASK_EMAIL_AGAIN, Phase.POST_BOOKING)
-
-    # She just told us she booked -> the full prep message, once.
-    if intent == "booked":
+    # She just told us she booked -> the prep message, exactly once. The phase
+    # check is what stops it being replayed on a later turn.
+    if intent == "booked" and state["phase"] != Phase.POST_BOOKING.value:
         return _script(state, Action.POST_BOOKING_ASK_EMAIL, Phase.POST_BOOKING)
 
-    # Link sent, nothing to say yet. Stay silent but do NOT pause: a pause here
-    # would swallow her later "I booked" and kill the whole post-booking flow.
-    return Decision(
-        action=Action.AWAIT_BOOKING, next_phase=state["phase"], lead_state=state,
-        send_message=False,
-    )
+    # Anything else after the link -> pause, a human takes it from here.
+    return _takeover(state, "qualified_link_sent")
 
 
 def _booked_handoff(state: dict) -> Decision:
-    """Email captured -> short ack, then a human verifies it against the calendar.
-    Not `qualified`: that tag already fired when the link went out, and setting it
-    again would double-tag her in ManyChat."""
+    """Email captured -> confirm we received it (never claim the appointment is
+    verified; the AI cannot see the calendar), then pause for a human. Reuses the
+    existing "qualified / booking link sent" state so ops keeps one banner and one
+    ManyChat tag rather than gaining a new one."""
     state["flags"]["handed_off"] = True
-    state["flags"]["takeover_reason"] = "booked_pending_verification"
+    state["flags"]["takeover_reason"] = "qualified_link_sent"
     decision = _script(state, Action.POST_BOOKING_ACK, Phase.POST_BOOKING)
     decision.pause = True
-    decision.pause_reason = "booked_pending_verification"
+    decision.pause_reason = "qualified_link_sent"
     decision.add_tag = True
+    decision.qualified = True
     return decision
 
 

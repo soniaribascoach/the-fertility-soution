@@ -153,16 +153,17 @@ sets `booking_sent`, and tags **qualified** — but it does **not** pause or han
 stays live. It never re-sends the link (`booking_sent` guards the branch; the gate would
 otherwise still pass on every later turn).
 
-**Post-booking.** She says she booked → `POST_BOOKING_ASK_EMAIL`: ask which email she booked
-with, send the prep page (`prep_link`), and set the reply-to-the-text expectation. Sent **once** —
-any later reply without an email gets `POST_BOOKING_ASK_EMAIL_AGAIN`, a one-line nudge, because
-replaying that four-paragraph block reads like a broken bot (a live transcript did exactly that).
-Two nudges with no email → the repeat guard hands her to a human. She gives the email →
-`POST_BOOKING_ACK`, then **pause + tag + `handed_off=True`** with reason
-`booked_pending_verification`. The AI never *confirms* a booking: it cannot see the calendar, so
-a human verifies. An email at any point after the link is treated as proof she booked, even if
-the extractor missed the `booked` intent. Post-link messages that are neither "booked" nor an
-interrupt return `AWAIT_BOOKING` — silent but **unpaused**, so a later "I booked" is still caught.
+**Post-booking.** Once the link is out the AI handles exactly two turns and hands over everything
+else. `booked` → `POST_BOOKING_ASK_EMAIL` (ask which email she booked with, send the prep page
+`prep_link`, set the reply-to-the-text expectation), sent **once**. Her email → `POST_BOOKING_ACK`
+(confirm receipt, never claim the appointment is verified: the AI cannot see the calendar), then
+**pause + tag + `handed_off=True`**. An email counts as proof she booked even if the extractor
+missed the `booked` intent. **Anything else** — small talk, a price question, a second "I booked" —
+**pauses to a human**. The post-booking branch sits ABOVE the interrupt handler in `decide`, so
+price/call-process questions are deflected before the link and handed over after it.
+
+Both post-link pauses reuse the existing `qualified_link_sent` reason and the qualified ManyChat
+tag, so ops keeps one banner rather than gaining a new state.
 
 ---
 

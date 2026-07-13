@@ -233,17 +233,14 @@ cannot see the calendar. A human verifies once the email is in.
 >
 > Does that all make sense? If so, I'm excited for you to take the next step, and we'll be here to support you throughout the process."
 
-**Step 1b — She replies without giving the email (`POST_BOOKING_ASK_EMAIL_AGAIN`):**
-One short line, never a replay of the message above (a live transcript had her say "awesome,
-thank you sonia" and get the whole four-paragraph block a second time):
-> "Whenever you get a moment, could you send me the email address you used to book? I just want to check on my end that everything looks good."
-
-After two nudges with no email, hand to a human rather than nagging.
-
 **Step 2 — She gives the email (`POST_BOOKING_ACK`), then pause + tag for a human:**
 > "Perfect, thank you. I'll check that on my end and make sure everything looks good. We're really looking forward to speaking with you."
 
-Pause reason: `booked_pending_verification`. The old per-closer prep templates
+**Anything else after the link** (small talk, a price question, "thanks!") → **pause + human
+takeover**, no reply. The AI only handles "I booked" and the email; a person owns the rest. Both
+pauses reuse the existing `qualified_link_sent` reason/tag, so no new admin state appears.
+
+The old per-closer prep templates
 (`POST_BOOKING_CONFIRM_NATALIA` / `_MONIKA`, sent by hand) are retired: the message above
 replaces them, and it names no closer ("my team will text you").
 

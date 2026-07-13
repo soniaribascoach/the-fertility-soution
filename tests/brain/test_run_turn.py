@@ -289,19 +289,34 @@ async def test_post_booking_collects_email_then_hands_off(openai_client):
     assert PREP_URL in r.reply_text, f"prep page missing: {r.reply_text}"
     assert "email" in r.reply_text.lower()
 
-    # She thanks us without giving the email. She must NOT get the whole prep
-    # message a second time (a real transcript did exactly that).
-    prep_msg = r.reply_text
-    r = await _say(openai_client, history, state, "awesome, thank you sonia")
-    state = r.lead_state
-    assert r.action == Action.POST_BOOKING_ASK_EMAIL_AGAIN.value, f"got {r.action}"
-    assert PREP_URL not in (r.reply_text or ""), f"prep page re-sent: {r.reply_text}"
-    assert len(r.reply_text) < len(prep_msg) / 2, f"replayed the block: {r.reply_text}"
-
     r = await _say(openai_client, history, state, "sarah.jones@gmail.com")
     assert r.action == Action.POST_BOOKING_ACK.value, f"got {r.action}: {r.reply_text}"
-    assert r.pause is True and r.pause_reason == "booked_pending_verification"
+    assert r.pause is True and r.pause_reason == "qualified_link_sent"
     assert r.lead_state["slots"]["email_collected"]
+
+
+async def test_non_email_reply_after_booking_hands_off(openai_client):
+    # She replies to the prep message without an email ("awesome, thank you
+    # sonia"). A real transcript replayed the whole four-paragraph block at her.
+    # Now a human takes it: no reply, paused.
+    history = []
+    r = await _say(openai_client, history, None, "FERTILITY")
+    state = r.lead_state
+    for msg in (
+        "I'm 36, we've been trying for 3 years, did 2 IUIs that failed",
+        "it's a 10, top priority",
+        "yes that's exactly the support I'm looking for, and I'm open to a paid program",
+        "I'm doing this on my own",
+        "just booked it for Tuesday!",
+    ):
+        r = await _say(openai_client, history, state, msg)
+        state = r.lead_state
+    assert r.action == Action.POST_BOOKING_ASK_EMAIL.value
+
+    r = await _say(openai_client, history, state, "awesome, thank you sonia")
+    assert r.action == Action.HUMAN_TAKEOVER.value, f"got {r.action}: {r.reply_text}"
+    assert not r.reply_text, f"should have said nothing, said: {r.reply_text}"
+    assert r.pause is True and r.pause_reason == "qualified_link_sent"
 
 
 async def test_both_tubes_blocked_triggers_takeover(openai_client):
