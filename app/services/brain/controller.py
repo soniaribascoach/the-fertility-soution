@@ -43,7 +43,6 @@ _GATE_QUESTIONS = {
     Action.FINANCIAL_CHECK,
     Action.PARTNER_CHECK,
     Action.PARTNER_ASK_JOIN,
-    Action.PARTNER_PUSHBACK,
     Action.SOLO_NO_PARTNER_ACK,
     Action.ASK_BOTH_TUBES,
     Action.ONE_TUBE_ACK,
@@ -92,8 +91,35 @@ def _partner_resolved(s: dict) -> bool:
     if status in ("solo", "donor", "single_by_choice"):
         return True
     if status == "couple":
-        return s.get("partner_can_join") is True or s.get("partner_is_decision_maker") is False
+        # Resolved once we know whether he is coming, either way: if he is not,
+        # she books with the couples expectation set rather than being quizzed
+        # about who decides (Sonia v1.2 - the answer no longer gates the link, so
+        # asking for it is friction). She alone deciding also resolves it.
+        return (
+            s.get("partner_can_join") is not None
+            or s.get("partner_is_decision_maker") is False
+        )
     return False
+
+
+def _shares_decision_but_absent(s: dict) -> bool:
+    """A partner who will not attend is ASSUMED to share the decision unless she
+    has told us otherwise. We never ask: both answers send the link, so the only
+    thing riding on it is which message wraps it."""
+    return (
+        s.get("partner_status") == "couple"
+        and s.get("partner_can_join") is False
+        and s.get("partner_is_decision_maker") is not False
+    )
+
+
+def _booking_action(s: dict) -> Action:
+    """Which booking script to send. A couple whose partner will not join hears
+    the couples expectation first; everyone else (solo, a partner who IS joining,
+    or a woman who says she decides alone) gets the plain link."""
+    if _shares_decision_but_absent(s):
+        return Action.SEND_BOOKING_TOGETHER
+    return Action.SEND_BOOKING
 
 
 def _discovery_complete(s: dict) -> bool:
@@ -144,15 +170,15 @@ def booking_gate(state: dict) -> bool:
 def merge(lead_state: dict, extraction: Extraction) -> dict:
     state = normalize_lead_state(lead_state)
     deltas = non_null_deltas(extraction.slot_deltas)
-    # "He won't join" turns are where the extractor over-infers that she is the
-    # sole decision maker. That fact must come as its own answer to the explicit
-    # PARTNER_PUSHBACK question, never ride along with a refusal (Sonia v1.1:
-    # no booking link until the decision-maker question is answered). Once we
-    # HAVE just asked that question, her decision-maker answer is trusted even
-    # if the extractor re-emits the earlier refusal alongside it.
+    # "He won't join" is where the extractor over-infers who decides, in BOTH
+    # directions: it reads "my husband can't make it" as either sole-decision-maker
+    # (False) or, merely because a husband exists, as a shared decision (True). A
+    # refusal says nothing about who decides, so it may not set the fact either
+    # way. Dropping the delta leaves it null, which we treat as "he shares the
+    # decision" -> the couples message. Only a value she volunteered on an EARLIER
+    # turn ("I decide this myself") survives and gets her the plain link.
     if (deltas.get("partner_can_join") is False
-            and deltas.get("partner_is_decision_maker") is False
-            and state["flags"].get("last_prompt") != Action.PARTNER_PUSHBACK.value):
+            and deltas.get("partner_is_decision_maker") is not None):
         deltas.pop("partner_is_decision_maker")
     for k, v in deltas.items():
         if k in state["slots"]:
@@ -255,6 +281,13 @@ def decide(
         return _takeover(state, extraction.takeover_reason or intent)
     if extraction.takeover:
         return _takeover(state, extraction.takeover_reason or "complex_case")
+
+    # 3b) The booking link is out. From here the AI handles exactly two turns it
+    # can handle safely - "I booked" and the email she booked with - and hands
+    # everything else to a human. Deliberately ABOVE the interrupts: once she has
+    # the link we stop deflecting price/call questions and let a person take it.
+    if f.get("booking_sent"):
+        return _post_booking(state, intent)
 
     # 4) Intent interrupts — answer, then stay put.
     if intent in _INTERRUPTS:
@@ -428,25 +461,22 @@ def _waterfall(
         if s.get("partner_is_decision_maker") is not True:
             return _script(state, Action.FINANCIAL_CHECK, Phase.FINANCIAL)
 
-    # PARTNER
+    # PARTNER. Two questions at most: is there a partner, and can he come? If he
+    # cannot, we do NOT go on to ask who decides - we assume he shares it and
+    # book her with the couples expectation set (_booking_action).
     if not _partner_resolved(s):
         if s.get("partner_status") is None:
             f["asked_partner"] = True
             return _script(state, Action.PARTNER_CHECK, Phase.PARTNER)
-        if s.get("partner_can_join") is False:
-            return _script(state, Action.PARTNER_PUSHBACK, Phase.PARTNER)
         f["asked_partner_join"] = True
         return _script(state, Action.PARTNER_ASK_JOIN, Phase.PARTNER)
 
-    # BOOKING -> send the link, then hand off to a human immediately. The AI can't
-    # verify the email or confirm attendance, so a human takes it from here. This is
-    # terminal: pause + "qualified / link sent" tag.
+    # BOOKING -> send the link and tag her as qualified, but stay LIVE: Sonia v1.2
+    # wants the AI to keep going and collect the booking email, so this no longer
+    # pauses or hands off.
     if booking_gate(state):
         f["booking_sent"] = True
-        f["handed_off"] = True
-        decision = _script(state, Action.SEND_BOOKING, Phase.POST_BOOKING)
-        decision.pause = True
-        decision.pause_reason = "qualified_link_sent"
+        decision = _script(state, _booking_action(s), Phase.BOOKING)
         decision.add_tag = True
         decision.qualified = True
         return decision
@@ -499,6 +529,42 @@ def _oos(state: dict, action: Action, reason: str) -> Decision:
         pause_reason=reason,
         add_tag=True,
     )
+
+
+def _post_booking(state: dict, intent: str) -> Decision:
+    """The booking link is out. Sonia v1.2: the AI only handles the two turns it
+    can handle safely - "I booked" (send the prep message) and her email (confirm
+    receipt, then hand over). ANY other message is a human's job, so it pauses:
+    no price deflections, no nudging, no small talk once she has the link."""
+    s = state["slots"]
+
+    # Her email is proof she booked, whether or not the extractor caught the
+    # "booked" intent and whether or not we ever got to ask for it.
+    if s.get("email_collected"):
+        return _booked_handoff(state)
+
+    # She just told us she booked -> the prep message, exactly once. The phase
+    # check is what stops it being replayed on a later turn.
+    if intent == "booked" and state["phase"] != Phase.POST_BOOKING.value:
+        return _script(state, Action.POST_BOOKING_ASK_EMAIL, Phase.POST_BOOKING)
+
+    # Anything else after the link -> pause, a human takes it from here.
+    return _takeover(state, "qualified_link_sent")
+
+
+def _booked_handoff(state: dict) -> Decision:
+    """Email captured -> confirm we received it (never claim the appointment is
+    verified; the AI cannot see the calendar), then pause for a human. Reuses the
+    existing "qualified / booking link sent" state so ops keeps one banner and one
+    ManyChat tag rather than gaining a new one."""
+    state["flags"]["handed_off"] = True
+    state["flags"]["takeover_reason"] = "qualified_link_sent"
+    decision = _script(state, Action.POST_BOOKING_ACK, Phase.POST_BOOKING)
+    decision.pause = True
+    decision.pause_reason = "qualified_link_sent"
+    decision.add_tag = True
+    decision.qualified = True
+    return decision
 
 
 def _nurture_close(state: dict) -> Decision:

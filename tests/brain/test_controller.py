@@ -4,7 +4,9 @@ This is the heart of the anti-hallucination design: every guarantee Sonia asked
 for (never book early, never repeat a question, OOS -> takeover) is enforced
 here as code, so it is tested here deterministically.
 """
-from app.services.brain.constants import Action, Phase, empty_lead_state
+from app.services.brain.constants import (
+    Action, Phase, empty_lead_state, resume_lead_state,
+)
 from app.services.brain.controller import decide, booking_gate
 from app.services.brain.extractor import Extraction, SlotDeltas
 from app.services.brain import scripts
@@ -82,7 +84,8 @@ def test_empathy_variant_passed_for_misfortune():
 def test_fully_qualified_lead_gets_booking_link():
     d = decide(qualified_state(), ext(intent="ready_to_book"))
     assert d.action == Action.SEND_BOOKING
-    assert d.lead_state["phase"] == Phase.POST_BOOKING.value
+    # BOOKING = the link is out. POST_BOOKING only once she says she booked.
+    assert d.lead_state["phase"] == Phase.BOOKING.value
     assert d.lead_state["flags"]["booking_sent"] is True
 
 
@@ -256,7 +259,10 @@ def test_financial_decline_blocks_booking():
 
 # --- Partner -----------------------------------------------------------------
 
-def test_partner_join_then_pushback_then_resolved():
+def test_partner_flow_asks_at_most_two_questions():
+    # Sonia v1.2: is there a partner, and can he come. That is all. We no longer
+    # go on to quiz her about who decides - both answers send the link, so the
+    # extra question was pure friction.
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
             "open_to_holistic": True, "financial_ready": True}
     flags = {"explained_role": True}
@@ -265,60 +271,78 @@ def test_partner_join_then_pushback_then_resolved():
                    ext(intent="answers_question"))
     assert d_ask.action == Action.PARTNER_ASK_JOIN
 
-    d_push = decide(
-        state(slots={**base, "partner_status": "couple", "partner_can_join": False,
-                     "partner_is_decision_maker": True}, flags=flags),
+    # He can't come -> book her with the couples expectation, no third question.
+    d_no = decide(
+        state(slots={**base, "partner_status": "couple", "partner_can_join": False},
+              flags=flags),
         ext(intent="answers_question"))
-    assert d_push.action == Action.PARTNER_PUSHBACK
+    assert d_no.action == Action.SEND_BOOKING_TOGETHER
 
+    # He can come -> plain link.
     d_ok = decide(
         state(slots={**base, "partner_status": "couple", "partner_can_join": True}, flags=flags),
         ext(intent="answers_question"))
     assert d_ok.action == Action.SEND_BOOKING
 
 
-def test_partner_refusal_never_books_without_decision_maker_answer():
-    # Sonia v1.1: "my husband doesn't want to join" sent the booking link.
-    # Even if the extractor over-infers sole-decision-maker on the refusal
-    # turn, merge() drops that delta and the bot asks the question first.
+def test_partner_who_cannot_join_books_in_one_turn():
+    # "My husband is supportive but too busy to join" -> straight to the couples
+    # message + link. No decision-maker question, because a supportive partner is
+    # ASSUMED to share the decision.
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
             "open_to_holistic": True, "financial_ready": True}
     st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
     d = decide(st, ext(intent="answers_question", partner_status="couple",
-                       partner_can_join=False, partner_is_decision_maker=False))
-    assert d.action == Action.PARTNER_PUSHBACK
-    assert d.lead_state["slots"]["partner_is_decision_maker"] is None
-
-    # Her explicit follow-up answer resolves it -> booking.
-    d2 = decide(d.lead_state, ext(intent="answers_question", partner_is_decision_maker=False))
-    assert d2.action == Action.SEND_BOOKING
+                       partner_can_join=False))
+    assert d.action == Action.SEND_BOOKING_TOGETHER
+    assert "{booking_link}" in scripts.SCRIPTS[Action.SEND_BOOKING_TOGETHER]
 
 
-def test_decision_maker_answer_trusted_after_pushback_question():
-    # After PARTNER_PUSHBACK, "I'm the only decision maker" must book even if
-    # the extractor re-emits the earlier refusal (partner_can_join=False)
-    # alongside her answer.
+def test_refusal_turn_never_sets_who_decides_either_way():
+    # The extractor over-infers who decides from "he can't make it", in BOTH
+    # directions. A refusal says nothing about who decides, so the delta is
+    # dropped and the slot stays null -> she gets the couples message.
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
-            "open_to_holistic": True, "financial_ready": True,
-            "partner_status": "couple", "partner_can_join": False}
-    st = state(slots=base, flags={"explained_role": True, "situation_shared": True,
-                                  "last_prompt": "PARTNER_PUSHBACK"})
-    d = decide(st, ext(intent="answers_question",
-                       partner_can_join=False, partner_is_decision_maker=False))
+            "open_to_holistic": True, "financial_ready": True}
+    for inferred in (True, False):
+        st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
+        d = decide(st, ext(intent="answers_question", partner_status="couple",
+                           partner_can_join=False, partner_is_decision_maker=inferred))
+        assert d.lead_state["slots"]["partner_is_decision_maker"] is None, inferred
+        assert d.action == Action.SEND_BOOKING_TOGETHER, inferred
+
+
+def test_she_decides_alone_gets_the_plain_link():
+    # Said on an EARLIER turn ("I decide about this myself"), so it survives the
+    # refusal-turn guard. She is not lectured about bringing a partner.
+    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
+            "open_to_holistic": True, "financial_ready": True, "partner_status": "couple",
+            "partner_is_decision_maker": False}
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
+    d = decide(st, ext(intent="answers_question", partner_can_join=False))
     assert d.action == Action.SEND_BOOKING
 
 
-def test_partner_pushback_loop_guard_hands_off():
+def test_known_shared_decision_still_books_together():
     base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
             "open_to_holistic": True, "financial_ready": True,
-            "partner_status": "couple", "partner_can_join": False}
+            "partner_status": "couple", "partner_is_decision_maker": True}
     st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
-    d1 = decide(st, ext(intent="answers_question"))
-    assert d1.action == Action.PARTNER_PUSHBACK
-    d2 = decide(d1.lead_state, ext(intent="answers_question"))
-    assert d2.action == Action.PARTNER_PUSHBACK
-    d3 = decide(d2.lead_state, ext(intent="answers_question"))
-    assert d3.action == Action.HUMAN_TAKEOVER
+    d = decide(st, ext(intent="answers_question", partner_can_join=False))
+    assert d.action == Action.SEND_BOOKING_TOGETHER
+
+
+def test_couple_is_still_asked_the_financial_question():
+    # Guard against the trap in defaulting "partner shares the decision": if that
+    # were written into the SLOT, _financial_ok would treat the money as decided
+    # on the call and skip the paid-program question for every couple.
+    base = {"trying_duration": "2y", "age": 38, "treatment_path": "ivf", "priority_score": 9,
+            "open_to_holistic": True}  # financial_ready NOT set
+    st = state(slots=base, flags={"explained_role": True, "situation_shared": True})
+    d = decide(st, ext(intent="answers_question", partner_status="couple",
+                       partner_can_join=False))
+    assert d.action == Action.FINANCIAL_CHECK
+    assert d.lead_state["slots"]["partner_is_decision_maker"] is None
 
 
 def test_solo_lead_skips_partner_and_books():
@@ -347,20 +371,116 @@ def test_solo_disclosure_gets_no_partner_needed_ack():
 
 # --- Post-booking ------------------------------------------------------------
 
-def test_booking_link_is_terminal_qualified_handoff():
-    # Sending the link is the AI's last act: it pauses + tags qualified and hands
-    # off (the AI can't verify the email). No email/confirmation dance, no re-sends.
+def test_booking_link_tags_qualified_but_keeps_the_ai_live():
+    # Sonia v1.2: the link still tags her qualified, but it is no longer the AI's
+    # last act. It must NOT pause or hand off, or the post-booking flow below can
+    # never run (the worker skips every turn for a paused lead).
     d = decide(qualified_state(), ext(intent="ready_to_book"))
     assert d.action == Action.SEND_BOOKING
-    assert d.pause is True and d.qualified is True and d.add_tag is True
-    assert d.lead_state["flags"]["handed_off"] is True
+    assert d.qualified is True and d.add_tag is True
+    assert d.pause is False
+    assert d.lead_state["flags"]["booking_sent"] is True
+    assert d.lead_state["flags"]["handed_off"] is False
+
+
+def test_booking_link_is_never_sent_twice():
+    # The booking gate still passes on every later turn, so without the
+    # booking_sent guard she would get the link again on her very next message.
+    d = decide(qualified_state(), ext(intent="ready_to_book"))
+    assert d.action == Action.SEND_BOOKING
+    d2 = decide(d.lead_state, ext(intent="ready_to_book"))
+    assert d2.action != Action.SEND_BOOKING
+    d3 = decide(d.lead_state, ext(intent="other"))
+    assert d3.action != Action.SEND_BOOKING
+
+
+def test_link_not_resent_after_a_human_resumes_the_ai():
+    # resume_lead_state() clears handed_off but keeps booking_sent. Before the
+    # guard, a resumed qualified lead was handed the link a second time.
+    d = decide(qualified_state(), ext(intent="ready_to_book"))
+    resumed = resume_lead_state(d.lead_state)
+    assert resumed["flags"]["booking_sent"] is True
+    d2 = decide(resumed, ext(intent="other"))
+    assert d2.action != Action.SEND_BOOKING
+
+
+def test_says_booked_gets_email_ask_with_prep_page():
+    d = decide(qualified_state(), ext(intent="ready_to_book"))
+    d2 = decide(d.lead_state, ext(intent="booked"))
+    assert d2.action == Action.POST_BOOKING_ASK_EMAIL
+    assert d2.lead_state["phase"] == Phase.POST_BOOKING.value
+    assert d2.pause is False  # still live: we are waiting on her email
+    assert "{prep_link}" in scripts.SCRIPTS[Action.POST_BOOKING_ASK_EMAIL]
+
+
+def test_email_after_booking_confirms_then_hands_off():
+    d = decide(qualified_state(), ext(intent="ready_to_book"))
+    d2 = decide(d.lead_state, ext(intent="booked"))
+    d3 = decide(d2.lead_state, ext(intent="gives_email", email_collected="sarah@gmail.com"))
+    assert d3.action == Action.POST_BOOKING_ACK
+    # Tagged as the existing booking-link-sent state, not a new one.
+    assert d3.pause is True and d3.pause_reason == "qualified_link_sent"
+    assert d3.add_tag is True and d3.qualified is True
+    assert d3.lead_state["flags"]["handed_off"] is True
+    assert d3.lead_state["slots"]["email_collected"] == "sarah@gmail.com"
+
+    # And she is genuinely done: a later message stays silent.
+    d4 = decide(d3.lead_state, ext(intent="other"))
+    assert d4.send_message is False
+
+
+def test_email_alone_is_enough_even_if_booked_intent_is_missed():
+    # Backstop: the extractor once read "just booked it for Tuesday!" as small
+    # talk. Her email is proof she booked, whatever the intent label says.
+    d = decide(qualified_state(), ext(intent="ready_to_book"))
+    d2 = decide(d.lead_state, ext(intent="other", email_collected="sarah@gmail.com"))
+    assert d2.action == Action.POST_BOOKING_ACK
+    assert d2.pause is True and d2.pause_reason == "qualified_link_sent"
+
+
+def test_any_other_message_after_the_link_hands_off():
+    # Sonia v1.2: once she has the link the AI only handles "I booked" and the
+    # email. Anything else pauses for a human rather than chatting on.
+    d = decide(qualified_state(), ext(intent="ready_to_book"))
+    for intent in ("other", "shares_situation", "answers_question"):
+        d2 = decide(d.lead_state, ext(intent=intent))
+        assert d2.action == Action.HUMAN_TAKEOVER, intent
+        assert d2.send_message is False and d2.pause is True
+        assert d2.pause_reason == "qualified_link_sent"
+
+
+def test_interrupts_after_the_link_hand_off_instead_of_deflecting():
+    # Price / call-process questions are answered BEFORE the link. After it, a
+    # human takes them (the interrupt handler is deliberately bypassed).
+    d = decide(qualified_state(), ext(intent="ready_to_book"))
+    for intent in ("asks_price", "asks_call_process", "asks_is_it_sonia", "trouble_booking"):
+        d2 = decide(d.lead_state, ext(intent=intent))
+        assert d2.action == Action.HUMAN_TAKEOVER, intent
+        assert d2.pause is True
+
+
+def test_thanks_after_booking_never_replays_the_whole_prep_message():
+    # Live transcript bug: she said "awesome, thank you sonia" and got the entire
+    # four-paragraph email/prep message a second time, verbatim. Now she gets a
+    # human instead, and the long message is never sent twice.
+    d = decide(qualified_state(), ext(intent="ready_to_book"))
+    d2 = decide(d.lead_state, ext(intent="booked"))
+    assert d2.action == Action.POST_BOOKING_ASK_EMAIL
+
+    d3 = decide(d2.lead_state, ext(intent="other"))
+    assert d3.action == Action.HUMAN_TAKEOVER
+    assert d3.send_message is False and d3.pause is True
+
+    # Not even a second "booked" replays it.
+    d4 = decide(d2.lead_state, ext(intent="booked"))
+    assert d4.action != Action.POST_BOOKING_ASK_EMAIL
 
 
 def test_after_handoff_stays_silent():
-    booked = qualified_state()
-    booked["flags"]["booking_sent"] = True
-    booked["flags"]["handed_off"] = True
-    d = decide(booked, ext(intent="other"))
+    # The nurture close is now the terminal path that goes quiet (booking is not).
+    closed = qualified_state()
+    closed["flags"]["handed_off"] = True
+    d = decide(closed, ext(intent="other"))
     assert d.action == Action.HUMAN_TAKEOVER
     assert d.send_message is False and d.pause is True
 

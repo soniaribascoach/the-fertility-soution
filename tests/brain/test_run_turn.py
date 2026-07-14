@@ -13,6 +13,7 @@ from app.services.brain.constants import Action, Phase
 pytestmark = pytest.mark.live
 
 BOOKING_URL = "thefertilitysolution.com/free-call"
+PREP_URL = "thefertilitysolution.com/call-scheduled"
 
 CFG = {
     "phase1_cta_keywords": "AMH\nBABY\nFERTILITY\nIVF",
@@ -212,9 +213,11 @@ async def test_donor_sperm_solo_lead_told_no_partner_needed(openai_client):
     assert any(w in text for w in ("naturally", "iui", "ivf")), text
 
 
-async def test_partner_refusal_clarifies_decision_maker_before_link(openai_client):
-    # Sonia v1.1: "husband doesn't want to join" must trigger the sole-
-    # decision-maker question, never the booking link.
+async def test_partner_who_wont_join_books_together_without_a_third_question(openai_client):
+    # Sonia v1.2: "my husband can't join" -> the couples expectation + the link,
+    # in ONE turn. We no longer ask who decides: both answers send the link, so
+    # the question was pure friction. This is the exact shape of the transcript
+    # where a supportive-but-busy partner got quizzed about decision-making.
     history = []
     r = await _say(openai_client, history, None, "FERTILITY")
     state = r.lead_state
@@ -222,19 +225,40 @@ async def test_partner_refusal_clarifies_decision_maker_before_link(openai_clien
         "I'm 36, we've been trying for 3 years, did 2 IUIs that failed",
         "it's a 10, top priority",
         "yes that's exactly the support I'm looking for, and I'm open to a paid program",
+        "I do have a supportive partner",
     ):
         r = await _say(openai_client, history, state, msg)
         state = r.lead_state
-        assert BOOKING_URL not in (r.reply_text or "")
+        assert BOOKING_URL not in (r.reply_text or ""), f"link sent early: {r.reply_text}"
 
     r = await _say(openai_client, history, state,
-                   "I'm married but my husband doesn't want to join the call")
+                   "He's always busy, might be difficult to schedule")
     state = r.lead_state
-    assert BOOKING_URL not in (r.reply_text or ""), f"link sent on refusal: {r.reply_text}"
+    assert r.action == Action.SEND_BOOKING_TOGETHER.value, f"got {r.action}: {r.reply_text}"
+    assert BOOKING_URL in r.reply_text, f"link withheld: {r.reply_text}"
+    assert "together" in r.reply_text.lower()
+    # She was never asked who makes the decision.
+    assert "decision maker" not in r.reply_text.lower()
 
-    r = await _say(openai_client, history, state,
-                   "I'm the only decision maker, I decide about this myself")
-    assert r.action == Action.SEND_BOOKING.value, f"expected booking, got {r.action}"
+
+async def test_sole_decision_maker_who_says_so_gets_the_plain_link(openai_client):
+    # She volunteers that she decides alone BEFORE the refusal, so it survives the
+    # refusal-turn guard and she is not told to bring a partner she doesn't need.
+    history = []
+    r = await _say(openai_client, history, None, "FERTILITY")
+    state = r.lead_state
+    for msg in (
+        "I'm 36, we've been trying for 3 years, did 2 IUIs that failed",
+        "it's a 10, top priority",
+        "yes that's exactly the support I'm looking for, and I'm open to a paid program",
+        "I'm married, but I'm the only decision maker, I decide about this myself",
+    ):
+        r = await _say(openai_client, history, state, msg)
+        state = r.lead_state
+
+    if r.action != Action.SEND_BOOKING.value:  # she may still be asked if he can join
+        r = await _say(openai_client, history, state, "no, he can't join the call")
+    assert r.action == Action.SEND_BOOKING.value, f"got {r.action}: {r.reply_text}"
     assert BOOKING_URL in r.reply_text
 
 

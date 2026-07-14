@@ -137,18 +137,42 @@ with a fertility coach to help elevate your chances?" — a "yes" to either sati
 (sets `financial_ready=True`), so it isn't re-asked. "I'll ask my partner" → `partner_is_decision_maker`
 (the money decision happens on the call).
 
-**Partner** — assume couple unless told otherwise. Couple → ask if partner can join; if the
-partner is the decision-maker and won't attend → pushback (no booking). Solo/donor/single-by-choice → proceed.
+**Partner** — at most TWO questions: is there a partner (`PARTNER_CHECK`), and can he come
+(`PARTNER_ASK_JOIN`). If he cannot, we do **not** go on to ask who decides: we ASSUME he shares the
+decision and send `SEND_BOOKING_TOGETHER` (encourage attending together, concede gracefully, send
+the link anyway). Sonia v1.2 — the decision-maker answer no longer gates the link, so asking for it
+was pure friction. She only gets the plain `SEND_BOOKING` if she VOLUNTEERED that she decides alone
+on an earlier turn. A refusal turn never sets `partner_is_decision_maker` (the extractor over-infers
+it in both directions), so the delta is dropped and the slot stays null.
+
+> **Trap:** do not default the SLOT to `True`. `_financial_ok` reads
+> `partner_is_decision_maker is True` as "the money is decided on the call" and would skip the
+> paid-program question for every couple. The assumption lives in `_shares_decision_but_absent`
+> (which booking message), never in the slot.
+
+Solo/donor/single-by-choice → no partner needed, proceed.
 
 **The booking gate** (`booking_gate`) — `SEND_BOOKING` is only reachable when **ALL** are true:
 `situation_shared`, actively TTC, priority ok (score ≥ 8 **or** `strong_readiness`),
 `explained_role`, `open_to_holistic`, `_financial_ok`, no `oos_reason`, partner resolved.
 `_financial_ok` = `financial_ready is True` **OR** (`partner_is_decision_maker` and not explicitly declined).
 
-**Booking is terminal.** `SEND_BOOKING` sends the link + asks for the email, then immediately
-**pauses + tags "qualified / link sent" + `handed_off=True`** → the AI goes silent. A human
-verifies the email and sends prep (the AI can't verify emails). The `POST_BOOKING_*` scripts
-exist but are no longer reached.
+**Booking tags but does not end the conversation** (Sonia v1.2). `SEND_BOOKING` sends the link,
+sets `booking_sent`, and tags **qualified** — but it does **not** pause or hand off, so the AI
+stays live. It never re-sends the link (`booking_sent` guards the branch; the gate would
+otherwise still pass on every later turn).
+
+**Post-booking.** Once the link is out the AI handles exactly two turns and hands over everything
+else. `booked` → `POST_BOOKING_ASK_EMAIL` (ask which email she booked with, send the prep page
+`prep_link`, set the reply-to-the-text expectation), sent **once**. Her email → `POST_BOOKING_ACK`
+(confirm receipt, never claim the appointment is verified: the AI cannot see the calendar), then
+**pause + tag + `handed_off=True`**. An email counts as proof she booked even if the extractor
+missed the `booked` intent. **Anything else** — small talk, a price question, a second "I booked" —
+**pauses to a human**. The post-booking branch sits ABOVE the interrupt handler in `decide`, so
+price/call-process questions are deflected before the link and handed over after it.
+
+Both post-link pauses reuse the existing `qualified_link_sent` reason and the qualified ManyChat
+tag, so ops keeps one banner rather than gaining a new state.
 
 ---
 
@@ -359,7 +383,6 @@ checks pause, locks batch, then **if `brain_version == funnel`** → `_run_brain
 
 - Voice tone caps out at `gpt-4o-mini`'s ability; upgrade the voice model for richer tone.
 - "Contradictory info" / "complex medical case" takeovers rely on LLM judgment (no deterministic test).
-- The `POST_BOOKING_*` scripts are dormant (booking hands off before them) — a human does post-booking.
 - **To add a funnel step:** add the `Action` (constants) + script (`scripts.py`) + wire it in `controller._waterfall` + a `_ModeSpec`/`_GUIDANCE` entry (`directive.py`) + tests.
 - **To change wording:** edit `scripts.py` (fallback/verbatim) and/or `_GUIDANCE` (voice reference); the voice paraphrases the reference.
 - **To add a hard rule:** add a check in `validate_generated` (`validator.py`).

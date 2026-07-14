@@ -61,6 +61,7 @@ async def test_spanish_lead_stays_in_funnel(openai_client):
 # --- Spanish generation --------------------------------------------------------
 
 BOOKING_URL = "thefertilitysolution.com/free-call"
+PREP_URL = "thefertilitysolution.com/call-scheduled"
 
 _ES_MARKERS = (" que ", " para ", " con ", " estás", " tu ", " te ", "¿", "años", " es ", " y ")
 _EN_MARKERS = (" the ", " you ", " your ", " is ", " are ", " with ", " and ", " what ")
@@ -109,6 +110,20 @@ async def test_spanish_full_funnel_books_only_when_qualified(openai_client):
 
     assert booked_turn is not None, f"never booked; phase={state['phase']}, slots={state['slots']}"
     assert state["flags"]["booking_sent"] is True
+
+    # Post-booking must stay Spanish. These scripts were dormant until v1.2 and
+    # render() falls back to English for any action missing a Spanish twin, so a
+    # missing translation would silently ship English to a Spanish lead.
+    r = await _say(openai_client, history, state, "¡Ya agendé la llamada para el martes!")
+    state = r.lead_state
+    assert r.action == Action.POST_BOOKING_ASK_EMAIL.value, f"got {r.action}: {r.reply_text}"
+    assert PREP_URL in r.reply_text, f"prep page missing: {r.reply_text}"
+    assert _looks_spanish(r.reply_text.replace(PREP_URL, "")), r.reply_text
+
+    r = await _say(openai_client, history, state, "sara.jimenez@gmail.com")
+    assert r.action == Action.POST_BOOKING_ACK.value, f"got {r.action}: {r.reply_text}"
+    assert _looks_spanish(r.reply_text), r.reply_text
+    assert r.pause_reason == "qualified_link_sent"
 
 
 async def test_language_switch_mid_conversation_sticks(openai_client):

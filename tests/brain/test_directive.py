@@ -141,9 +141,20 @@ def test_es_price_reveal_requires_spanish_range_tokens():
         assert token in rendered, (token, rendered)
 
 
-def test_send_booking_directive_is_qualified_handoff():
+def test_send_booking_directive_is_qualified_but_not_paused():
+    # Sonia v1.2: tagged qualified, but the AI stays live for the post-booking turns.
     d = _directive_for(qualified(), ext(intent="ready_to_book"))
-    assert d.qualified is True and d.pause is True
+    assert d.qualified is True and d.pause is False
+
+
+def test_post_booking_email_directive_requires_the_prep_link():
+    d = _directive_for(qualified(), ext(intent="ready_to_book"))
+    d2 = _directive_for(d.lead_state, ext(intent="booked"))
+    assert d2.action == Action.POST_BOOKING_ASK_EMAIL
+    prep = scripts.placeholders()["prep_link"]
+    assert prep in d2.allow_urls and prep in d2.must_include
+    # The booking link must NOT be re-emitted on this turn.
+    assert scripts.placeholders()["booking_link"] not in d2.allow_urls
 
 
 def test_explain_role_uses_short_guidance_not_long_script():

@@ -85,17 +85,16 @@ _SPEC = {
     Action.PARTNER_CHECK: _ModeSpec("PARTNER", "Note fertility is a team decision and ask if she is doing this with a partner or on her own."),
     Action.PARTNER_ASK_JOIN: _ModeSpec("PARTNER", "Ask whether her partner would be able to join the call."),
     Action.SOLO_NO_PARTNER_ACK: _ModeSpec("DISCOVERY", "Reassure her that since she is doing this on her own she would not need a partner on the call, then ask her current stage (trying naturally, IUI, preparing for IVF, or still deciding)."),
-    Action.PARTNER_PUSHBACK: _ModeSpec("PARTNER", "Reassure her she can come alone IF she is the only decision maker, then ask directly whether she alone decides or her partner needs to be aligned too. Do not send or promise the booking link."),
 
     Action.SEND_BOOKING: _ModeSpec("BOOK", "Invite her to book the call and include the booking link; tell her to follow the next steps after booking so the call gets confirmed. Do NOT ask for her email.", url_names=("booking_link",), require_urls=True),
+    Action.SEND_BOOKING_TOGETHER: _ModeSpec("BOOK", "Her partner shares the decision but cannot join. Warmly explain that you always encourage couples to attend the strategy call together because the strongest outcomes happen when both partners hear the same information and decide as a team, and say you hope she can pick a time when both can attend. Then reassure her that if it is truly impossible that is okay too, and you will make the best of the call. Then include the booking link. Do NOT withhold the link, do NOT guilt her, and do NOT ask for her email.", url_names=("booking_link",), require_urls=True),
     Action.BOOKING_IS_IT_SONIA: _ModeSpec("BOOK", "Explain the first call is with your team, and you will be her coach inside the program."),
     Action.BOOKING_CALL_PROCESS: _ModeSpec("BOOK", "Explain the first session is to get to know each other and see if you can help."),
     Action.BOOKING_WHO_NATALIA: _ModeSpec("BOOK", "Reassure her that her appointment is with your associate Natalia."),
     Action.BOOKING_WHO_MONIKA: _ModeSpec("BOOK", "Reassure her that her appointment is with your associate Monika."),
 
-    Action.POST_BOOKING_ASK_EMAIL: _ModeSpec("POST_BOOK", "Ask for the email address she used to book so you can verify it."),
-    Action.POST_BOOKING_CONFIRM_NATALIA: _ModeSpec("POST_BOOK", "Confirm she will speak with Natalia, give the confirmation phone number, and ask her to watch the masterclass first.", url_names=("watch_replay", "natalia_phone"), require_urls=True),
-    Action.POST_BOOKING_CONFIRM_MONIKA: _ModeSpec("POST_BOOK", "Confirm she will speak with Monika, give the confirmation phone number, and ask her to watch the masterclass first.", url_names=("watch_replay", "monika_phone"), require_urls=True),
+    Action.POST_BOOKING_ASK_EMAIL: _ModeSpec("POST_BOOK", "She says she booked. Warmly ask her to remind you of the email address she used to book, so you can check on your end that everything looks good. Share the prep page link so she gets the most out of the call. Tell her the team will text her the day before to confirm attendance, that she MUST reply to that text, and that the meeting is not confirmed if you do not hear back. Close by asking whether that all makes sense. Do NOT state that her booking IS confirmed or verified: you have not checked yet.", url_names=("prep_link",), require_urls=True),
+    Action.POST_BOOKING_ACK: _ModeSpec("POST_BOOK", "Warmly thank her for the email and say you will check it on your end to make sure everything looks good. Do NOT claim the booking is confirmed or verified, and do NOT ask a question."),
 
     Action.PRICE_DEFLECT: _ModeSpec("DEFLECT_PRICE", "Explain price depends on the level of support so you do not give a number yet, and redirect to understanding her situation. Do NOT state any price."),
     Action.PRICE_DEFLECT_LATE: _ModeSpec("DEFLECT_PRICE", "Explain price depends on the level of support so you do not give a number yet, and redirect to fit. Do NOT state any price or re-ask facts she already shared."),
@@ -129,8 +128,8 @@ _DEFAULT_SPEC = _ModeSpec("MISC", "Respond warmly and briefly, staying on the co
 # Actions whose approved content is legitimately multi-sentence.
 _LONG_ACTIONS = {
     Action.EXPLAIN_ROLE_TFS_UPDATED, Action.EXPLAIN_ROLE_TFS3,
-    Action.SEND_BOOKING, Action.POST_BOOKING_CONFIRM_NATALIA,
-    Action.POST_BOOKING_CONFIRM_MONIKA, Action.BOOKING_CALL_PROCESS,
+    Action.SEND_BOOKING, Action.SEND_BOOKING_TOGETHER,
+    Action.POST_BOOKING_ASK_EMAIL, Action.BOOKING_CALL_PROCESS,
 }
 
 # Guidance overrides: use SHORT, varied key-points as the reference (instead of

@@ -51,20 +51,23 @@ class Action(str, Enum):
     # Partner
     PARTNER_CHECK = "PARTNER_CHECK"
     PARTNER_ASK_JOIN = "PARTNER_ASK_JOIN"
-    PARTNER_PUSHBACK = "PARTNER_PUSHBACK"
     SOLO_NO_PARTNER_ACK = "SOLO_NO_PARTNER_ACK"  # solo/donor -> no partner needed + stage question
 
     # Booking
     SEND_BOOKING = "SEND_BOOKING"
+    # Partner shares the decision but cannot join -> set the couples expectation,
+    # then send the link anyway (Sonia v1.2: no friction, but state the standard).
+    SEND_BOOKING_TOGETHER = "SEND_BOOKING_TOGETHER"
     BOOKING_IS_IT_SONIA = "BOOKING_IS_IT_SONIA"
     BOOKING_CALL_PROCESS = "BOOKING_CALL_PROCESS"
     BOOKING_WHO_NATALIA = "BOOKING_WHO_NATALIA"
     BOOKING_WHO_MONIKA = "BOOKING_WHO_MONIKA"
 
-    # Post-booking
+    # Post-booking. She said she booked -> ask for the email she used, send the
+    # prep page, set the text-confirmation expectation. Then ack and hand to a
+    # human, who verifies the appointment against the calendar (the AI cannot).
     POST_BOOKING_ASK_EMAIL = "POST_BOOKING_ASK_EMAIL"
-    POST_BOOKING_CONFIRM_NATALIA = "POST_BOOKING_CONFIRM_NATALIA"
-    POST_BOOKING_CONFIRM_MONIKA = "POST_BOOKING_CONFIRM_MONIKA"
+    POST_BOOKING_ACK = "POST_BOOKING_ACK"
 
     # Advice / price / misc deflections
     ADVICE_DEFLECT = "ADVICE_DEFLECT"                    # early (re-asks discovery)

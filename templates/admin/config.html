@@ -88,6 +88,13 @@
         class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
     </div>
 
+    <div class="mb-7">
+      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Call Prep Page</h3>
+      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Sent after a lead tells us she booked, alongside the request for the email she booked with. This page must be live: the AI is required to include the link.</p>
+      <input type="url" name="prep_link" value="{{ cfg.prep_link or '' }}" placeholder="https://www.thefertilitysolution.com/call-scheduled"
+        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
+    </div>
+
   </section>
 
   <!-- ── AI Behaviour ──────────────────────────────────────────────────── -->
