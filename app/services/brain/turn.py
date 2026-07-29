@@ -1,0 +1,276 @@
+"""The v2 turn: classify, route, retrieve, write, check.
+
+Same entry-point contract as the funnel brain's `run_turn` - three callers and
+five test modules depend on the signature and on `TurnResult` - so this can be
+swapped in behind the `brain_version` flag with no changes upstream.
+
+    0. safety gate        no LLM   (reused unchanged from the funnel brain)
+    1. phase-1 CTA        no LLM   (reused unchanged)
+    2. classify           LLM #1
+    3. route              no LLM   <- QUALIFY is one mode among nine
+    4. retrieve knowledge no LLM
+    5. write              LLM #2
+    6. code checks        no LLM
+    7. veto panel         LLM #3   (conditional)
+    8. uncertainty        no LLM   -> a person, if anything is off
+"""
+import logging
+from typing import Optional
+
+from openai import AsyncOpenAI
+
+from app.services.brain import checker, checks, scripts, uncertainty, writer
+from app.services.brain import knowledge as kb
+from app.services.brain.classify import classify, verify_evidence
+from app.services.brain.constants import (
+    Action,
+    Phase,
+    ResponseMode,
+    normalize_lead_state,
+)
+from app.services.brain.gates import booking_gate
+from app.services.brain.llm import combine_usage
+from app.services.brain.router import route
+from app.services.brain import TurnResult, _check_phase1, _safety_gate, _trailing_user_texts
+
+logger = logging.getLogger(__name__)
+
+# Slots whose value, once established, must not be silently overwritten by a
+# later contradictory reading. "She said 2 years, now she says 6 months" is a
+# person's job, not a state update.
+_STABLE_SLOTS = ("age", "trying_duration", "partner_status", "email_collected")
+
+
+def merge_facts(state: dict, verified: dict) -> list[str]:
+    """Apply verified facts; return the slots that contradicted what we knew."""
+    contradictions = []
+    for slot, value in verified.items():
+        if slot not in state["slots"]:
+            continue
+        current = state["slots"].get(slot)
+        if slot in _STABLE_SLOTS and current not in (None, "") and current != value:
+            contradictions.append(slot)
+            continue
+        state["slots"][slot] = value
+
+    s = state["slots"]
+    if s.get("partner_status") is None and (
+        s.get("partner_can_join") is not None
+        or s.get("partner_is_decision_maker") is not None
+    ):
+        s["partner_status"] = "couple"
+    if s.get("trying_duration") or s.get("what_tried") or s.get("treatment_path"):
+        state["flags"]["situation_shared"] = True
+    return contradictions
+
+
+def _still_needed(state: dict) -> list[str]:
+    from app.services.brain import gates
+    s = state["slots"]
+    needed = []
+    if not gates._discovery_complete(s) and state["flags"].get("situation_rich") is not True:
+        needed.append("her situation (how long trying, age, what she has tried)")
+    if not gates._priority_ok(s):
+        needed.append("how much of a priority pregnancy is right now")
+    if not gates._role_ok(state):
+        needed.append("that she wants this kind of support")
+    if not gates._financial_ok(s):
+        needed.append("that she is open to a paid programme")
+    if not gates._partner_resolved(s):
+        needed.append("whether a partner is involved")
+    return needed
+
+
+_DISCOVERY_ORDER = ["trying_duration", "age", "treatment_path", "done_testing", "diagnosis"]
+
+
+def _next_question(state: dict) -> Optional[str]:
+    """The one thing to ask on a QUALIFY turn, as a topic rather than a script.
+
+    Handing over the approved sentence is what made every discovery message
+    identical, so the writer gets the subject and phrases it itself.
+    """
+    from app.services.brain import gates
+    s = state["slots"]
+    if not gates._discovery_complete(s) and not state["flags"].get("situation_rich"):
+        missing = next((k for k in _DISCOVERY_ORDER if not s.get(k)), "trying_duration")
+        return {
+            "trying_duration": "how long she has been trying, and what she has already tried",
+            "age": "her age",
+            "treatment_path": "whether she is trying naturally, doing IUI or IVF, or still deciding",
+            "done_testing": "whether she has had any fertility testing",
+            "diagnosis": "whether a doctor has given her a diagnosis",
+        }[missing]
+    if not gates._priority_ok(s):
+        return "how much of a priority getting pregnant is for her right now"
+    if not gates._role_ok(state):
+        state["flags"]["explained_role"] = True
+        return "whether this is the kind of support she is looking for"
+    if not gates._financial_ok(s):
+        return "whether she is open to this being a paid programme, if it feels right"
+    if not gates._partner_resolved(s):
+        if s.get("partner_status") is None:
+            return "whether she is doing this with a partner or on her own"
+        return "whether her partner could join the call"
+    return None
+
+
+async def run_turn_v2(
+    openai_client: AsyncOpenAI,
+    history: list[dict],
+    cfg: dict,
+    lead_state: Optional[dict] = None,
+    *,
+    ig_user_id: str = "",
+    new_texts: Optional[list[str]] = None,
+    knowledge_entries: Optional[list] = None,
+) -> TurnResult:
+    state = normalize_lead_state(lead_state)
+    recent = list(new_texts) if new_texts is not None else _trailing_user_texts(history)
+
+    # 0) Safety gate, unchanged. Scans only the new batch so a resumed lead does
+    # not re-trip on a message a human already handled.
+    gated = _safety_gate(cfg, recent, state)
+    if gated is not None:
+        return gated
+
+    # 1) Phase-1 CTA keyword, unchanged.
+    opener = _check_phase1(cfg, history)
+    if opener:
+        state["phase"] = Phase.DISCOVERY.value
+        return TurnResult(reply_text=opener, lead_state=state,
+                          action=Action.PHASE1_OPENING.value)
+
+    if not recent:
+        return TurnResult(reply_text=None, lead_state=state, action="NOOP")
+
+    # 2) Classify.
+    classification, usage_classify = await classify(
+        openai_client, history, state["slots"], cfg=cfg
+    )
+    evidence = verify_evidence(classification, recent)
+    contradictions = merge_facts(state, evidence.verified)
+    if classification.situation_richness == "rich":
+        # Complaint 2: a woman who has described four IVF cycles and years of
+        # interventions has finished discovery, whatever named slots are empty.
+        state["flags"]["situation_rich"] = True
+
+    gate_before = booking_gate(state)
+
+    # 3) Route.
+    r = route(state, classification, cfg)
+    state = r.lead_state
+    mode = r.mode
+
+    if contradictions:
+        logger.info("Contradiction on %s for %s", contradictions, ig_user_id)
+
+    # A handoff says nothing, except where an approved decline is pinned.
+    if mode is ResponseMode.HANDOFF:
+        text = None
+        if r.pinned_action is not None:
+            text = scripts.render(r.pinned_action, cfg, state["slots"].get("language") or "en")
+        return TurnResult(
+            reply_text=text, lead_state=state, pause=r.pause, pause_reason=r.pause_reason,
+            add_tag=r.add_tag, qualified=r.qualified, action=r.mode.value,
+            usage=usage_classify,
+        )
+
+    # Post-booking turns keep their approved wording verbatim.
+    if r.funnel_action in (Action.POST_BOOKING_ASK_EMAIL, Action.POST_BOOKING_ACK):
+        text = scripts.render(r.funnel_action, cfg, state["slots"].get("language") or "en")
+        return TurnResult(
+            reply_text=text, lead_state=state, pause=r.pause, pause_reason=r.pause_reason,
+            add_tag=r.add_tag, qualified=r.qualified, action=r.funnel_action.value,
+            usage=usage_classify,
+        )
+
+    # 4) Retrieve the substance this turn is allowed to use.
+    language = state["slots"].get("language") or "en"
+    entries = knowledge_entries if knowledge_entries is not None else []
+    retrieved = kb.select(
+        entries, mode=mode, intent=r.intent, text=" ".join(recent), language=language
+    )
+    knowledge_texts = [e.content for e in retrieved]
+
+    spec = writer.MODE_SPECS[mode]
+    allow_urls = writer.allowed_urls(spec, cfg)
+    known_facts = {k: v for k, v in state["slots"].items()
+                   if v is not None and k not in ("language", "closer_assigned")}
+
+    winput = writer.WriterInput(
+        mode=mode, known_facts=known_facts, knowledge=retrieved,
+        question_asked=r.question_asked, still_needed=_still_needed(state),
+        next_question=_next_question(state) if mode is ResponseMode.QUALIFY else None,
+        language=language, stance=writer.stance_for(history), allow_urls=allow_urls,
+    )
+
+    # 5) Write, 6) check, regenerate once at temperature 0 if the code checks fail.
+    draft, usage_write = await writer.generate(openai_client, history, winput, cfg=cfg)
+    result = checks.run_all(
+        draft.bubbles, mode=mode, allow_urls=allow_urls, allow_price=False,
+        history=history, lead_texts=recent, knowledge_texts=knowledge_texts,
+        known_facts=known_facts,
+    )
+    regenerated = False
+    if not result.ok:
+        logger.info("Draft failed checks %s; regenerating", result.violations)
+        regenerated = True
+        draft2, usage_write2 = await writer.generate(
+            openai_client, history, winput, cfg=cfg, temperature=0.0
+        )
+        usage_write = combine_usage(usage_write, usage_write2)
+        result2 = checks.run_all(
+            draft2.bubbles, mode=mode, allow_urls=allow_urls, allow_price=False,
+            history=history, lead_texts=recent, knowledge_texts=knowledge_texts,
+            known_facts=known_facts,
+        )
+        # Keep the second attempt either way, so the violations we report always
+        # describe the text we are holding.
+        draft, result = draft2, result2
+
+    # 7) Veto panel, only when something already looks off.
+    checker_violations, usage_check = [], {}
+    if uncertainty.should_check(
+        intent_certainty=classification.intent_certainty,
+        off_script=classification.off_script, writer_unsure=draft.unsure,
+        code_violations=result.violations,
+        gate_just_opened=(mode is ResponseMode.BOOK),
+        question_asked=r.question_asked,
+    ):
+        checker_violations, usage_check = await checker.check(
+            openai_client, draft.bubbles, history=history, known_facts=known_facts,
+            knowledge_texts=knowledge_texts, question_asked=r.question_asked,
+            gate_passed=gate_before, cfg=cfg,
+        )
+
+    # 8) One score, one threshold.
+    u = uncertainty.score_turn(
+        intent_certainty=classification.intent_certainty,
+        off_script=classification.off_script, fabricated_slots=evidence.fabricated,
+        contradictions=contradictions, writer_unsure=draft.unsure,
+        code_violations=result.violations, checker_violations=checker_violations,
+        regenerated=regenerated, still_failing=(regenerated and not result.ok),
+        repeat_count=state["counters"].get("repeat_count", 0),
+    )
+    usage = combine_usage(usage_classify, usage_write, usage_check)
+    violations = result.violations + checker_violations + [f"uncertainty={u.score}"]
+
+    if u.over(uncertainty.threshold_from(cfg)):
+        # Say nothing rather than send something we do not trust.
+        logger.info("Uncertainty %s (%s) -> human for %s", u.score, u.signals, ig_user_id)
+        state["phase"] = Phase.TAKEOVER.value
+        state["flags"]["takeover_reason"] = "uncertain"
+        if mode is ResponseMode.BOOK:
+            state["flags"]["booking_sent"] = False  # the link never went out
+        return TurnResult(
+            reply_text=None, lead_state=state, pause=True, pause_reason="uncertain",
+            add_tag=True, action=f"{mode.value}_ABORTED", usage=usage,
+            violations=violations + u.signals,
+        )
+
+    return TurnResult(
+        reply_text="\n\n".join(draft.bubbles), lead_state=state, pause=r.pause,
+        pause_reason=r.pause_reason, add_tag=r.add_tag, qualified=r.qualified,
+        action=mode.value, usage=usage, violations=violations,
+    )

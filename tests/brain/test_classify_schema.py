@@ -133,6 +133,38 @@ def test_quote_matching_folds_case_and_whitespace():
     assert verified == {"trying_duration": "2 years"}
 
 
+def test_unevidenced_and_fabricated_are_reported_separately():
+    """They mean different things and must not be conflated.
+
+    An inference with no quote offered is routine (the model likes to conclude
+    `diagnosis="none"` from a message that never mentions one) and says nothing
+    about the turn. A quote that IS offered and does not appear in her message
+    means the model invented her words, which is alarming.
+    """
+    c = _classification(
+        slot_deltas=SlotDeltas(**{
+            **{k: None for k in SlotDeltas.model_fields},
+            "diagnosis": "none",   # inferred, no quote offered
+            "age": 38,             # quoted, but the quote is invented
+        }),
+        evidence=[Evidence(slot="age", quote="I am 38 years old", certainty="certain")],
+    )
+    result = verify_evidence(c, ["hi, can you help me?"])
+    assert result.verified == {}
+    assert result.unevidenced == ["diagnosis"]
+    assert result.fabricated == ["age"]
+
+
+def test_evidence_result_still_unpacks_as_a_pair():
+    c = _classification(
+        slot_deltas=SlotDeltas(**{**{k: None for k in SlotDeltas.model_fields}, "age": 38}),
+        evidence=[Evidence(slot="age", quote="I'm 38", certainty="certain")],
+    )
+    verified, rejected = verify_evidence(c, ["I'm 38"])
+    assert verified == {"age": 38}
+    assert rejected == []
+
+
 def test_unsure_evidence_is_discarded_even_when_quotable():
     # The quote is real, but the model would not stand behind the reading. A
     # doubtful fact must never silently gate a booking.

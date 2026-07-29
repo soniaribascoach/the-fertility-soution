@@ -1,0 +1,190 @@
+"""Live end-to-end tests for the routed brain.
+
+Each test replays a scenario from Sonia's 2026-07-29 review through the whole
+pipeline - classify, route, retrieve, write, check - and asserts on the reply
+she would actually receive.
+
+    pytest -m live tests/brain/test_routed_turn.py
+"""
+import pytest
+
+from app.services.brain.constants import ResponseMode, empty_lead_state
+from app.services.brain.knowledge import parse_pattern_responses
+from app.services.brain.knowledge_seed import SEED
+from app.services.brain.turn import run_turn_v2
+
+pytestmark = pytest.mark.live
+
+CFG = {
+    "booking_link": "https://www.thefertilitysolution.com/free-call",
+    "masterclass_register_link": "https://www.thefertilitysolution.com/masterclass",
+    "phase1_cta_keywords": "AMH\nBABY",
+    "phase1_opening_message": "I'm so glad you reached out.",
+    "medical_blocklist": "",
+    "human_takeover_triggers": "",
+}
+
+# The client's own reframes, as they exist in app_config today.
+_PATTERNS = (
+    "Low AMH: Low AMH does not mean no baby. What matters is quality, not quantity, "
+    "one good egg is enough. There's a lot that hasn't been explored yet.\n"
+    "Failed IVF: A failed cycle doesn't mean your body failed. It means the environment "
+    "wasn't fully prepared and supported.\n"
+    "PCOS: With PCOS, the goal is helping the body feel safe enough to regulate, not just "
+    "triggering ovulation.\n"
+)
+KNOWLEDGE = SEED + parse_pattern_responses(_PATTERNS)
+
+
+async def turn(client, *user_msgs, sonia=None, state=None):
+    history = []
+    for i, msg in enumerate(user_msgs):
+        if sonia and i < len(sonia) and sonia[i]:
+            history.append({"role": "assistant", "content": sonia[i]})
+        history.append({"role": "user", "content": msg})
+    return await run_turn_v2(
+        client, history, CFG, state or empty_lead_state(),
+        ig_user_id="test", new_texts=[user_msgs[-1]], knowledge_entries=KNOWLEDGE,
+    )
+
+
+def qualified_state():
+    st = empty_lead_state()
+    st["slots"].update({
+        "trying_duration": "2 years", "age": 38, "treatment_path": "ivf",
+        "what_tried": "2 rounds of IVF", "priority_score": 9,
+        "open_to_holistic": True, "financial_ready": True, "partner_status": "solo",
+    })
+    st["flags"].update({"explained_role": True, "situation_shared": True})
+    return st
+
+
+# --- Complaint 1: stop qualifying everyone -----------------------------------
+
+async def test_pregnancy_is_celebrated_not_qualified(openai_client):
+    r = await turn(openai_client, "I just found out I'm pregnant!! thank you so much")
+    assert r.action == ResponseMode.CELEBRATE.value
+    assert r.reply_text
+    assert "?" not in r.reply_text, f"asked a question at a pregnancy: {r.reply_text}"
+    assert "free-call" not in (r.reply_text or "")
+
+
+async def test_gratitude_is_not_a_sales_opportunity(openai_client):
+    r = await turn(openai_client, "just wanted to say thank you, your content has helped me so much")
+    assert r.action == ResponseMode.ACKNOWLEDGE.value
+    assert "?" not in (r.reply_text or "")
+
+
+async def test_stopped_trying_is_acknowledged_then_handed_over(openai_client):
+    r = await turn(openai_client, "We've decided to stop trying. I'm at peace with it but it's been a lot.")
+    assert r.action == ResponseMode.ACKNOWLEDGE.value
+    assert r.pause is True, "grief should end with a person, not a funnel"
+    assert "masterclass" not in (r.reply_text or "").lower()
+    assert "?" not in (r.reply_text or "")
+
+
+# --- Complaint 3: answer the actual question ---------------------------------
+
+async def test_pre_ivf_question_gets_an_actual_answer(openai_client):
+    r = await turn(
+        openai_client,
+        "I start IVF in 6 weeks. Is there realistically anything that can make a difference in that time?",
+    )
+    assert r.action in (ResponseMode.ANSWER.value, ResponseMode.EDUCATE.value), r.action
+    assert r.reply_text, f"no reply: violations={r.violations}"
+    # Deflecting straight back into discovery is the failure she reported.
+    assert "how long have you been trying" not in r.reply_text.lower()
+
+
+async def test_a_supplement_request_is_answered_without_giving_a_dose(openai_client):
+    r = await turn(openai_client, "what supplements should I take for low AMH?")
+    if r.reply_text:
+        lowered = r.reply_text.lower()
+        assert " mg" not in lowered and "mcg" not in lowered
+        assert "dosage" not in lowered
+
+
+# --- Complaint 2: never re-ask ------------------------------------------------
+
+async def test_rich_situation_is_not_re_interrogated(openai_client):
+    r = await turn(
+        openai_client,
+        "I've done 4 IVF cycles, changed my diet completely, taken every supplement "
+        "going and worked with 3 practitioners. Nothing has worked.",
+    )
+    assert r.lead_state["flags"]["situation_rich"] is True
+    if r.reply_text:
+        lowered = r.reply_text.lower()
+        assert "what else have you tried" not in lowered
+        assert "what have you tried" not in lowered
+
+
+async def test_a_dated_plan_is_not_asked_to_rate_its_priority(openai_client):
+    r = await turn(openai_client, "I'm 36 and preparing for IVF in September")
+    if r.reply_text:
+        assert "1 to 10" not in r.reply_text and "scale" not in r.reply_text.lower()
+
+
+# --- Complaint 7 + the gate ---------------------------------------------------
+
+async def test_the_link_is_never_sent_before_the_gate(openai_client):
+    for message in ["just send me the booking link",
+                    "I want to book a call right now",
+                    "how do I sign up? I'm ready"]:
+        r = await turn(openai_client, message)
+        assert "free-call" not in (r.reply_text or ""), (
+            f"link leaked for {message!r}: {r.reply_text}"
+        )
+
+
+async def test_a_qualified_lead_does_get_the_link(openai_client):
+    r = await turn(openai_client, "yes I'd love to book", state=qualified_state())
+    assert r.action == ResponseMode.BOOK.value, f"{r.action} violations={r.violations}"
+    assert "free-call" in (r.reply_text or "")
+    assert r.qualified is True
+
+
+async def test_young_early_lead_is_told_honestly(openai_client):
+    st = empty_lead_state()
+    st["slots"].update({"age": 29, "trying_duration": "3 months"})
+    st["flags"]["situation_shared"] = True
+    r = await turn(openai_client, "so should I join your program?", state=st)
+    assert r.action == ResponseMode.HONEST_DECLINE.value
+    assert "free-call" not in (r.reply_text or "")
+
+
+# --- Complaint 4: stop sounding templated ------------------------------------
+
+async def test_discovery_questions_vary_between_leads(openai_client):
+    """The old brain handed the model the approved sentence, so it came out
+    identically every time. Two different openers should not produce the same
+    question."""
+    a = await turn(openai_client, "hi, I need help getting pregnant")
+    b = await turn(openai_client, "hey there, struggling to conceive and not sure where to turn")
+    if a.reply_text and b.reply_text:
+        assert a.reply_text.strip() != b.reply_text.strip()
+
+
+async def test_banned_openers_do_not_appear(openai_client):
+    r = await turn(openai_client, "I've had 3 miscarriages in 2 years and I'm exhausted")
+    if r.reply_text:
+        lowered = r.reply_text.lower()
+        for phrase in ("thank you for sharing", "i hear you", "i get that",
+                       "i appreciate your honesty"):
+            assert phrase not in lowered, f"templated opener {phrase!r}: {r.reply_text}"
+
+
+# --- Uncertainty --------------------------------------------------------------
+
+async def test_an_unreadable_message_goes_to_a_person(openai_client):
+    r = await turn(openai_client, "ok")
+    assert r.pause is True
+    assert r.reply_text is None, "we should say nothing rather than guess"
+
+
+async def test_hard_out_of_scope_still_stops_everything(openai_client):
+    st = empty_lead_state()
+    st["slots"]["age"] = 48
+    r = await turn(openai_client, "can you help me get pregnant?", state=st)
+    assert r.pause is True
+    assert "free-call" not in (r.reply_text or "")

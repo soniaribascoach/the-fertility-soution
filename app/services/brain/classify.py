@@ -17,6 +17,8 @@ extractor relied on, and it is what lets the hand-written over-inference patches
 import json
 import logging
 import re
+from dataclasses import dataclass
+from dataclasses import field as dc_field
 from typing import Literal, Optional
 
 from openai import AsyncOpenAI
@@ -250,40 +252,67 @@ def _norm(text: str) -> str:
     return _WS_RE.sub(" ", (text or "")).strip().casefold()
 
 
-def verify_evidence(
-    classification: Classification, lead_texts: list[str]
-) -> tuple[dict, list[str]]:
+@dataclass
+class EvidenceResult:
+    """Outcome of checking extracted facts against what she actually wrote.
+
+    `unevidenced` and `fabricated` are kept apart deliberately, because they mean
+    very different things:
+
+    * unevidenced - the model set a slot and offered no quote. This is a routine
+      inference (it likes to conclude `diagnosis="none"` from a message that
+      never mentions one). Dropping it is normal operation and says nothing about
+      whether the turn is trustworthy.
+    * fabricated - the model DID offer a quote and the quote is not in her
+      message. It invented her words, which is genuinely alarming and feeds the
+      uncertainty score.
+    """
+    verified: dict = dc_field(default_factory=dict)
+    unevidenced: list = dc_field(default_factory=list)
+    fabricated: list = dc_field(default_factory=list)
+
+    def __iter__(self):
+        """Unpack as `verified, rejected` for callers that only need the totals."""
+        return iter((self.verified, self.unevidenced + self.fabricated))
+
+
+def verify_evidence(classification: Classification, lead_texts: list[str]) -> EvidenceResult:
     """Keep only the facts whose quote really appears in what she wrote.
 
-    Returns `(verified_deltas, rejected_slots)`. A model that fabricates or
-    paraphrases a quote loses the fact - which is the whole point of asking for
-    one. Slots with no evidence entry at all are also dropped: if it were really
-    stated, there would be something to quote.
+    A model that cannot quote cannot claim. This is a stronger guarantee than the
+    "only record what she explicitly stated" instruction the old extractor relied
+    on, and it is what retires the hand-written over-inference patches.
     """
     haystack = _norm(" ".join(lead_texts))
     quoted: dict[str, str] = {}
+    fabricated: set[str] = set()
+
     for ev in classification.evidence:
         if not _norm(ev.quote) or _norm(ev.quote) not in haystack:
-            logger.info("Unverifiable evidence for %s: %r", ev.slot, ev.quote)
+            logger.info("Fabricated evidence for %s: %r", ev.slot, ev.quote)
+            fabricated.add(ev.slot)
             continue
         if ev.certainty == "unsure":
-            # She may have said it, but the model would not stand behind it.
-            # A doubtful fact must not silently gate a booking.
+            # She may have said it, but the model will not stand behind the
+            # reading. A doubtful fact must not silently gate a booking.
             logger.info("Discarding unsure evidence for %s: %r", ev.slot, ev.quote)
             continue
         quoted[ev.slot] = ev.certainty
 
-    verified, rejected = {}, []
+    result = EvidenceResult()
     for slot, value in classification.slot_deltas.model_dump().items():
         if value is None:
             continue
         if slot in quoted:
-            verified[slot] = value
+            result.verified[slot] = value
+        elif slot in fabricated:
+            result.fabricated.append(slot)
         else:
-            rejected.append(slot)
-    if rejected:
-        logger.info("Dropped unevidenced slots: %s", rejected)
-    return verified, rejected
+            result.unevidenced.append(slot)
+
+    if result.unevidenced:
+        logger.info("Dropped unevidenced slots: %s", result.unevidenced)
+    return result
 
 
 async def classify(

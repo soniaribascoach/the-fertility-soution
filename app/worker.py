@@ -116,15 +116,20 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             batch_texts = [r.content.lower() for r in rows]
             cfg = await get_all_config(db)
 
-            # New qualification-funnel brain (behind a config flag for safe rollout).
+            # Behind a config flag for safe rollout:
+            #   "routed" - intent classifier + router + knowledge (current work)
+            #   "funnel" - the qualification-funnel brain
+            #   anything else - the legacy monolith
+            # Rollback is this one field in AppConfig, with no deploy.
             brain_version = (cfg.get("brain_version") or "legacy").strip().lower()
-            if brain_version == "funnel":
+            if brain_version in ("funnel", "routed"):
                 await _run_brain_turn(
                     db, ig_user_id, manychat_contact_id, cfg, app_state,
-                    [r.content for r in rows],
+                    [r.content for r in rows], routed=(brain_version == "routed"),
                 )
                 await mark_batch_processed(db, ig_user_id)
-                logger.info("Processed conversation (funnel) for user %s", ig_user_id)
+                logger.info("Processed conversation (%s) for user %s",
+                            brain_version, ig_user_id)
                 return
 
             if any(_is_media_url(txt) for txt in batch_texts):
@@ -220,16 +225,31 @@ async def _send_bubbles(app_state, manychat_contact_id: str, text: str) -> None:
         await app_state.manychat_client.send_message(manychat_contact_id, chunk)
 
 
-async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state, batch_texts) -> None:
-    """Run the qualification-funnel brain for one batch and apply side effects."""
+async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
+                          batch_texts, *, routed: bool = False) -> None:
+    """Run a brain for one batch and apply its side effects.
+
+    Both brains share this function because they share `TurnResult`; only the
+    turn implementation and the knowledge lookup differ.
+    """
     history = await get_history(db, ig_user_id, limit=20)
     history_dicts = [{"role": r.role, "content": r.content} for r in history]
     lead_state = await get_lead_state(db, ig_user_id)
 
-    result = await run_turn(
-        app_state.openai_client, history_dicts, cfg, lead_state,
-        ig_user_id=ig_user_id, new_texts=batch_texts,
-    )
+    if routed:
+        from app.repositories.knowledge import get_active_knowledge
+        from app.services.brain.turn import run_turn_v2
+
+        result = await run_turn_v2(
+            app_state.openai_client, history_dicts, cfg, lead_state,
+            ig_user_id=ig_user_id, new_texts=batch_texts,
+            knowledge_entries=await get_active_knowledge(db),
+        )
+    else:
+        result = await run_turn(
+            app_state.openai_client, history_dicts, cfg, lead_state,
+            ig_user_id=ig_user_id, new_texts=batch_texts,
+        )
 
     await save_lead_state(db, ig_user_id, result.lead_state)
 
@@ -253,6 +273,7 @@ async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state, b
         await app_state.manychat_client.add_tag(manychat_contact_id, tag_id)
 
     logger.info(
-        "Brain turn for %s: action=%s phase=%s pause=%s",
+        "Brain turn for %s: action=%s phase=%s pause=%s violations=%s",
         ig_user_id, result.action, result.lead_state.get("phase"), result.pause,
+        result.violations,
     )

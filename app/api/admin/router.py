@@ -176,12 +176,26 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
     # New qualification-funnel brain (behind a config flag). The sandbox is
     # stateless server-side, so lead_state is round-tripped via the client.
     brain_version = (cfg.get("brain_version") or "legacy").strip().lower()
-    if brain_version == "funnel":
-        from app.services.brain import run_turn
-        result = await run_turn(
-            request.app.state.openai_client, messages, cfg,
-            body.get("lead_state"), ig_user_id="admin_sandbox",
-        )
+    # `brain_version` may be overridden per request so the routed brain can be
+    # exercised in the sandbox without switching it on for live traffic.
+    brain_version = (body.get("brain_version") or brain_version).strip().lower()
+
+    if brain_version in ("funnel", "routed"):
+        if brain_version == "routed":
+            from app.repositories.knowledge import get_active_knowledge
+            from app.services.brain.turn import run_turn_v2
+
+            result = await run_turn_v2(
+                request.app.state.openai_client, messages, cfg,
+                body.get("lead_state"), ig_user_id="admin_sandbox",
+                knowledge_entries=await get_active_knowledge(db),
+            )
+        else:
+            from app.services.brain import run_turn
+            result = await run_turn(
+                request.app.state.openai_client, messages, cfg,
+                body.get("lead_state"), ig_user_id="admin_sandbox",
+            )
         return JSONResponse({
             "reply": result.reply_text,
             "human_takeover": result.pause,
@@ -189,6 +203,8 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
             "lead_state": result.lead_state,
             "phase": result.lead_state.get("phase"),
             "action": result.action,
+            "violations": result.violations,
+            "brain_version": brain_version,
         })
 
     last_user_text = next(

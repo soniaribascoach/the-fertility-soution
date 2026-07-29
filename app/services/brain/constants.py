@@ -253,6 +253,7 @@ FLAG_KEYS = [
     "explained_role",   # we have shown the explain-role message
     "asked_priority",   # we have asked the 1-10 question
     "situation_shared",
+    "situation_rich",   # she has described her situation fully -> discovery is done
     "handed_off",       # booking sequence complete -> handed to a human
     "cost_declined",    # she said she can't afford it -> takeover if she keeps engaging
     "last_prompt",      # loop guard: key of the last question we sent
@@ -273,6 +274,7 @@ _DEFAULT_FLAGS = {
     "explained_role": False,
     "asked_priority": False,
     "situation_shared": False,
+    "situation_rich": False,
     "handed_off": False,
     "cost_declined": False,
     "last_prompt": None,

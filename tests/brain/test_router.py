@@ -186,12 +186,33 @@ def test_explicit_financial_decline_is_not_overwritten_by_a_price_question():
 
 # --- Complaint 7: not-a-fit and ready-to-book --------------------------------
 
-def test_young_early_lead_is_told_honestly():
+@pytest.mark.parametrize("intent", [
+    "answers_question", "new_prospect", "asks_about_program", "warm_high_intent",
+])
+def test_young_early_lead_is_told_honestly(intent):
+    """Sonia: 'the AI described my services instead of honestly assessing whether
+    she may even need this level of support.' Asking about the programme must not
+    route to a services description."""
     st = state(slots={"age": 29, "trying_duration": "3 months"},
                flags={"situation_shared": True})
-    r = route(st, cls("answers_question"))
+    r = route(st, cls(intent, question_asked="should I join your program?"))
     assert r.mode is ResponseMode.HONEST_DECLINE
     assert r.reason == "likely_not_a_fit"
+
+
+@pytest.mark.parametrize("intent,expected", [
+    ("general_fertility_question", ResponseMode.ANSWER),
+    ("asks_free_advice", ResponseMode.ANSWER),
+    ("asks_masterclass", ResponseMode.RESOURCE),
+    ("asks_results_proof", ResponseMode.EDUCATE),
+])
+def test_a_not_a_fit_lead_still_gets_real_questions_answered(intent, expected):
+    """Being early is not a reason to stop answering her. Only the "should I
+    join" question is superseded by the honest assessment."""
+    st = state(slots={"age": 29, "trying_duration": "3 months"},
+               flags={"situation_shared": True})
+    r = route(st, cls(intent, question_asked="does stress affect egg quality?"))
+    assert r.mode is expected
 
 
 def test_high_intent_with_gate_passed_books():

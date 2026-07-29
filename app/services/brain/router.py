@@ -71,6 +71,16 @@ _QUESTION_INTENTS = {
     LeadIntent.ASKS_MASTERCLASS: ResponseMode.RESOURCE,
 }
 
+# Questions worth answering on their own merits even when her facts suggest she
+# does not need the programme yet. Asking about the programme is NOT one of them:
+# there, the honest assessment is the answer.
+_ANSWER_ANYWAY = {
+    LeadIntent.GENERAL_FERTILITY_QUESTION,
+    LeadIntent.ASKS_FREE_ADVICE,
+    LeadIntent.ASKS_MASTERCLASS,
+    LeadIntent.ASKS_RESULTS_PROOF,
+}
+
 # Objections are four different conversations. Sonia: "A financial concern, fear
 # after repeated IVF failure, a husband who does not believe in coaching, and
 # someone asking for free supplement advice are completely different situations."
@@ -201,12 +211,24 @@ def route(state: dict, classification, cfg: Optional[dict] = None) -> Route:
 
     question = classification.question_asked
 
-    # 8) She asked something. Answer it before any qualification move.
+    # 8) Her own facts say she probably does not need this yet.
+    #
+    # This sits ABOVE the question handler on purpose. "Should I join your
+    # programme?" from a 29-year-old three months in is exactly the case Sonia
+    # raised: the honest assessment IS the answer to that question, and
+    # describing the services instead is what she objected to. A genuine
+    # fertility question is still answered on its merits, so those intents are
+    # excluded.
+    if gates.likely_not_a_fit(state) and intent not in _ANSWER_ANYWAY:
+        return _route(state, intent, stage, ResponseMode.HONEST_DECLINE, "likely_not_a_fit",
+                      question_asked=question)
+
+    # 9) She asked something. Answer it before any qualification move.
     if intent in _QUESTION_INTENTS:
         return _route(state, intent, stage, _QUESTION_INTENTS[intent], f"question:{intent.value}",
                       answer_first=True, question_asked=question)
 
-    # 9) Objections, each its own conversation.
+    # 10) Objections, each its own conversation.
     if intent in _OBJECTION_INTENTS:
         if intent is LeadIntent.OBJECTION_PRICE:
             # Engaging with cost signals financial openness, so the financial
@@ -217,11 +239,6 @@ def route(state: dict, classification, cfg: Optional[dict] = None) -> Route:
         return _route(state, intent, stage, _OBJECTION_INTENTS[intent],
                       f"objection:{intent.value}",
                       answer_first=bool(question), question_asked=question)
-
-    # 10) Her own facts say she probably does not need this yet. Sonia wants her
-    # told honestly rather than sold to.
-    if gates.likely_not_a_fit(state):
-        return _route(state, intent, stage, ResponseMode.HONEST_DECLINE, "likely_not_a_fit")
 
     # 11) Ready to move, and the gate agrees.
     if gates.booking_gate(state):
