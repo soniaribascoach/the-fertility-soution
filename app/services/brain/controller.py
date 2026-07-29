@@ -17,6 +17,20 @@ from app.services.brain.constants import (
 )
 from app.services.brain.extractor import Extraction, non_null_deltas
 from app.services.brain import scripts
+# The qualification gates and OOS rules live in gates.py so every brain version
+# shares one implementation. Re-exported here because `directive.py` and the
+# controller tests reach for them as `controller._discovery_complete` etc.
+from app.services.brain.gates import (  # noqa: F401
+    _actively_ttc,
+    _booking_action,
+    _discovery_complete,
+    _financial_ok,
+    _partner_resolved,
+    _priority_ok,
+    _role_ok,
+    booking_gate,
+    oos_check,
+)
 
 
 @dataclass
@@ -73,96 +87,6 @@ _DISCOVERY_ORDER = ["trying_duration", "age", "treatment_path", "done_testing", 
 # (Sonia v1.1: a multi-fact message must be reflected before the next question).
 _FACT_DELTA_KEYS = ("trying_duration", "age", "treatment_path", "what_tried",
                     "done_testing", "diagnosis_detail")
-
-
-# --- Predicates --------------------------------------------------------------
-
-def _actively_ttc(s: dict) -> bool:
-    return bool(s.get("trying_duration") or s.get("what_tried") or s.get("treatment_path"))
-
-
-def _priority_ok(s: dict) -> bool:
-    score = s.get("priority_score")
-    return (isinstance(score, int) and score >= 8) or s.get("strong_readiness") is True
-
-
-def _partner_resolved(s: dict) -> bool:
-    status = s.get("partner_status")
-    if status in ("solo", "donor", "single_by_choice"):
-        return True
-    if status == "couple":
-        # Resolved once we know whether he is coming, either way: if he is not,
-        # she books with the couples expectation set rather than being quizzed
-        # about who decides (Sonia v1.2 - the answer no longer gates the link, so
-        # asking for it is friction). She alone deciding also resolves it.
-        return (
-            s.get("partner_can_join") is not None
-            or s.get("partner_is_decision_maker") is False
-        )
-    return False
-
-
-def _shares_decision_but_absent(s: dict) -> bool:
-    """A partner who will not attend is ASSUMED to share the decision unless she
-    has told us otherwise. We never ask: both answers send the link, so the only
-    thing riding on it is which message wraps it."""
-    return (
-        s.get("partner_status") == "couple"
-        and s.get("partner_can_join") is False
-        and s.get("partner_is_decision_maker") is not False
-    )
-
-
-def _booking_action(s: dict) -> Action:
-    """Which booking script to send. A couple whose partner will not join hears
-    the couples expectation first; everyone else (solo, a partner who IS joining,
-    or a woman who says she decides alone) gets the plain link."""
-    if _shares_decision_but_absent(s):
-        return Action.SEND_BOOKING_TOGETHER
-    return Action.SEND_BOOKING
-
-
-def _discovery_complete(s: dict) -> bool:
-    return bool(
-        s.get("trying_duration")
-        and s.get("age")
-        and (s.get("treatment_path") or s.get("what_tried"))
-    )
-
-
-def _financial_ok(s: dict) -> bool:
-    # Confirmed open, OR the partner is the decision-maker (money is decided with
-    # them on the call) and the lead has not explicitly declined.
-    if s.get("financial_ready") is True:
-        return True
-    return s.get("partner_is_decision_maker") is True and s.get("financial_ready") is not False
-
-
-def _role_ok(state: dict) -> bool:
-    """Role step satisfied: she heard (and accepted) the not-a-doctor role, OR
-    stated in her own words that she understands this is coaching, not medical
-    care (Sonia v1.1: such a lead must not be re-run through EXPLAIN_ROLE) -
-    and she never rejected the approach."""
-    s, f = state["slots"], state["flags"]
-    if s.get("open_to_holistic") is False:
-        return False
-    if s.get("understands_role") is True:
-        return True
-    return f.get("explained_role") is True and s.get("open_to_holistic") is True
-
-
-def booking_gate(state: dict) -> bool:
-    """Phase-7 checklist. SEND_BOOKING is only reachable when ALL are true."""
-    s, f = state["slots"], state["flags"]
-    return all([
-        f.get("situation_shared") is True,
-        _actively_ttc(s),
-        _priority_ok(s),
-        _role_ok(state),
-        _financial_ok(s),
-        f.get("oos_reason") is None,
-        _partner_resolved(s),
-    ])
 
 
 # --- State merge -------------------------------------------------------------
@@ -240,40 +164,19 @@ def decide(
     elif lang == "other":
         return _takeover(state, "unsupported_language", action=Action.UNSUPPORTED_LANGUAGE)
 
-    # 2) Hard out-of-scope. Check the EXTRACTED FACTS deterministically first, so
-    # these never depend on the LLM remembering to set an oos flag (age is a
-    # number -> code decides, not the model).
-    age = s.get("age")
-    if isinstance(age, int) and age > 46:
-        return _oos(state, Action.OOS_AGE_OVER_46, "age_over_46")
-    if s.get("tubes_blocked") == "both":
-        return _oos(state, Action.OOS_BOTH_TUBES, "both_tubes_blocked")
-    if s.get("no_period_over_year") is True:
-        # 12+ months without a period -> review carefully REGARDLESS of age
-        # (Sonia v1.1); never continue discovery or ask her age first.
-        return _oos(state, Action.OOS_NO_PERIOD_12M, "no_period_over_12m")
-    if extraction.slot_deltas.tubes_blocked == "one" and not (
-        s.get("treatment_path") or s.get("what_tried")
-    ):
-        # She just said one tube is blocked -> acknowledge the one-vs-both
-        # difference once and ask her treatment stage (Sonia v1.1). Delta-keyed
-        # so it never re-fires, and skipped when her stage is already known.
-        return _script(state, Action.ONE_TUBE_ACK, Phase.DISCOVERY)
-
-    oos = extraction.oos_signal
-    if oos == "deaf":
-        return _oos(state, Action.OOS_DEAF, "oos_deaf")
-    if oos == "age_over_46":  # LLM flagged it but no numeric age parsed
-        return _oos(state, Action.OOS_AGE_OVER_46, "age_over_46")
-    if oos == "blocked_tubes":
-        if s.get("tubes_blocked") in (None, "unspecified"):
-            return _script(state, Action.ASK_BOTH_TUBES, Phase.DISCOVERY)
-        # one blocked -> continue discovery (fall through)
-    if oos == "menopause_no_period":
-        decision = _handle_menopause(state)
-        if decision is not None:
-            return decision
-        # else: young + benign -> continue
+    # 2) Hard out-of-scope (gates.oos_check). The EXTRACTED FACTS are checked
+    # before the LLM's signal so these never depend on the model remembering to
+    # set a flag. A "clarify" outcome is a normal question and the funnel
+    # continues; None means nothing tripped.
+    outcome = oos_check(
+        state,
+        delta_tubes_blocked=extraction.slot_deltas.tubes_blocked,
+        oos_signal=extraction.oos_signal,
+    )
+    if outcome is not None:
+        if outcome.kind == "oos":
+            return _oos(state, outcome.action, outcome.reason)
+        return _script(state, outcome.action, outcome.phase)
 
     # 3) Human-takeover: from the intent label deterministically (asks-if-AI /
     # angry / severe distress), or the extractor's soft takeover flag.
@@ -328,21 +231,6 @@ def _guard_repeats(state: dict, decision: Decision) -> Decision:
         state["counters"]["repeat_count"] = 0
     state["flags"]["last_prompt"] = key
     return decision
-
-
-def _handle_menopause(state: dict) -> Optional[Decision]:
-    s = state["slots"]
-    age = s.get("age")
-    if age is None:
-        # Need her age to decide; ask it directly rather than the reason first.
-        return _script(state, Action.ASK_MENOPAUSE_AGE, Phase.DISCOVERY)
-    if isinstance(age, int) and age >= 40:
-        # 40+ with a menopause / long no-period signal -> out of scope.
-        return _oos(state, Action.OOS_MENOPAUSE, "menopause_oos")
-    # Younger than 40: the reason matters (benign irregularity vs premenopausal).
-    if s.get("no_period_reason") is None:
-        return _script(state, Action.ASK_MENOPAUSE_REASON, Phase.DISCOVERY)
-    return None  # young with a stated (benign) reason -> continue the funnel
 
 
 def _handle_interrupt(state: dict, intent: str, cfg: Optional[dict],

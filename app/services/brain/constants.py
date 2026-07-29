@@ -133,6 +133,93 @@ class Intent(str, Enum):
     OTHER = "other"
 
 
+class LeadIntent(str, Enum):
+    """WHY the lead is messaging. The routing-level classification.
+
+    Distinct from the older `Intent`, which asks what a single message *does*
+    inside the funnel. This asks whether the conversation belongs in the funnel
+    at all - the failure Sonia reported was that everything did.
+    """
+    # Not a sales conversation. These must never reach qualification.
+    PREGNANCY_OR_SUCCESS = "pregnancy_or_success"
+    GRATITUDE = "gratitude"
+    GRIEF_OR_STOPPED_TRYING = "grief_or_stopped_trying"
+    EXISTING_CLIENT = "existing_client"
+    COLLABORATION_OR_TECHNICAL = "collaboration_or_technical"
+
+    # She asked something. Answer it before anything else.
+    GENERAL_FERTILITY_QUESTION = "general_fertility_question"
+    ASKS_FREE_ADVICE = "asks_free_advice"
+    ASKS_ABOUT_PROGRAM = "asks_about_program"
+    ASKS_RESULTS_PROOF = "asks_results_proof"
+    ASKS_MASTERCLASS = "asks_masterclass"
+
+    # Objections are four different conversations, not one.
+    OBJECTION_PRICE = "objection_price"
+    OBJECTION_PARTNER = "objection_partner"
+    OBJECTION_TRUST = "objection_trust"
+    OBJECTION_FEAR_AFTER_FAILURE = "objection_fear_after_failure"
+    OBJECTION_PAYING_TWICE = "objection_paying_twice"
+
+    # The qualification path proper.
+    NEW_PROSPECT = "new_prospect"
+    ANSWERS_QUESTION = "answers_question"
+    WARM_HIGH_INTENT = "warm_high_intent"
+    NOT_A_FIT_SIGNAL = "not_a_fit_signal"
+    IVF_ONLY = "ivf_only"
+
+    # After the link is out.
+    BOOKED = "booked"
+    GIVES_EMAIL = "gives_email"
+    TROUBLE_BOOKING = "trouble_booking"
+
+    # Straight to a human.
+    IS_THIS_AI = "is_this_ai"
+    ANGRY_OR_CHALLENGING = "angry_or_challenging"
+    DISTRESS = "distress"
+
+    OTHER = "other"
+
+
+class ResponseMode(str, Enum):
+    """What the reply is FOR. Sonia's own verbs.
+
+    The router picks exactly one. QUALIFY is now one mode among nine rather than
+    the only path through the code.
+    """
+    CELEBRATE = "CELEBRATE"            # congratulate; no question, no pitch
+    ACKNOWLEDGE = "ACKNOWLEDGE"        # sit with it; no question, no redirect
+    ANSWER = "ANSWER"                  # answer what she actually asked
+    EDUCATE = "EDUCATE"                # positioning / proof, grounded in knowledge
+    RESOURCE = "RESOURCE"              # send the masterclass or a link she asked for
+    QUALIFY = "QUALIFY"                # the funnel
+    BOOK = "BOOK"                      # the gate passed; send the link
+    HONEST_DECLINE = "HONEST_DECLINE"  # she may not need this - say so plainly
+    HANDOFF = "HANDOFF"                # a human takes it; usually silent
+
+
+class Stage(str, Enum):
+    """Where the CONVERSATION is, independent of why this message was sent."""
+    COLD = "cold"                # nothing established yet
+    DISCOVERING = "discovering"  # mid-qualification
+    QUALIFIED = "qualified"      # gate passes, link not yet sent
+    LINK_SENT = "link_sent"
+    BOOKED = "booked"
+    CLIENT = "client"            # already enrolled
+
+
+# Intents that must never enter the qualification funnel, whatever the stage.
+# Sonia's complaint 1 and 7, as a constant the router and its tests share.
+NEVER_QUALIFY = frozenset({
+    LeadIntent.PREGNANCY_OR_SUCCESS,
+    LeadIntent.GRATITUDE,
+    LeadIntent.GRIEF_OR_STOPPED_TRYING,
+    LeadIntent.EXISTING_CLIENT,
+    LeadIntent.COLLABORATION_OR_TECHNICAL,
+    LeadIntent.NOT_A_FIT_SIGNAL,
+})
+
+
 # --- Lead-state schema -------------------------------------------------------
 
 SLOT_KEYS = [
