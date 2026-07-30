@@ -169,8 +169,17 @@ def _sentences(text: str) -> list[str]:
     return [s for s in re.split(r"(?<=[.!?])\s+|\n+", text or "") if len(s.strip()) > 12]
 
 
+_WORD_RE = re.compile(r"[a-z0-9']+")
+
+
+def _words(text: str) -> set:
+    """Bare word tokens. Punctuation is stripped so "link." and "link" match -
+    without this, one trailing full stop was enough to hide an exact echo."""
+    return set(_WORD_RE.findall(_fold(text)))
+
+
 def _similar(a: str, b: str) -> float:
-    wa, wb = set(_fold(a).split()), set(_fold(b).split())
+    wa, wb = _words(a), _words(b)
     if not wa or not wb:
         return 0.0
     return len(wa & wb) / len(wa | wb)
@@ -191,6 +200,29 @@ def no_repeat(bubbles: list[str], history: list[dict], *, threshold: float = 0.7
         for previous in said:
             if _similar(sentence, previous) >= threshold:
                 return CheckResult(False, [f"repeat:{sentence[:40]}"])
+    return CheckResult(True, [])
+
+
+def no_echo(bubbles: list[str], lead_texts: list[str], *, threshold: float = 0.75) -> CheckResult:
+    """Reject a reply that parrots the lead's own message back at her.
+
+    Seen live: a "just send me the booking link" turn came back as
+    "just send me the booking link. I can feel how much you want this." The
+    transcript sits in the writer's prompt, and a small model will sometimes
+    continue it instead of replying to it. Nothing else catches this and it
+    reads as broken.
+    """
+    for text in lead_texts:
+        if len(_fold(text)) < 12:
+            continue
+        for bubble in bubbles:
+            if _similar(bubble, text) >= threshold:
+                return CheckResult(False, [f"echoed_lead:{bubble[:40]}"])
+            # Also catch the opening-clause case, where her sentence is used as
+            # a preamble before the real reply.
+            first = _sentences(bubble)[:1]
+            if first and _similar(first[0], text) >= threshold:
+                return CheckResult(False, [f"echoed_lead_opening:{first[0][:40]}"])
     return CheckResult(True, [])
 
 
@@ -236,6 +268,7 @@ def run_all(
         ground(bubbles, lead_texts=lead_texts, knowledge_texts=knowledge_texts,
                known_facts=known_facts),
         no_repeat(bubbles, history),
+        no_echo(bubbles, lead_texts),
         no_reask(bubbles, known_facts),
     ):
         violations.extend(result.violations)

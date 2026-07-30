@@ -8,6 +8,7 @@ import pytest
 
 from app.services.brain.checks import (
     ground,
+    no_echo,
     no_reask,
     no_repeat,
     run_all,
@@ -189,6 +190,33 @@ def test_a_fresh_sentence_is_accepted():
 def test_short_fragments_are_not_compared():
     history = [{"role": "assistant", "content": "got it."}]
     assert no_repeat(["got it."], history).ok
+
+
+# --- no echoing her back ------------------------------------------------------
+
+def test_parroting_the_lead_is_rejected():
+    """Seen live: a "just send me the booking link" turn came back opening with
+    her own sentence. The transcript is in the writer's prompt and a small model
+    will sometimes continue it instead of replying to it."""
+    lead = ["just send me the booking link"]
+    r = no_echo(["just send me the booking link. I can feel how much you want this."], lead)
+    assert not r.ok
+    assert r.violations[0].startswith("echoed_lead")
+
+
+def test_echoing_a_whole_bubble_is_rejected():
+    lead = ["I have been trying for two years and nothing has worked"]
+    assert not no_echo(["I have been trying for two years and nothing has worked"], lead).ok
+
+
+def test_a_real_reply_is_not_an_echo():
+    lead = ["just send me the booking link"]
+    assert no_echo(["before I do that, can I ask what's been going on?"], lead).ok
+
+
+def test_short_lead_messages_are_not_echo_checked():
+    # "yes" appearing in a reply must not trip this.
+    assert no_echo(["yes, that's exactly the kind of thing I look at"], ["yes"]).ok
 
 
 # --- no re-asking -------------------------------------------------------------
