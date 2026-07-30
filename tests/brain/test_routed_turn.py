@@ -189,6 +189,52 @@ async def test_an_unreadable_message_goes_to_a_person(openai_client):
     assert r.reply_text is None, "we should say nothing rather than guess"
 
 
+# --- The way real conversations actually start -------------------------------
+# Every other test here begins from a bare first message. Not one covered the
+# CTA-keyword opener followed by her first real reply, which is how most real
+# conversations begin - and the first shape to misbehave in the sandbox.
+
+_OPENER = (
+    "I'm so glad you reached out 🤍 Before I point you in the right direction, "
+    "I'd love to understand a little more about your situation. How long have you "
+    "been trying to conceive, and what have you already tried so far?"
+)
+
+
+@pytest.mark.parametrize("first_reply", [
+    "Hi Sonia, my amh results came back low",
+    "hi! we've been trying for about a year and nothing yet",
+    "I'm 38 and just found out I have low AMH",
+    "my doctor said I have pcos",
+    "we've been trying 3 years, done 2 IUIs",
+])
+async def test_cta_opener_then_her_first_message_gets_a_reply(openai_client, first_reply):
+    """A textbook lead answering the opener must never be handed to a human.
+
+    This is the exact flow that failed in the sandbox: keyword, opener, first
+    real message. Anything but silence is acceptable here; silence is not.
+    """
+    history = [
+        {"role": "user", "content": "AMH"},
+        {"role": "assistant", "content": _OPENER},
+        {"role": "user", "content": first_reply},
+    ]
+    state = empty_lead_state()
+    state["phase"] = "DISCOVERY"
+    r = await run_turn_v2(
+        openai_client, history, CFG, state, ig_user_id="test",
+        new_texts=[first_reply], knowledge_entries=KNOWLEDGE,
+    )
+    assert r.reply_text, (
+        f"handed a textbook lead to a human. action={r.action} "
+        f"signals={r.trace.get('uncertainty_signals')} "
+        f"violations={r.violations} "
+        f"suppressed={r.trace.get('suppressed_reply')!r}"
+    )
+    assert not r.pause, f"paused on a normal opener reply: {r.pause_reason}"
+    assert "free-call" not in r.reply_text
+
+
 async def test_the_trace_explains_the_turn(openai_client):
     """"Why did the bot say that" must be answerable from the persisted trace.
 

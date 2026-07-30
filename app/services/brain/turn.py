@@ -21,7 +21,7 @@ from openai import AsyncOpenAI
 
 from app.services.brain import checker, checks, scripts, uncertainty, writer
 from app.services.brain import knowledge as kb
-from app.services.brain.classify import classify, verify_evidence
+from app.services.brain.classify import classify, verify_evidence, verify_question
 from app.services.brain.constants import (
     Action,
     Phase,
@@ -82,6 +82,45 @@ def _still_needed(state: dict) -> list[str]:
 
 
 _DISCOVERY_ORDER = ["trying_duration", "age", "treatment_path", "done_testing", "diagnosis"]
+
+
+_ASKED_MARKERS = {
+    "how long she has been trying, and what she has already tried":
+        ("how long have you been trying", "how long you have been trying",
+         "cuanto tiempo llevan intentando"),
+    "her age": ("how old are you", "cuantos anos tienes"),
+    "whether she is trying naturally, doing IUI or IVF, or still deciding":
+        ("trying naturally", "iui", "still deciding"),
+    "whether she has had any fertility testing": ("fertility testing", "any testing"),
+    "whether a doctor has given her a diagnosis": ("diagnosis",),
+    "how much of a priority getting pregnant is for her right now":
+        ("scale of 1 to 10", "top priority"),
+    "whether this is the kind of support she is looking for":
+        ("kind of support", "looking for"),
+    "whether she is open to this being a paid programme, if it feels right":
+        ("paid program", "paid coaching"),
+    "whether she is doing this with a partner or on her own":
+        ("with a partner", "on your own"),
+    "whether her partner could join the call": ("join the call",),
+}
+
+
+def already_asked(question: Optional[str], history: list[dict]) -> bool:
+    """Has this topic already been put to her?
+
+    The phase-1 opener asks about duration and what she has tried, so a lead who
+    answers it partially sends us straight back to the same question. It still
+    needs asking - but the writer has to reword it, or the repeat check rejects
+    the reply and she gets silence instead.
+    """
+    if not question:
+        return False
+    markers = _ASKED_MARKERS.get(question)
+    if not markers:
+        return False
+    said = " ".join(m.get("content", "") for m in history
+                    if m.get("role") == "assistant").casefold()
+    return any(marker in said for marker in markers)
 
 
 def _next_question(state: dict) -> Optional[str]:
@@ -149,6 +188,9 @@ async def run_turn_v2(
         openai_client, history, state["slots"], cfg=cfg
     )
     evidence = verify_evidence(classification, recent)
+    # Drop a question the model paraphrased or invented from a statement: a
+    # phantom question makes the `answered` judge veto a perfectly good reply.
+    classification.question_asked = verify_question(classification, recent)
     contradictions = merge_facts(state, evidence.verified)
     if classification.situation_richness == "rich":
         # Complaint 2: a woman who has described four IVF cycles and years of
@@ -217,10 +259,11 @@ async def run_turn_v2(
     known_facts = {k: v for k, v in state["slots"].items()
                    if v is not None and k not in ("language", "closer_assigned")}
 
+    next_q = _next_question(state) if mode is ResponseMode.QUALIFY else None
     winput = writer.WriterInput(
         mode=mode, known_facts=known_facts, knowledge=retrieved,
         question_asked=r.question_asked, still_needed=_still_needed(state),
-        next_question=_next_question(state) if mode is ResponseMode.QUALIFY else None,
+        next_question=next_q, already_asked=already_asked(next_q, history),
         language=language, stance=writer.stance_for(history), allow_urls=allow_urls,
     )
 
@@ -244,9 +287,11 @@ async def run_turn_v2(
             history=history, lead_texts=recent, knowledge_texts=knowledge_texts,
             known_facts=known_facts,
         )
-        # Keep the second attempt either way, so the violations we report always
-        # describe the text we are holding.
-        draft, result = draft2, result2
+        # Keep whichever attempt is safer, so the violations we report always
+        # describe the text we are holding. If the retry traded a soft problem
+        # for a hard one, the first draft was better.
+        if not result2.hard or result.hard:
+            draft, result = draft2, result2
 
     # 7) Veto panel, only when something already looks off.
     checker_violations, usage_check = [], {}
@@ -269,7 +314,10 @@ async def run_turn_v2(
         off_script=classification.off_script, fabricated_slots=evidence.fabricated,
         contradictions=contradictions, writer_unsure=draft.unsure,
         code_violations=result.violations, checker_violations=checker_violations,
-        regenerated=regenerated, still_failing=(regenerated and not result.ok),
+        # Only a HARD violation surviving both attempts justifies silence. A
+        # reply that merely repeats a question or keeps an em-dash is worth far
+        # more to the lead than nothing at all.
+        regenerated=regenerated, still_failing=bool(result.hard),
         repeat_count=state["counters"].get("repeat_count", 0),
     )
     usage = combine_usage(usage_classify, usage_write, usage_check)

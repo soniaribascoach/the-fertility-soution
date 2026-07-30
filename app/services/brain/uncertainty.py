@@ -28,7 +28,12 @@ WEIGHTS = {
     "checker_premature": 5,       # it sold before the gate
     "checker_unavailable": 2,
     "grounding_failure": 5,
-    "writer_unsure": 3,
+    # The writer's own doubt is weak evidence: gpt-4o-mini's self-assessment is
+    # as uncalibrated here as its confidence float was on the classifier. Its
+    # real job is to TRIGGER the veto panel (see `should_check`), and the panel's
+    # verdict is what should decide. At weight 3 against a threshold of 3 it
+    # silently killed turns on its own, with no second opinion involved.
+    "writer_unsure": 1,
     "hard_violation": 3,          # link/price/medical rule broken
     "regenerated": 1,             # needed a second attempt
     # Two attempts and the rules are still broken: the writer is stuck, so send

@@ -276,6 +276,25 @@ class EvidenceResult:
         return iter((self.verified, self.unevidenced + self.fabricated))
 
 
+def verify_question(classification: Classification, lead_texts: list[str]) -> Optional[str]:
+    """Her question, only if she actually asked one.
+
+    Same principle as evidence quotes: the model paraphrases, or invents a
+    question from a statement ("I'm 38 and just found out I have low AMH"). A
+    phantom question is worse than none - the `answered` judge is then asked
+    whether the reply answered something that was never asked, says no, and the
+    turn is suppressed over it.
+    """
+    raw = (classification.question_asked or "").strip()
+    if not raw:
+        return None
+    haystack = _norm(" ".join(lead_texts))
+    if _norm(raw) and _norm(raw) in haystack:
+        return raw
+    logger.info("Discarding unverifiable question_asked: %r", raw)
+    return None
+
+
 def verify_evidence(classification: Classification, lead_texts: list[str]) -> EvidenceResult:
     """Keep only the facts whose quote really appears in what she wrote.
 

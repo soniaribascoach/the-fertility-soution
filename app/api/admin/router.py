@@ -233,6 +233,15 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
                 request.app.state.openai_client, messages, cfg,
                 body.get("lead_state"), ig_user_id="admin_sandbox",
             )
+        # Record sandbox turns too. This is the surface the team actually tests
+        # on, and without this a turn that goes wrong here leaves no trace at
+        # all - which is exactly what happened the first time one did.
+        from app.repositories.brain_turn import save_turn
+        last_user = next((m["content"] for m in reversed(messages)
+                          if m.get("role") == "user"), "")
+        await save_turn(db, "admin_sandbox", brain_version=brain_version,
+                        result=result, lead_message=last_user)
+
         return JSONResponse({
             "reply": result.reply_text,
             "human_takeover": result.pause,
@@ -242,6 +251,12 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
             "action": result.action,
             "violations": result.violations,
             "brain_version": brain_version,
+            # So an "uncertain" banner in the sandbox says WHY, instead of being
+            # an opaque dead end.
+            "uncertainty": result.trace.get("uncertainty_score"),
+            "signals": result.trace.get("uncertainty_signals") or [],
+            "intent": result.trace.get("intent"),
+            "mode": result.trace.get("mode"),
         })
 
     last_user_text = next(

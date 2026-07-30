@@ -18,13 +18,36 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from app.services.brain.constants import ResponseMode
-from app.services.brain.writer import AT_MOST_ONE, FORBIDDEN, REQUIRED, MODE_SPECS
+from app.services.brain.writer import (
+    AT_MOST_ONE, FORBIDDEN, OPTIONAL, REQUIRED, MODE_SPECS,
+)
+
+
+# Violations that make a reply UNSAFE rather than merely clumsy. Only these are
+# worth going silent over: sending nothing has a real cost to the lead, so a
+# repeated question or an em-dash must not silence a turn the way a leaked link
+# or invented lab value should.
+HARD_VIOLATIONS = (
+    "disallowed_url", "missing_required_url", "unexpected_price", "medical_advice",
+    "question_not_allowed", "invented_number", "invented_email", "echoed_lead",
+    "empty",
+)
+
+
+def is_hard(violation: str) -> bool:
+    name = violation.split(":")[0]
+    return name in HARD_VIOLATIONS
 
 
 @dataclass
 class CheckResult:
     ok: bool
     violations: list = field(default_factory=list)
+
+    @property
+    def hard(self) -> list:
+        """The violations that justify saying nothing at all."""
+        return [v for v in self.violations if is_hard(v)]
 
 
 _URL_RE = re.compile(r"https?://[^\s)]+")
@@ -95,7 +118,9 @@ def validate_draft(
         v.append("question_not_allowed")
     elif spec.question_policy == REQUIRED and q != 1:
         v.append("expected_exactly_one_question")
-    elif spec.question_policy == AT_MOST_ONE and q > 1:
+    elif spec.question_policy in (AT_MOST_ONE, OPTIONAL) and q > 1:
+        # OPTIONAL means "one question or none", never a pile of them. Without
+        # this cap an ANSWER turn could stack three, which is an interrogation.
         v.append("too_many_questions")
 
     if "—" in text:

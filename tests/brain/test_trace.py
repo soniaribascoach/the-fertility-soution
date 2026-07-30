@@ -103,3 +103,70 @@ def test_shadow_flag_parsing(value, expected):
 def test_shadow_flag_missing_key_is_off():
     from app.worker import _flag
     assert _flag({}, "brain_shadow_enabled") is False
+
+
+# --- Silence has a cost -------------------------------------------------------
+
+def test_hard_and_soft_violations_are_distinguished():
+    """Only an unsafe reply is worth going silent over.
+
+    A repeated question or an em-dash is worth far more to the lead than
+    nothing at all; a leaked link or an invented lab value is not.
+    """
+    from app.services.brain.checks import CheckResult, is_hard
+
+    assert is_hard("disallowed_url")
+    assert is_hard("invented_number:0.6")
+    assert is_hard("medical_advice")
+    assert is_hard("echoed_lead:just send me the link")
+
+    assert not is_hard("repeat:How long have you been trying")
+    assert not is_hard("em_dash")
+    assert not is_hard("markdown")
+    assert not is_hard("too_long")
+    assert not is_hard("banned_phrase:i hear you")
+
+    r = CheckResult(False, ["repeat:x", "em_dash", "disallowed_url"])
+    assert r.hard == ["disallowed_url"]
+    assert CheckResult(False, ["repeat:x", "em_dash"]).hard == []
+
+
+# --- Re-asking a question the opener already asked ----------------------------
+
+_OPENER = ("I'm so glad you reached out. How long have you been trying to "
+           "conceive, and what have you already tried so far?")
+
+
+def test_a_question_the_opener_already_asked_is_flagged():
+    """The phase-1 opener asks about duration and what she has tried. A lead who
+    answers it partially sends us straight back to the same question, and the
+    writer must reword it or the repeat check rejects the reply."""
+    from app.services.brain.turn import already_asked
+
+    history = [{"role": "assistant", "content": _OPENER}]
+    assert already_asked(
+        "how long she has been trying, and what she has already tried", history) is True
+
+
+def test_an_unasked_question_is_not_flagged():
+    from app.services.brain.turn import already_asked
+
+    history = [{"role": "assistant", "content": _OPENER}]
+    assert already_asked("her age", history) is False
+    assert already_asked(
+        "how much of a priority getting pregnant is for her right now", history) is False
+
+
+def test_already_asked_ignores_what_the_lead_said():
+    # Only Sonia's turns count; the lead using the same words is not us asking.
+    from app.services.brain.turn import already_asked
+
+    history = [{"role": "user", "content": "how long have you been trying to help people?"}]
+    assert already_asked(
+        "how long she has been trying, and what she has already tried", history) is False
+
+
+def test_already_asked_handles_no_question():
+    from app.services.brain.turn import already_asked
+    assert already_asked(None, []) is False
+    assert already_asked("some topic with no marker", [{"role": "assistant", "content": "x"}]) is False

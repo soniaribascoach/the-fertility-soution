@@ -175,6 +175,8 @@ class WriterInput:
     question_asked: Optional[str] = None
     still_needed: list = field(default_factory=list)
     next_question: Optional[str] = None
+    # True when this topic has already been put to her once and went unanswered.
+    already_asked: bool = False
     language: str = "en"
     stance: str = "early_trust"
     allow_urls: list = field(default_factory=list)
@@ -287,6 +289,18 @@ def build_prompt(inp: WriterInput, history: list[dict], spec: ModeSpec) -> str:
                  f"{_fmt_knowledge(inp.knowledge)}")
     if inp.next_question and spec.question_policy == REQUIRED:
         parts.append(f"\nTHE ONE THING TO ASK: {inp.next_question}")
+        if inp.already_asked:
+            # The opener asks about duration and what she has tried, so a lead who
+            # answers it partially sends us straight back to the same question. It
+            # still needs asking - but repeating the sentence verbatim is what the
+            # repeat check rejects, and going silent over it is far worse than
+            # rephrasing.
+            parts.append(
+                "\nYou have ALREADY asked her this once and she did not answer it. "
+                "Ask it again in COMPLETELY different words - different sentence "
+                "shape, different opening. Acknowledge what she DID tell you first, "
+                "so it does not read as though you ignored her."
+            )
     if inp.still_needed:
         parts.append("\nSTILL UNKNOWN over the coming messages (do not rush these): "
                      + ", ".join(inp.still_needed))
