@@ -165,6 +165,25 @@ async def run_turn_v2(
     if contradictions:
         logger.info("Contradiction on %s for %s", contradictions, ig_user_id)
 
+    def trace(**extra) -> dict:
+        """The turn's reasoning, for `brain_turns` and the shadow diff."""
+        base = {
+            "intent": classification.intent,
+            "intent_certainty": classification.intent_certainty,
+            "secondary_intent": classification.secondary_intent,
+            "stage": r.stage.value,
+            "mode": mode.value,
+            "reason": r.reason,
+            "question_asked": r.question_asked,
+            "situation_richness": classification.situation_richness,
+            "off_script": classification.off_script,
+            "fabricated_slots": evidence.fabricated,
+            "unevidenced_slots": evidence.unevidenced,
+            "contradictions": contradictions,
+        }
+        base.update(extra)
+        return base
+
     # A handoff says nothing, except where an approved decline is pinned.
     if mode is ResponseMode.HANDOFF:
         text = None
@@ -173,7 +192,7 @@ async def run_turn_v2(
         return TurnResult(
             reply_text=text, lead_state=state, pause=r.pause, pause_reason=r.pause_reason,
             add_tag=r.add_tag, qualified=r.qualified, action=r.mode.value,
-            usage=usage_classify,
+            usage=usage_classify, trace=trace(),
         )
 
     # Post-booking turns keep their approved wording verbatim.
@@ -182,7 +201,7 @@ async def run_turn_v2(
         return TurnResult(
             reply_text=text, lead_state=state, pause=r.pause, pause_reason=r.pause_reason,
             add_tag=r.add_tag, qualified=r.qualified, action=r.funnel_action.value,
-            usage=usage_classify,
+            usage=usage_classify, trace=trace(),
         )
 
     # 4) Retrieve the substance this turn is allowed to use.
@@ -255,6 +274,20 @@ async def run_turn_v2(
     )
     usage = combine_usage(usage_classify, usage_write, usage_check)
     violations = result.violations + checker_violations + [f"uncertainty={u.score}"]
+    turn_trace = trace(
+        knowledge_ids=[e.id for e in retrieved if e.id is not None],
+        knowledge_topics=[e.topic for e in retrieved],
+        stance=winput.stance,
+        bubbles=draft.bubbles,
+        writer_unsure=draft.unsure,
+        writer_unsure_reason=draft.unsure_reason,
+        regenerated=regenerated,
+        code_violations=result.violations,
+        checker_violations=checker_violations,
+        uncertainty_score=u.score,
+        uncertainty_signals=u.signals,
+        threshold=uncertainty.threshold_from(cfg),
+    )
 
     if u.over(uncertainty.threshold_from(cfg)):
         # Say nothing rather than send something we do not trust.
@@ -267,10 +300,13 @@ async def run_turn_v2(
             reply_text=None, lead_state=state, pause=True, pause_reason="uncertain",
             add_tag=True, action=f"{mode.value}_ABORTED", usage=usage,
             violations=violations + u.signals,
+            # The suppressed draft is kept in the trace: an aborted turn is the
+            # most useful thing to review, and it is invisible otherwise.
+            trace=dict(turn_trace, aborted=True, suppressed_reply="\n\n".join(draft.bubbles)),
         )
 
     return TurnResult(
         reply_text="\n\n".join(draft.bubbles), lead_state=state, pause=r.pause,
         pause_reason=r.pause_reason, add_tag=r.add_tag, qualified=r.qualified,
-        action=mode.value, usage=usage, violations=violations,
+        action=mode.value, usage=usage, violations=violations, trace=turn_trace,
     )

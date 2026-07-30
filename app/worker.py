@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import logging
 import random
 import re
@@ -132,6 +133,9 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
                             brain_version, ig_user_id)
                 return
 
+            # Shadow mode is only meaningful for the two brains above; the legacy
+            # monolith keeps no lead state to run the routed brain against.
+
             if any(_is_media_url(txt) for txt in batch_texts):
                 logger.info("Media message detected (batch) for user %s", ig_user_id)
                 await pause_ai(db, ig_user_id, "media_message")
@@ -232,24 +236,24 @@ async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
     Both brains share this function because they share `TurnResult`; only the
     turn implementation and the knowledge lookup differ.
     """
+    from app.repositories.brain_turn import save_turn
+
     history = await get_history(db, ig_user_id, limit=20)
     history_dicts = [{"role": r.role, "content": r.content} for r in history]
     lead_state = await get_lead_state(db, ig_user_id)
+    lead_message = "\n".join(batch_texts)
 
     if routed:
-        from app.repositories.knowledge import get_active_knowledge
-        from app.services.brain.turn import run_turn_v2
-
-        result = await run_turn_v2(
-            app_state.openai_client, history_dicts, cfg, lead_state,
-            ig_user_id=ig_user_id, new_texts=batch_texts,
-            knowledge_entries=await get_active_knowledge(db),
-        )
+        result = await _routed_turn(db, app_state, history_dicts, cfg, lead_state,
+                                    ig_user_id, batch_texts)
     else:
         result = await run_turn(
             app_state.openai_client, history_dicts, cfg, lead_state,
             ig_user_id=ig_user_id, new_texts=batch_texts,
         )
+
+    await save_turn(db, ig_user_id, brain_version="routed" if routed else "funnel",
+                    result=result, lead_message=lead_message)
 
     await save_lead_state(db, ig_user_id, result.lead_state)
 
@@ -276,4 +280,40 @@ async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
         "Brain turn for %s: action=%s phase=%s pause=%s violations=%s",
         ig_user_id, result.action, result.lead_state.get("phase"), result.pause,
         result.violations,
+    )
+
+    # Shadow: run the routed brain on the same input WITHOUT sending, so its
+    # tone and handoff rate can be reviewed against real traffic before the flag
+    # is flipped. Deliberately last and fully isolated - a shadow failure must
+    # never affect the lead who already got her reply.
+    if not routed and _flag(cfg, "brain_shadow_enabled"):
+        try:
+            shadow = await _routed_turn(
+                db, app_state, history_dicts, cfg, lead_state, ig_user_id, batch_texts,
+            )
+            await save_turn(
+                db, ig_user_id, brain_version="routed", result=shadow, shadow=True,
+                lead_message=lead_message, live_reply=result.reply_text or "",
+            )
+        except Exception:
+            logger.exception("Shadow turn failed for %s", ig_user_id)
+
+
+def _flag(cfg: dict, key: str) -> bool:
+    return (cfg.get(key) or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+async def _routed_turn(db, app_state, history_dicts, cfg, lead_state, ig_user_id, batch_texts):
+    """Run the routed brain. Shared by the live path and shadow mode so the two
+    can never drift apart."""
+    from app.repositories.knowledge import get_active_knowledge
+    from app.services.brain.turn import run_turn_v2
+
+    return await run_turn_v2(
+        app_state.openai_client, history_dicts, cfg,
+        # Shadow must not mutate the lead's real state, and `run_turn_v2` writes
+        # into what it is handed, so it gets a copy.
+        copy.deepcopy(lead_state),
+        ig_user_id=ig_user_id, new_texts=batch_texts,
+        knowledge_entries=await get_active_knowledge(db),
     )

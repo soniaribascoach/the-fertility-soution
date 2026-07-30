@@ -216,12 +216,17 @@ SEED: list[KnowledgeEntry] = [
         kind=Kind.NOT_A_FIT,
         topic="early_days",
         content=(
-            "At her age and this early on, most people conceive without any of "
-            "this, and it would not be honest to sell her a six month programme "
-            "she probably does not need yet. Say so plainly, tell her what is "
-            "worth doing on her own for now, and make clear the door is open if "
-            "months pass and nothing changes."
+            "At her age and this early on, most people conceive without any help, "
+            "and it would not be honest to sell her a six month programme she "
+            "probably does not need yet. Say that plainly, tell her it is genuinely "
+            "good news rather than a brush-off, and make clear the door is open if "
+            "months go by and nothing changes."
         ),
+        # Deliberately does NOT tell her what to do on her own. Nothing in this
+        # table supports specific self-help guidance, so inviting it here made the
+        # writer invent cycle-tracking advice and the faithful judge - correctly -
+        # vetoed the whole reply. Add a `boundary` or `answer` entry with real
+        # guidance and this can say more.
         triggers=[r"should.{0,10}i.{0,10}(join|sign|start)", r"do.{0,10}i.{0,10}need",
                   r"too.{0,5}early", r"just.{0,10}started"],
         source="NEEDS SONIA REVIEW - no prior copy existed for this case",

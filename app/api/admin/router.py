@@ -73,6 +73,43 @@ async def lead_resume(request: Request, ig_user_id: str, db: AsyncSession = Depe
     return RedirectResponse("/admin/dashboard", status_code=302)
 
 
+@router.get("/admin/shadow", response_class=HTMLResponse)
+async def shadow_get(request: Request, live: str = None, db: AsyncSession = Depends(get_db)):
+    """Review what the routed brain would have said.
+
+    In shadow mode the routed brain runs on real traffic without sending, so its
+    tone and handoff rate can be judged against the reply the lead actually got
+    before the flag is flipped. `?live=1` shows the turns that WERE sent.
+    """
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    from app.repositories.brain_turn import handoff_rate, mode_counts, recent_turns
+
+    shadow = not (live in ("1", "true"))
+    turns = await recent_turns(db, shadow=shadow, limit=60)
+    paused, total = await handoff_rate(db, shadow=shadow)
+    cfg = await get_all_config(db)
+
+    return templates.TemplateResponse(
+        request,
+        "admin/shadow.html",
+        {
+            "turns": turns,
+            "shadow": shadow,
+            "modes": await mode_counts(db, shadow=shadow),
+            "paused": paused,
+            "total": total,
+            "handoff_pct": round(100 * paused / total, 1) if total else 0.0,
+            "cost": round(sum(t.token_cost or 0 for t in turns), 4),
+            "shadow_enabled": (cfg.get("brain_shadow_enabled") or "").strip().lower()
+            in ("1", "true", "yes", "on"),
+            "brain_version": cfg.get("brain_version") or "legacy",
+            "threshold": cfg.get("uncertainty_threshold") or "3",
+        },
+    )
+
+
 @router.get("/admin/login", response_class=HTMLResponse)
 async def login_get(request: Request):
     return templates.TemplateResponse(request, "admin/login.html", {"error": None})

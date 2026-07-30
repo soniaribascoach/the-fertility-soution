@@ -81,6 +81,9 @@ def test_a_different_link_is_still_rejected():
 
 @pytest.mark.parametrize("text", [
     "take 400 mg of CoQ10", "the dosage matters", "toma 600 mcg de folato",
+    # Plurals: `\bdosage\b` silently missed "dosages", which is the more natural
+    # phrasing and so the one that actually slipped through in a live run.
+    "I can suggest dosages", "we adjust doses later", "about 400 milligrams",
 ])
 def test_dosage_language_is_rejected(text):
     assert "medical_advice" in validate_draft([text], mode=ResponseMode.ANSWER,

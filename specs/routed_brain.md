@@ -147,6 +147,14 @@ tunable without a deploy. Replaces roughly six scattered takeover paths.
 - The **`premature` judge is given the retrieved knowledge**. The approved pricing
   answer legitimately points to the call, and without that context the judge
   vetoed its own approved substance.
+- **A knowledge entry must not promise more than the table contains.** The seed
+  `not_a_fit` copy told the writer to say what was worth doing on her own; nothing
+  in the table supported that, so the writer invented cycle-tracking advice and the
+  `faithful` judge vetoed the whole reply. The entry was narrowed, not the judge.
+- **`\bdosage\b` silently missed "dosages"** — the more natural phrasing, and the
+  one that slipped through a live run. Plurals now covered. Note the check targets
+  a number with a unit: "I don't give dosages over DM" is the correct thing to say,
+  so the word itself must not be treated as the offence.
 
 ---
 
@@ -155,8 +163,28 @@ tunable without a deploy. Replaces roughly six scattered takeover paths.
 | Key | Purpose |
 |---|---|
 | `brain_version` | `routed` \| `funnel` \| `legacy`. Rollback is this field, no deploy. |
+| `brain_shadow_enabled` | `1` runs the routed brain alongside the live one without sending. |
 | `uncertainty_threshold` | Integer, default 3. Lower = more handoffs. |
 | `model_classifier` / `model_writer` / `model_checker` | Per-role model override. |
+
+## 6b. Reviewing turns
+
+Every turn is recorded in `brain_turns`: the routing decision, the retrieved
+knowledge, the uncertainty score and per-call cost. An aborted turn keeps the
+draft it refused to send, since that is the most useful thing to review and is
+invisible otherwise.
+
+- **`/admin/shadow`** — the review surface. Lead message, what the routed brain
+  said, and (in shadow) what was actually sent, side by side. The mode
+  distribution at the top is the health check: if it is almost entirely QUALIFY,
+  the router is not doing its job.
+- **`/sqladmin → Brain Turns`** — filtering and the raw JSON trace.
+
+**Shadow rollout:** set `brain_shadow_enabled=1` while `brain_version` stays
+`funnel`. The routed brain then runs on real traffic with a deep copy of the
+lead's state, so it cannot move anyone's funnel position, and nothing it writes is
+sent. Review `/admin/shadow` with Sonia, calibrate `uncertainty_threshold` from
+the observed handoff rate, then set `brain_version=routed`.
 
 All existing funnel keys still apply.
 
@@ -180,6 +208,9 @@ client rather than developer-invented scenarios.
 - **`few_shots/` has no Spanish transcripts**, so ES tone will not improve
   proportionally with EN. A content gap, not a code gap.
 - **The `not_a_fit` seed entry has no prior art** in the repo and is marked
-  `NEEDS SONIA REVIEW` in `knowledge_seed.py`.
-- `brain_turns` observability table is not built yet; per-turn traces are logged
-  but not persisted.
+  `NEEDS SONIA REVIEW` in `knowledge_seed.py`. It deliberately says nothing about
+  what she could do on her own, because the table holds no guidance to draw on.
+  Add a `boundary` or `answer` entry with real content and it can say more.
+- **Nothing has run against live traffic yet.** The handoff rate at
+  `uncertainty_threshold=3` is a guess until shadow mode produces data; that
+  number is the first thing to tune.

@@ -4,6 +4,7 @@ from app.models.conversation import Conversation
 from app.models.user_state import UserState
 from app.models.pending_message import PendingMessage
 from app.models.config import AppConfig
+from app.models.brain_turn import BrainTurn
 from app.models.knowledge import Knowledge
 
 
@@ -117,6 +118,39 @@ class PendingMessageAdmin(ModelView, model=PendingMessage):
     can_edit = False
     can_delete = True
     can_view_details = True
+
+
+class BrainTurnAdmin(ModelView, model=BrainTurn):
+    """Read-only turn traces. `/admin/shadow` is the review surface; this is for
+    filtering and drilling into the raw JSON."""
+    name = "Brain Turn"
+    name_plural = "Brain Turns"
+    icon = "fa-solid fa-diagram-project"
+    category = "Ops"
+
+    column_list = [BrainTurn.created_at, BrainTurn.instagram_user_id, BrainTurn.shadow,
+                   BrainTurn.intent, BrainTurn.mode, BrainTurn.uncertainty_score,
+                   BrainTurn.pause, BrainTurn.token_cost]
+    column_details_list = [
+        BrainTurn.id, BrainTurn.created_at, BrainTurn.instagram_user_id,
+        BrainTurn.brain_version, BrainTurn.shadow, BrainTurn.lead_message,
+        BrainTurn.intent, BrainTurn.intent_certainty, BrainTurn.stage, BrainTurn.mode,
+        BrainTurn.reason, BrainTurn.action, BrainTurn.question_asked,
+        BrainTurn.reply, BrainTurn.live_reply, BrainTurn.violations,
+        BrainTurn.uncertainty_score, BrainTurn.pause, BrainTurn.pause_reason,
+        BrainTurn.qualified, BrainTurn.trace, BrainTurn.usage, BrainTurn.token_cost,
+    ]
+    column_searchable_list = [BrainTurn.instagram_user_id, BrainTurn.intent,
+                              BrainTurn.mode, BrainTurn.reply]
+    column_sortable_list = [BrainTurn.created_at, BrainTurn.mode, BrainTurn.intent,
+                            BrainTurn.uncertainty_score, BrainTurn.token_cost]
+    column_default_sort = [(BrainTurn.created_at, True)]
+
+    can_create = False
+    can_edit = False
+    can_delete = True
+    can_view_details = True
+    page_size = 50
 
 
 class KnowledgeAdmin(ModelView, model=Knowledge):

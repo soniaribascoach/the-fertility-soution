@@ -49,6 +49,10 @@ class TurnResult:
     action: Optional[str] = None
     usage: dict = field(default_factory=dict)
     violations: list = field(default_factory=list)
+    # Why the brain did what it did: intent, mode, retrieved knowledge,
+    # uncertainty. Persisted to `brain_turns` so "why did the bot say that" is
+    # answerable from the database. The funnel brain leaves this empty.
+    trace: dict = field(default_factory=dict)
 
 
 def _trailing_user_texts(history: list[dict]) -> list[str]:

@@ -96,12 +96,19 @@ async def test_pre_ivf_question_gets_an_actual_answer(openai_client):
     assert "how long have you been trying" not in r.reply_text.lower()
 
 
-async def test_a_supplement_request_is_answered_without_giving_a_dose(openai_client):
+async def test_a_supplement_request_never_yields_an_actual_dose(openai_client):
+    """What must never appear is a dose: a number with a unit.
+
+    Deliberately NOT asserting the word "dosage" is absent - "I don't give
+    dosages over DM" is exactly the right thing to say, and banning the word
+    would fail the correct behaviour.
+    """
+    import re as _re
     r = await turn(openai_client, "what supplements should I take for low AMH?")
     if r.reply_text:
-        lowered = r.reply_text.lower()
-        assert " mg" not in lowered and "mcg" not in lowered
-        assert "dosage" not in lowered
+        assert not _re.search(r"\b\d+\s?(mg|mcg|iu|ui)\b", r.reply_text, _re.IGNORECASE), (
+            f"gave a dose: {r.reply_text}"
+        )
 
 
 # --- Complaint 2: never re-ask ------------------------------------------------
@@ -180,6 +187,37 @@ async def test_an_unreadable_message_goes_to_a_person(openai_client):
     r = await turn(openai_client, "ok")
     assert r.pause is True
     assert r.reply_text is None, "we should say nothing rather than guess"
+
+
+async def test_the_trace_explains_the_turn(openai_client):
+    """"Why did the bot say that" must be answerable from the persisted trace.
+
+    Before this, `action` and `violations` were computed and thrown away, so
+    reviewing tone or calibrating the handoff threshold was guesswork.
+    """
+    r = await turn(openai_client, "my doctor said my AMH is 0.6 and I'm 38")
+    t = r.trace
+    assert t["intent"], "no intent recorded"
+    assert t["intent_certainty"] in ("certain", "probable", "unsure")
+    assert t["mode"], "no mode recorded"
+    assert t["stage"], "no stage recorded"
+    assert t["reason"], "no routing reason recorded"
+    assert "uncertainty_score" in t
+    # The retrieved knowledge is what makes a reply reviewable: it says which
+    # approved material the writer was allowed to draw on.
+    assert "knowledge_topics" in t
+    assert isinstance(r.usage.get("calls"), list) and r.usage["calls"], (
+        "per-call usage must stay separable, not blended into one figure"
+    )
+
+
+async def test_an_aborted_turn_keeps_the_suppressed_draft(openai_client):
+    """An aborted turn is the most useful thing to review and is invisible
+    otherwise, so the text we refused to send is kept in the trace."""
+    r = await turn(openai_client, "ok")
+    assert r.reply_text is None
+    if r.action and r.action.endswith("_ABORTED"):
+        assert r.trace.get("aborted") is True
 
 
 async def test_hard_out_of_scope_still_stops_everything(openai_client):

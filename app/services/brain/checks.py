@@ -34,8 +34,11 @@ _PRICE_RE = re.compile(r"\$\s*\d")
 # they appear in Sonia's own not-a-doctor disclaimer. The LLM checker is the
 # semantic backstop for the rest.
 _MEDICAL_RE = re.compile(
-    r"\b\d+\s?(mg|mcg|iu|ui)\b|\bmilligram|\bdosage\b|\bdosis\b|dosificaci[oó]n"
-    r"|\bmiligramos?\b|\bmicrogramos?\b",
+    # A number with a unit is the thing that must never appear. The bare words
+    # are also blocked, but note the plurals: `\bdosage\b` silently missed
+    # "dosages", which is how the more natural phrasing slipped through.
+    r"\b\d+\s?(mg|mcg|iu|ui)\b|\bmilligrams?\b|\bdosages?\b|\bdoses\b"
+    r"|\bdosis\b|dosificaci[oó]n|\bmiligramos?\b|\bmicrogramos?\b",
     re.IGNORECASE,
 )
 
