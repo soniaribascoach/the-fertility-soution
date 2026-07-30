@@ -1,6 +1,7 @@
 # Routed Brain — intent classification above the funnel
 
-**Status:** implemented, behind `brain_version=routed`. Not live.
+**Status:** implemented and the DEFAULT (`brain_version=routed`).
+Rollback is that one field in AppConfig: set it to `funnel` or `legacy`, no deploy.
 **Supersedes for new work:** [`brain_architecture.md`](./brain_architecture.md), which
 describes the funnel brain (`brain_version=funnel`) and is still accurate for it.
 **Source of requirements:** Sonia's review email, 2026-07-29.
@@ -162,7 +163,7 @@ tunable without a deploy. Replaces roughly six scattered takeover paths.
 
 | Key | Purpose |
 |---|---|
-| `brain_version` | `routed` \| `funnel` \| `legacy`. Rollback is this field, no deploy. |
+| `brain_version` | `routed` (default) \| `funnel` \| `legacy`. Rollback is this field, no deploy. |
 | `brain_shadow_enabled` | `1` runs the routed brain alongside the live one without sending. |
 | `uncertainty_threshold` | Integer, default 3. Lower = more handoffs. |
 | `model_classifier` / `model_writer` / `model_checker` | Per-role model override. |

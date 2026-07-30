@@ -20,7 +20,7 @@ from app.api.admin.auth import (
     record_failed_attempt,
     reset_attempts,
 )
-from config import settings, APP_VERSION
+from config import settings, APP_VERSION, DEFAULT_BRAIN
 
 FEW_SHOTS_DIR = "few_shots"
 
@@ -104,7 +104,7 @@ async def shadow_get(request: Request, live: str = None, db: AsyncSession = Depe
             "cost": round(sum(t.token_cost or 0 for t in turns), 4),
             "shadow_enabled": (cfg.get("brain_shadow_enabled") or "").strip().lower()
             in ("1", "true", "yes", "on"),
-            "brain_version": cfg.get("brain_version") or "legacy",
+            "brain_version": cfg.get("brain_version") or DEFAULT_BRAIN,
             "threshold": cfg.get("uncertainty_threshold") or "3",
         },
     )
@@ -212,7 +212,7 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
 
     # New qualification-funnel brain (behind a config flag). The sandbox is
     # stateless server-side, so lead_state is round-tripped via the client.
-    brain_version = (cfg.get("brain_version") or "legacy").strip().lower()
+    brain_version = (cfg.get("brain_version") or DEFAULT_BRAIN).strip().lower()
     # `brain_version` may be overridden per request so the routed brain can be
     # exercised in the sandbox without switching it on for live traffic.
     brain_version = (body.get("brain_version") or brain_version).strip().lower()

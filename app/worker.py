@@ -27,7 +27,7 @@ from app.services.few_shots import get_few_shot_scenarios
 from app.services.message_splitter import split_reply
 from app.services.output_parser import parse_ai_output
 from app.services.typing_delay import calculate_delay
-from config import settings
+from config import settings, DEFAULT_BRAIN
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             #   "funnel" - the qualification-funnel brain
             #   anything else - the legacy monolith
             # Rollback is this one field in AppConfig, with no deploy.
-            brain_version = (cfg.get("brain_version") or "legacy").strip().lower()
+            brain_version = (cfg.get("brain_version") or DEFAULT_BRAIN).strip().lower()
             if brain_version in ("funnel", "routed"):
                 await _run_brain_turn(
                     db, ig_user_id, manychat_contact_id, cfg, app_state,
