@@ -106,12 +106,20 @@ def _fold(text: str) -> str:
     return re.sub(r"\s+", " ", stripped).strip().casefold()
 
 
+# Sonia addresses every lead informally. The voice prompt says so, but nothing
+# enforced it: the only guard was a GEval judge, which flaked in both directions
+# for three sessions before it was replaced by this line. `usted` is the giveaway
+# and it is exact, free, and cannot drift between runs.
+_USTED_RE = re.compile(r"\busted(es)?\b", re.IGNORECASE)
+
+
 def validate_draft(
     bubbles: list[str],
     *,
     mode: ResponseMode,
     allow_urls: list,
     allow_price: bool = False,
+    language: str = "en",
 ) -> CheckResult:
     spec = MODE_SPECS[mode]
     text = " ".join(bubbles).strip()
@@ -131,6 +139,9 @@ def validate_draft(
 
     if not allow_price and _PRICE_RE.search(text):
         v.append("unexpected_price")
+    if language == "es" and _USTED_RE.search(text):
+        v.append("formal_address")
+
     if _MEDICAL_RE.search(text):
         v.append("medical_advice")
 
@@ -341,11 +352,13 @@ def run_all(
     knowledge_texts: list[str],
     known_facts: dict,
     recent_openings: Optional[list[str]] = None,
+    language: str = "en",
 ) -> CheckResult:
     """Every code-level check, combined. No LLM, so this runs on every turn."""
     violations = []
     for result in (
-        validate_draft(bubbles, mode=mode, allow_urls=allow_urls, allow_price=allow_price),
+        validate_draft(bubbles, mode=mode, allow_urls=allow_urls,
+                       allow_price=allow_price, language=language),
         ground(bubbles, lead_texts=lead_texts, knowledge_texts=knowledge_texts,
                known_facts=known_facts),
         no_repeat(bubbles, history),

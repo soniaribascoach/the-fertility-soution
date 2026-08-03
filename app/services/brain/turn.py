@@ -286,6 +286,7 @@ async def run_turn_v2(
         draft.bubbles, mode=mode, allow_urls=allow_urls, allow_price=False,
         history=history, lead_texts=recent, knowledge_texts=knowledge_texts,
         known_facts=known_facts, recent_openings=recent_openings,
+        language=language,
     )
     regenerated = False
     if not result.ok:
@@ -299,6 +300,7 @@ async def run_turn_v2(
             draft2.bubbles, mode=mode, allow_urls=allow_urls, allow_price=False,
             history=history, lead_texts=recent, knowledge_texts=knowledge_texts,
             known_facts=known_facts, recent_openings=recent_openings,
+            language=language,
         )
         # Keep whichever attempt is safer, so the violations we report always
         # describe the text we are holding. If the retry traded a soft problem

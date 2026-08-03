@@ -36,17 +36,20 @@ Answer one question: does the REPLY state any fact about the lead, or any claim 
 
 problem=true only for a genuine addition of unsupported content. Ordinary warmth, empathy, and rephrasing of the approved material are fine. Put the offending sentence in `offending`."""
 
-_ANSWERED = """You check whether a reply answers a question.
+_ANSWERED = """You check whether the lead got a real response to what she asked.
 
-You are given the QUESTION the lead asked and the REPLY.
+You are given the QUESTION she asked and the REPLY.
 
-Answer one question: does the REPLY leave her question unanswered - by deflecting it, changing the subject, or replying only with a question of its own?
+Set problem=true ONLY when the reply gives her nothing to take away: it ignores the question, changes the subject to something she did not ask about, or consists only of a question back to her.
 
-problem=true means she did NOT get an answer. A brief but real answer is fine.
+Everything below COUNTS as a real response. Set problem=false for all of them:
 
-A NEGATIVE answer is still an answer. If she asked whether she should join, sign up for, or needs the programme, then a reply telling her she probably does NOT need it yet, and why, is a COMPLETE answer. Saying "most people in your situation conceive without help, so it would not be honest to sell you this" answers the question fully. Do NOT mark that as a deflection.
+- A direct answer, however brief.
+- A negative answer. "At 29 and three months in you probably don't need this yet, because most people conceive without help" fully answers whether she should join.
+- A boundary given with a reason, where the boundary is about the THING SHE ASKED FOR. This coach is NOT permitted to give supplement protocols, dosages, lab interpretations or personal medical plans over direct message. So "I can't put together a protocol for you without seeing your full history, that needs a proper conversation" IS the correct and complete response to a request for a protocol. It is a real response, not an evasion.
+- An honest "it depends on your situation", where she is told what it depends on.
 
-Judge whether she received an answer, not whether she received the answer she was hoping for.
+You are judging whether she received a real response, NOT whether she received the response she was hoping for, and NOT whether you would have answered differently.
 
 Put the reason in `offending`."""
 
