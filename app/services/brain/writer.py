@@ -33,7 +33,7 @@ from pydantic import BaseModel
 from app.services.brain import behavior, playbooks, scripts
 from app.services.brain.constants import ResponseMode
 from app.services.brain.knowledge import KnowledgeEntry
-from app.services.brain.llm import model_for, usage_of, with_retry
+from app.services.brain.llm import completion_kwargs, model_for, usage_of, with_retry
 from app.services.few_shots import load_few_shot_scenarios, select_few_shots
 
 logger = logging.getLogger(__name__)
@@ -358,7 +358,7 @@ async def generate(
     async def _call():
         return await openai_client.chat.completions.parse(
             model=model, messages=messages, response_format=Draft,
-            temperature=temperature, max_tokens=500,
+            **completion_kwargs(model, max_tokens=500, temperature=temperature),
         )
 
     completion = await with_retry(_call, what="writer")

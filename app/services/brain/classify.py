@@ -25,7 +25,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel
 
 from app.services.brain.constants import LeadIntent
-from app.services.brain.llm import model_for, usage_of, with_retry
+from app.services.brain.llm import completion_kwargs, model_for, usage_of, with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -360,7 +360,7 @@ async def classify(
                 {"role": "user", "content": user_content},
             ],
             response_format=Classification,
-            temperature=0,
+            **completion_kwargs(model, max_tokens=1200, temperature=0),
         )
 
     completion = await with_retry(_call, what="classifier")

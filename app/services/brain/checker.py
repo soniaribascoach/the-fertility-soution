@@ -18,7 +18,7 @@ from typing import Optional
 from openai import AsyncOpenAI
 from pydantic import BaseModel
 
-from app.services.brain.llm import model_for, usage_of, with_retry
+from app.services.brain.llm import completion_kwargs, model_for, usage_of, with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,8 @@ async def _judge(client, system: str, user: str, model: str, name: str):
             model=model,
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}],
-            response_format=Verdict, temperature=0, max_tokens=150,
+            response_format=Verdict,
+            **completion_kwargs(model, max_tokens=150, temperature=0),
         )
     completion = await with_retry(_call, what=f"checker:{name}")
     return completion.choices[0].message.parsed, usage_of(completion, model, f"checker:{name}")
