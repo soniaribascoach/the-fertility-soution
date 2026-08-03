@@ -307,6 +307,7 @@ async def _routed_turn(db, app_state, history_dicts, cfg, lead_state, ig_user_id
     """Run the routed brain. Shared by the live path and shadow mode so the two
     can never drift apart."""
     from app.repositories.knowledge import get_active_knowledge
+    from app.repositories.playbook import get_active_playbooks
     from app.services.brain.turn import run_turn_v2
 
     return await run_turn_v2(
@@ -316,4 +317,5 @@ async def _routed_turn(db, app_state, history_dicts, cfg, lead_state, ig_user_id
         copy.deepcopy(lead_state),
         ig_user_id=ig_user_id, new_texts=batch_texts,
         knowledge_entries=await get_active_knowledge(db),
+        playbook_entries=await get_active_playbooks(db),
     )

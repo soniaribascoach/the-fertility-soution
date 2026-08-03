@@ -6,6 +6,7 @@ from app.models.pending_message import PendingMessage
 from app.models.config import AppConfig
 from app.models.brain_turn import BrainTurn
 from app.models.knowledge import Knowledge
+from app.models.playbook import Playbook as PlaybookModel
 
 
 class ConversationAdmin(ModelView, model=Conversation):
@@ -206,4 +207,59 @@ class AppConfigAdmin(ModelView, model=AppConfig):
     form_excluded_columns = [AppConfig.updated_at]
     form_widget_args = {
         "value": {"rows": 10, "style": "font-family: monospace; font-size: 0.85rem;"},
+    }
+
+
+class PlaybookAdmin(ModelView, model=PlaybookModel):
+    """The Conversation Playbook Library, Part 4 of the Operating Manual.
+
+    Sonia's own words: "The biggest improvements going forward will come from
+    building the Conversation Playbook Library with real, edited conversations."
+    This view is that workflow. She reviews a conversation, edits the reply, and
+    pastes it into `examples`; the next matching turn learns from it.
+
+    Anything sourced `DRAFT - needs Sonia` was written without prior art and is
+    waiting to be replaced. Sort by `source` to find them.
+    """
+    name = "Playbook"
+    name_plural = "Playbooks"
+    icon = "fa-solid fa-comments"
+    category = "Config"
+
+    column_list = [PlaybookModel.slug, PlaybookModel.mode, PlaybookModel.title,
+                   PlaybookModel.source, PlaybookModel.active, PlaybookModel.updated_at]
+    column_details_list = [
+        PlaybookModel.id, PlaybookModel.slug, PlaybookModel.title, PlaybookModel.mode,
+        PlaybookModel.intents, PlaybookModel.stages, PlaybookModel.triggers,
+        PlaybookModel.language, PlaybookModel.situation, PlaybookModel.goal,
+        PlaybookModel.emotional_outcome, PlaybookModel.communication_priorities,
+        PlaybookModel.mistakes_to_avoid, PlaybookModel.examples,
+        PlaybookModel.conversation_state, PlaybookModel.success_criteria,
+        PlaybookModel.information_that_matters, PlaybookModel.decision_outcome,
+        PlaybookModel.why_this_works, PlaybookModel.source, PlaybookModel.active,
+        PlaybookModel.updated_at,
+    ]
+    column_searchable_list = [PlaybookModel.slug, PlaybookModel.title,
+                              PlaybookModel.situation]
+    column_sortable_list = [PlaybookModel.mode, PlaybookModel.slug,
+                            PlaybookModel.source, PlaybookModel.active]
+    column_default_sort = [(PlaybookModel.mode, False), (PlaybookModel.slug, False)]
+
+    can_create = True
+    can_edit = True
+    can_delete = True
+    can_view_details = True
+
+    form_excluded_columns = [PlaybookModel.updated_at]
+    _lines = {"rows": 4, "style": "font-family: monospace; font-size: 0.85rem;"}
+    form_widget_args = {
+        # One value per line for the list-shaped columns.
+        "intents": _lines,
+        "stages": _lines,
+        "triggers": {"rows": 6, "style": "font-family: monospace; font-size: 0.85rem;"},
+        "communication_priorities": _lines,
+        "mistakes_to_avoid": _lines,
+        "situation": {"rows": 3},
+        "goal": {"rows": 2},
+        "examples": {"rows": 18, "style": "font-family: monospace; font-size: 0.8rem;"},
     }

@@ -11,6 +11,7 @@ import pytest
 
 from app.services.brain.knowledge import parse_pattern_responses
 from app.services.brain.knowledge_seed import SEED
+from app.services.brain.playbook_seed import SEED as PLAYBOOKS
 from app.services.brain.turn import run_turn_v2
 from scenario_loader import build_state, check_text, load_scenarios
 
@@ -65,7 +66,7 @@ async def test_scenario_end_to_end(openai_client, scenario):
             openai_client, history, CFG, state,
             ig_user_id=f"scenario_{scenario.id}",
             new_texts=[t.lead],
-            knowledge_entries=KNOWLEDGE,
+            knowledge_entries=KNOWLEDGE, playbook_entries=PLAYBOOKS,
         )
         state = result.lead_state
         if result.reply_text:

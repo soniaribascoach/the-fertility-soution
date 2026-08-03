@@ -220,12 +220,14 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
     if brain_version in ("funnel", "routed"):
         if brain_version == "routed":
             from app.repositories.knowledge import get_active_knowledge
+            from app.repositories.playbook import get_active_playbooks
             from app.services.brain.turn import run_turn_v2
 
             result = await run_turn_v2(
                 request.app.state.openai_client, messages, cfg,
                 body.get("lead_state"), ig_user_id="admin_sandbox",
                 knowledge_entries=await get_active_knowledge(db),
+                playbook_entries=await get_active_playbooks(db),
             )
         else:
             from app.services.brain import run_turn

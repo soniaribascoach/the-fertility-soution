@@ -30,7 +30,7 @@ from typing import Optional
 from openai import AsyncOpenAI
 from pydantic import BaseModel
 
-from app.services.brain import behavior, scripts
+from app.services.brain import behavior, playbooks, scripts
 from app.services.brain.constants import ResponseMode
 from app.services.brain.knowledge import KnowledgeEntry
 from app.services.brain.llm import model_for, usage_of, with_retry
@@ -139,6 +139,11 @@ class WriterInput:
     language: str = "en"
     stance: str = "early_trust"
     allow_urls: list = field(default_factory=list)
+    playbook: Optional[object] = None
+    ig_user_id: str = ""
+    # Length ceiling for THIS reply. Sonia: "if someone writes one short
+    # sentence, avoid responding with a long essay."
+    max_chars: Optional[int] = None
 
 
 _URL_RE = re.compile(r"https?://\S+")
@@ -176,13 +181,51 @@ def truncate_at_link(messages: list[dict]) -> list[dict]:
     return out
 
 
-def few_shot_messages(spec: ModeSpec, conversation_text: str, *, allow_urls: list) -> list[dict]:
+def few_shot_messages(
+    spec: ModeSpec,
+    conversation_text: str,
+    *,
+    allow_urls: list,
+    playbook=None,
+    ig_user_id: str = "",
+) -> list[dict]:
+    """Exemplars for this turn.
+
+    A retrieved playbook wins outright. Its examples were written for this exact
+    situation, so they are safe even for the modes that deliberately refuse the
+    generic transcripts: `few_shots/` contains nothing but qualification
+    conversations ending in a booking link, which is the worst possible thing to
+    show the model before it congratulates someone on a pregnancy.
+    """
+    if playbook is not None and playbook.examples:
+        messages = playbooks.as_messages(playbooks.rotate_examples(playbook, ig_user_id))
+        if messages:
+            return messages if allow_urls else truncate_at_link(messages)
     if not spec.few_shots:
         return []
     selected = select_few_shots(_scenarios(), conversation_text)
     if allow_urls:
         return selected
     return truncate_at_link(selected)
+
+
+def energy_max_chars(spec: ModeSpec, lead_texts: list[str]) -> int:
+    """Cap this reply against the length of HER message.
+
+    Sonia, manual 6.6: "If someone writes one short sentence, avoid responding
+    with a long essay." The per-mode ceiling alone cannot do that - it is the
+    same number whether she wrote three words or three paragraphs, which is how
+    a six-word message came back with three paragraphs including "I can imagine
+    how overwhelming the whole process can feel."
+
+    A floor is still needed: a reply carrying a link, or one that has to decline
+    honestly and explain why, cannot be two sentences.
+    """
+    written = sum(len(t or "") for t in lead_texts)
+    if not written:
+        return spec.max_chars
+    floor = 320 if spec.url_names else 220
+    return max(floor, min(spec.max_chars, written * 4))
 
 
 def stance_for(history: list[dict]) -> str:
@@ -229,10 +272,11 @@ def build_prompt(inp: WriterInput, history: list[dict], spec: ModeSpec) -> str:
         lines.append(f"{who}: {m.get('content', '')}")
     body = "\n".join(lines)
 
-    parts = [
-        body,
-        f"\nPACING: {_STANCE[inp.stance]}",
-    ]
+    parts = [body]
+    playbook_block = playbooks.prompt_block(inp.playbook)
+    if playbook_block:
+        parts.append("\n" + playbook_block)
+    parts.append(f"\nPACING: {_STANCE[inp.stance]}")
     if inp.question_asked:
         parts.append(
             f"\nSHE ASKED THIS, ANSWER IT: \"{inp.question_asked}\"\n"
@@ -271,7 +315,7 @@ def build_prompt(inp: WriterInput, history: list[dict], spec: ModeSpec) -> str:
     else:
         reqs.append("Do NOT include any link or URL.")
     reqs.append(f"{spec.bubbles[0]} to {spec.bubbles[1]} bubbles, "
-                f"{spec.max_chars} characters total at most.")
+                f"{inp.max_chars or spec.max_chars} characters total at most.")
     parts.append("\nREQUIREMENTS:\n" + "\n".join(f"- {r}" for r in reqs))
     parts.append("\nWrite Sonia's next message now, in Spanish."
                  if inp.language == "es" else "\nWrite Sonia's next message now.")
@@ -305,7 +349,10 @@ async def generate(
     messages = [{"role": "system", "content": system}]
 
     convo_text = " ".join(m.get("content", "") for m in history if m.get("role") == "user")
-    messages += few_shot_messages(spec, convo_text, allow_urls=inp.allow_urls)
+    messages += few_shot_messages(
+        spec, convo_text, allow_urls=inp.allow_urls,
+        playbook=inp.playbook, ig_user_id=inp.ig_user_id,
+    )
     messages.append({"role": "user", "content": build_prompt(inp, history, spec)})
 
     async def _call():

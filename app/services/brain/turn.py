@@ -20,6 +20,7 @@ from typing import Optional
 from openai import AsyncOpenAI
 
 from app.services.brain import checker, checks, scripts, uncertainty, writer
+from app.services.brain import playbooks as pb
 from app.services.brain import knowledge as kb
 from app.services.brain.classify import classify, verify_evidence, verify_question
 from app.services.brain.constants import (
@@ -163,6 +164,7 @@ async def run_turn_v2(
     ig_user_id: str = "",
     new_texts: Optional[list[str]] = None,
     knowledge_entries: Optional[list] = None,
+    playbook_entries: Optional[list] = None,
 ) -> TurnResult:
     state = normalize_lead_state(lead_state)
     recent = list(new_texts) if new_texts is not None else _trailing_user_texts(history)
@@ -254,6 +256,14 @@ async def run_turn_v2(
     )
     knowledge_texts = [e.content for e in retrieved]
 
+    # The playbook for this exact situation. None is a normal outcome: the mode
+    # contract alone is a complete instruction, and a wrong playbook is worse
+    # than no playbook.
+    playbook = pb.select(
+        playbook_entries or [], mode=mode, intent=r.intent, stage=r.stage,
+        text=" ".join(recent), language=language,
+    )
+
     spec = writer.MODE_SPECS[mode]
     allow_urls = writer.allowed_urls(spec, cfg)
     known_facts = {k: v for k, v in state["slots"].items()
@@ -265,6 +275,8 @@ async def run_turn_v2(
         question_asked=r.question_asked, still_needed=_still_needed(state),
         next_question=next_q, already_asked=already_asked(next_q, history),
         language=language, stance=writer.stance_for(history), allow_urls=allow_urls,
+        playbook=playbook, ig_user_id=ig_user_id,
+        max_chars=writer.energy_max_chars(spec, recent),
     )
 
     # 5) Write, 6) check, regenerate once at temperature 0 if the code checks fail.
@@ -325,6 +337,8 @@ async def run_turn_v2(
     turn_trace = trace(
         knowledge_ids=[e.id for e in retrieved if e.id is not None],
         knowledge_topics=[e.topic for e in retrieved],
+        playbook=playbook.slug if playbook else None,
+        max_chars=winput.max_chars,
         stance=winput.stance,
         bubbles=draft.bubbles,
         writer_unsure=draft.unsure,
