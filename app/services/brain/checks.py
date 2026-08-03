@@ -228,6 +228,38 @@ def no_repeat(bubbles: list[str], history: list[dict], *, threshold: float = 0.7
     return CheckResult(True, [])
 
 
+def no_stock_opening(
+    bubbles: list[str],
+    recent_openings: list[str],
+    *,
+    threshold: float = 0.8,
+) -> CheckResult:
+    """Reject an opening line already used on OTHER leads.
+
+    `no_repeat` only sees one conversation, but Sonia's complaint was explicitly
+    cross-conversation: "We repeatedly saw phrases such as 'I hear you' ... used
+    across very different conversations and objections, making the replies feel
+    automated." Within a single thread the bot looked fine; the sameness was only
+    visible to the person reading all of them.
+
+    Only the FIRST sentence is compared. Two replies can legitimately share a
+    later sentence - an approved boundary, a link instruction - but a shared
+    opening is what makes a set of conversations read as one template. Soft on
+    purpose: rephrasing is worth a regeneration, never silence.
+
+    `recent_openings` is passed in rather than queried so this module stays pure.
+    """
+    if not recent_openings:
+        return CheckResult(True, [])
+    opening = next(iter(_sentences(" ".join(bubbles))), "")
+    if not opening:
+        return CheckResult(True, [])
+    for previous in recent_openings:
+        if _similar(opening, previous) >= threshold:
+            return CheckResult(False, [f"stock_opening:{opening[:40]}"])
+    return CheckResult(True, [])
+
+
 def no_echo(bubbles: list[str], lead_texts: list[str], *, threshold: float = 0.75) -> CheckResult:
     """Reject a reply that parrots the lead's own message back at her.
 
@@ -285,6 +317,7 @@ def run_all(
     lead_texts: list[str],
     knowledge_texts: list[str],
     known_facts: dict,
+    recent_openings: Optional[list[str]] = None,
 ) -> CheckResult:
     """Every code-level check, combined. No LLM, so this runs on every turn."""
     violations = []
@@ -293,6 +326,7 @@ def run_all(
         ground(bubbles, lead_texts=lead_texts, knowledge_texts=knowledge_texts,
                known_facts=known_facts),
         no_repeat(bubbles, history),
+        no_stock_opening(bubbles, recent_openings or []),
         no_echo(bubbles, lead_texts),
         no_reask(bubbles, known_facts),
     ):

@@ -291,3 +291,56 @@ def test_a_clean_reply_passes_everything():
         history=[], lead_texts=["i've done 4 rounds of ivf"],
         knowledge_texts=[], known_facts={},
     ).ok
+
+
+# --- cross-conversation sameness ---------------------------------------------
+# Sonia: "We repeatedly saw phrases such as 'I hear you' ... used across very
+# different conversations and objections, making the replies feel automated."
+# `no_repeat` only ever sees one thread, so it cannot see this at all.
+
+def test_an_opening_already_used_on_another_lead_is_rejected():
+    from app.services.brain.checks import no_stock_opening
+
+    r = no_stock_opening(
+        ["I hear you, that sounds really tough.", "how long has it been?"],
+        ["I hear you, that sounds really tough."],
+    )
+    assert not r.ok
+    assert any(v.startswith("stock_opening") for v in r.violations)
+
+
+def test_a_fresh_opening_passes():
+    from app.services.brain.checks import no_stock_opening
+
+    assert no_stock_opening(
+        ["four rounds is a lot to have carried."],
+        ["I hear you, that sounds really tough.",
+         "that's such good news, congratulations!"],
+    ).ok
+
+
+def test_only_the_opening_is_compared():
+    """Two replies may legitimately share a later sentence - an approved
+    boundary, a link instruction. A shared OPENING is what makes a set of
+    conversations read as one template."""
+    from app.services.brain.checks import no_stock_opening
+
+    assert no_stock_opening(
+        ["four rounds is a lot to have carried.",
+         "I don't give supplement protocols over DM."],
+        ["I don't give supplement protocols over DM."],
+    ).ok
+
+
+def test_no_history_of_other_leads_is_not_a_violation():
+    from app.services.brain.checks import no_stock_opening
+
+    assert no_stock_opening(["anything at all."], []).ok
+
+
+def test_a_stock_opening_is_soft():
+    """Worth a regeneration, never worth silence: sending nothing costs the lead
+    far more than a familiar opening line does."""
+    from app.services.brain.checks import is_hard
+
+    assert not is_hard("stock_opening:I hear you")

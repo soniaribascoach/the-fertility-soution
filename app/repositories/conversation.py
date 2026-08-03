@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -173,6 +174,39 @@ async def has_price_been_deflected(
         .limit(1)
     )
     return result.scalar_one_or_none() is not None
+
+
+async def recent_opening_sentences(
+    db: AsyncSession,
+    exclude_instagram_user_id: str,
+    *,
+    limit: int = 40,
+) -> list[str]:
+    """First sentence of the most recent replies sent to OTHER leads.
+
+    Sonia's complaint was cross-conversation: the same acknowledgement appearing
+    "across very different conversations and objections". Nothing inside a single
+    thread can see that, so the openings actually sent elsewhere are handed to
+    `checks.no_stock_opening`.
+
+    Deliberately capped and ordered by recency: this runs on every turn, and a
+    reply only has to differ from what went out lately, not from all history.
+    """
+    result = await db.execute(
+        select(Conversation.content)
+        .where(
+            Conversation.instagram_user_id != exclude_instagram_user_id,
+            Conversation.role == "assistant",
+        )
+        .order_by(desc(Conversation.created_at))
+        .limit(limit)
+    )
+    openings = []
+    for (content,) in result.all():
+        first = re.split(r"(?<=[.!?])\s+|\n", (content or "").strip(), maxsplit=1)[0]
+        if first:
+            openings.append(first)
+    return openings
 
 
 async def get_last_assistant_time(

@@ -165,6 +165,7 @@ async def run_turn_v2(
     new_texts: Optional[list[str]] = None,
     knowledge_entries: Optional[list] = None,
     playbook_entries: Optional[list] = None,
+    recent_openings: Optional[list[str]] = None,
 ) -> TurnResult:
     state = normalize_lead_state(lead_state)
     recent = list(new_texts) if new_texts is not None else _trailing_user_texts(history)
@@ -284,7 +285,7 @@ async def run_turn_v2(
     result = checks.run_all(
         draft.bubbles, mode=mode, allow_urls=allow_urls, allow_price=False,
         history=history, lead_texts=recent, knowledge_texts=knowledge_texts,
-        known_facts=known_facts,
+        known_facts=known_facts, recent_openings=recent_openings,
     )
     regenerated = False
     if not result.ok:
@@ -297,7 +298,7 @@ async def run_turn_v2(
         result2 = checks.run_all(
             draft2.bubbles, mode=mode, allow_urls=allow_urls, allow_price=False,
             history=history, lead_texts=recent, knowledge_texts=knowledge_texts,
-            known_facts=known_facts,
+            known_facts=known_facts, recent_openings=recent_openings,
         )
         # Keep whichever attempt is safer, so the violations we report always
         # describe the text we are holding. If the retry traded a soft problem
