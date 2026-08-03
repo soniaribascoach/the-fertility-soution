@@ -207,3 +207,33 @@ def test_the_never_qualify_modes_all_have_a_playbook():
     """These are the conversations that had no material anywhere in the repo."""
     covered = {p.mode for p in SEED}
     assert {"CELEBRATE", "ACKNOWLEDGE", "HONEST_DECLINE"} <= covered
+
+
+# --- priority signal (manual 2A section 9) ------------------------------------
+
+def test_treatment_prep_counts_as_priority_without_a_score():
+    """A woman with a cycle booked has answered the priority question by
+    booking it. Sonia reported being asked anyway."""
+    from app.services.brain.gates import _priority_ok
+
+    assert _priority_ok({"treatment_path": "ivf"}) is True
+    assert _priority_ok({"treatment_path": "iui"}) is True
+
+
+def test_deciding_and_natural_do_not_count():
+    """"Deciding" is the conversation, not the answer, and trying naturally is
+    the baseline for everyone in the funnel."""
+    from app.services.brain.gates import _priority_ok
+
+    assert _priority_ok({"treatment_path": "deciding"}) is False
+    assert _priority_ok({"treatment_path": "natural"}) is False
+
+
+def test_her_own_low_score_beats_the_inference():
+    """She said 5 out of 10. That is an answer, and it must win over anything
+    inferred from her treatment path, or a lead who told us pregnancy is not a
+    priority gets a booking link."""
+    from app.services.brain.gates import _priority_ok
+
+    assert _priority_ok({"treatment_path": "ivf", "priority_score": 5}) is False
+    assert _priority_ok({"treatment_path": "ivf", "priority_score": 9}) is True

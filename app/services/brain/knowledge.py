@@ -30,8 +30,9 @@ class Kind:
     PROOF = "proof"                # track record, testimonials
     BOUNDARY = "boundary"          # what she will not do, and why
     NOT_A_FIT = "not_a_fit"        # how she says "you may not need this yet"
+    FACT = "fact"                  # Part 5: pricing, links, team, credentials
 
-    ALL = (POSITIONING, REFRAME, ANSWER, OBJECTION, PROOF, BOUNDARY, NOT_A_FIT)
+    ALL = (POSITIONING, REFRAME, ANSWER, OBJECTION, PROOF, BOUNDARY, NOT_A_FIT, FACT)
 
 
 @dataclass
@@ -49,14 +50,15 @@ class KnowledgeEntry:
 # Which kinds are worth retrieving for each response mode. A CELEBRATE turn needs
 # no positioning; an EDUCATE turn needs exactly that.
 KINDS_FOR_MODE: dict[ResponseMode, tuple] = {
-    ResponseMode.ANSWER: (Kind.ANSWER, Kind.REFRAME, Kind.BOUNDARY, Kind.POSITIONING),
-    ResponseMode.EDUCATE: (Kind.POSITIONING, Kind.PROOF, Kind.REFRAME),
+    ResponseMode.ANSWER: (Kind.ANSWER, Kind.REFRAME, Kind.BOUNDARY, Kind.POSITIONING,
+                          Kind.FACT),
+    ResponseMode.EDUCATE: (Kind.POSITIONING, Kind.PROOF, Kind.REFRAME, Kind.FACT),
     ResponseMode.QUALIFY: (Kind.REFRAME,),
     ResponseMode.ACKNOWLEDGE: (Kind.REFRAME,),
     ResponseMode.HONEST_DECLINE: (Kind.NOT_A_FIT,),
-    ResponseMode.BOOK: (),
+    ResponseMode.BOOK: (Kind.FACT,),
     ResponseMode.CELEBRATE: (),
-    ResponseMode.RESOURCE: (),
+    ResponseMode.RESOURCE: (Kind.FACT,),
     ResponseMode.HANDOFF: (),
 }
 

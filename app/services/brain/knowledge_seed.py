@@ -40,7 +40,7 @@ SEED: list[KnowledgeEntry] = [
         ),
         triggers=[r"what.{0,10}do.{0,10}you.{0,10}do", r"how.{0,10}(does|do).{0,10}(this|it).{0,10}work",
                   r"instead.{0,10}of", r"different", r"alongside", r"\bivf\b", r"clinic"],
-        source="prompt_builder._IDENTITY",
+        source="manual v1.0 Part 1 sections 4 and 16",
     ),
     KnowledgeEntry(
         kind=Kind.POSITIONING,
@@ -53,7 +53,7 @@ SEED: list[KnowledgeEntry] = [
         ),
         triggers=[r"programme?", r"program", r"what.{0,10}is.{0,10}(it|this)",
                   r"how.{0,10}long", r"six.{0,5}month", r"coaching"],
-        source="prompt_builder._IDENTITY",
+        source="manual v1.0 Part 1 sections 4 and 16",
     ),
     KnowledgeEntry(
         kind=Kind.POSITIONING,
@@ -66,7 +66,7 @@ SEED: list[KnowledgeEntry] = [
         ),
         triggers=[r"included", r"what.{0,10}(do|does).{0,10}(i|she|you).{0,10}get",
                   r"what.{0,10}happens", r"support"],
-        source="prompt_builder._IDENTITY",
+        source="manual v1.0 Part 1 sections 4 and 16",
     ),
 
     # --- Boundaries: what she will not do, and why --------------------------
@@ -90,7 +90,7 @@ SEED: list[KnowledgeEntry] = [
         ),
         triggers=[r"supplement", r"vitamin", r"\bdose\b", r"dosage", r"should.{0,10}i.{0,10}take",
                   r"coq10", r"inositol", r"\bdhea\b"],
-        source="prompt_builder._IDENTITY",
+        source="manual v1.0 Part 1 sections 4 and 16",
     ),
 
     # --- Reframes she returns to (beyond prompt_pattern_responses) ----------
@@ -200,12 +200,13 @@ SEED: list[KnowledgeEntry] = [
         kind=Kind.PROOF,
         topic="track_record",
         content=(
-            "Over fifteen years of this work and more than seven hundred families "
-            "supported through diagnoses, failed cycles and losses."
+            "Sixteen years of this work and 735 babies welcomed, across PCOS, low "
+            "AMH, recurrent loss, failed IVF and IUI, unexplained infertility and "
+            "male-factor cases."
         ),
         triggers=[r"success.{0,5}rate", r"testimonial", r"proof", r"does.{0,10}it.{0,10}work",
                   r"results", r"experience", r"how.{0,10}long.{0,10}have.{0,10}you"],
-        source="prompt_builder._IDENTITY",
+        source="manual v1.0 Part 1 sections 4 and 16",
     ),
 
     # --- Not a fit -----------------------------------------------------------
@@ -232,3 +233,10 @@ SEED: list[KnowledgeEntry] = [
         source="NEEDS SONIA REVIEW - no prior copy existed for this case",
     ),
 ]
+
+# Part 5 of the manual: the factual reference. Kept in its own module because
+# it is the one part Sonia maintains directly and the one that changes when the
+# business changes, not when the behaviour does.
+from app.services.brain.knowledge_part5 import PART5  # noqa: E402
+
+SEED = SEED + PART5

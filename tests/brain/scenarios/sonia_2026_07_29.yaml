@@ -76,15 +76,6 @@
   why: >-
     Another prospect said she was preparing for IVF in September, but the AI
     continued asking how much of a priority pregnancy was.
-  xfail: >-
-    Whether the priority question gets re-asked depends entirely on the classifier
-    choosing to infer strong_readiness from "preparing for IVF in September" - it
-    often does, which is why this passes live, and Sonia saw the times it did not.
-    gates._priority_ok itself accepts only priority_score >= 8 or strong_readiness,
-    so nothing makes it reliable. Manual 2A section 9 lists "preparing for treatment
-    soon" as a strong-priority signal in its own right; making that deterministic in
-    the gate removes the dependency on inference. Fixed in Stage 2.
-  xfail_scope: routing
   state:
     slots:
       age: 36
