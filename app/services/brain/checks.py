@@ -67,11 +67,34 @@ _MEDICAL_RE = re.compile(
 
 # Tiny regression backstop only. Tone is fixed in the writer prompt and the
 # few-shots; this list exists to catch a specific relapse, not to shape voice.
+# Appendix A of the Operating Manual, "Responses Sonia Would Never Send". This is
+# HER enumerated list, not a list of phrases we guessed at, which is the only
+# reason it is a list at all: tone is otherwise a job for the prompt and the
+# retrieved examples, never for a regex. Soft violation - it forces a rewrite,
+# never silence.
 _BANNED = [
+    # A.1 generic empathy
     "thank you for sharing", "thanks for sharing", "i appreciate you sharing",
     "i appreciate your honesty", "i'm glad to hear", "im glad to hear",
     "that's great to hear", "it's wonderful to hear", "i admire",
-    "i hear you", "i get that",
+    "i hear you", "i get that", "i completely understand", "i totally get it",
+    "you're not alone", "youre not alone", "that must be so difficult",
+    "i'm so sorry you're going through this", "im so sorry youre going through this",
+    # A.2 generic AI language
+    "everyone's journey is different", "everyones journey is different",
+    "every body is unique", "your body knows what to do",
+    "healing isn't linear", "healing isnt linear", "trust the process",
+    "everything happens for a reason", "your body just needs to feel safe",
+    # A.3 overused marketing language
+    "holistic approach", "whole-body approach", "whole body approach",
+    "root cause", "optimize your biology", "optimise your biology",
+    "transform your fertility", "empower your fertility",
+    # A.4 empty encouragement
+    "you've got this", "youve got this", "don't give up", "dont give up",
+    "stay positive", "keep believing", "everything will work out",
+    # A.10 false hope
+    "i can fix this", "you will get pregnant", "i know this will help",
+    # Spanish equivalents already reported by the client
     "gracias por compartir", "te agradezco", "aprecio tu honestidad",
     "me alegra saber", "que bueno escuchar", "admiro",
 ]

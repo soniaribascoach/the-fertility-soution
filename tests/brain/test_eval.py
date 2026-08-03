@@ -170,6 +170,85 @@ def test_voice_spanish_is_natural_and_safe():
     )
 
 
+# The stock phrasings from Appendix A are caught for free by `checks._BANNED`,
+# an exact list of 51. Paying a model to spot a fixed string would be slower,
+# noisier and worse - measured: it scored clean replies 0.15-0.42 because it
+# never awards the positive case when the criteria is a list of phrases.
+#
+# What regex cannot do is Sonia's actual test, Part 3: "If I could copy and paste
+# the response into another conversation without changing anything, it is
+# probably too generic." That needs her message alongside the reply, so this
+# judge is the one place INPUT genuinely belongs.
+_SPECIFIC_TO_HER = GEval(
+    name="Specific To Her",
+    model="gpt-4o",
+    async_mode=False,
+    criteria=(
+        "INPUT is a message from a woman about her fertility. ACTUAL_OUTPUT is the "
+        "coach's reply. "
+        "Score 1.0 when the reply engages with the particular details of THIS message - "
+        "her numbers, her history, her diagnosis, what she actually said - so that "
+        "sending it to a different woman with a different situation would make no sense. "
+        "Score 0.0 when the reply is interchangeable: it would fit any woman writing "
+        "about any fertility problem, because it only offers general sympathy, general "
+        "encouragement or a general question. "
+        "Brevity, lowercase, contractions and bluntness are all CORRECT. A short reply "
+        "that names her specific situation scores 1.0."
+    ),
+    evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+    threshold=0.5,
+)
+
+_HER_MESSAGE = (
+    "I've done 4 IVF cycles, changed my diet, I'm on every supplement going and "
+    "worked with three different practitioners. Nothing has worked."
+)
+_SPECIFIC_REPLIES = [
+    "four cycles and three practitioners is a lot of doors to have knocked on. "
+    "what did the last clinic say about why it didn't take?",
+    "four rounds, three practitioners and every supplement going. so the useful "
+    "question isn't what else you could try, it's what nobody has actually looked "
+    "at yet.",
+]
+_INTERCHANGEABLE_REPLIES = [
+    "That sounds really challenging. Fertility can be such a difficult road for "
+    "so many women. What would you like to focus on?",
+    "I understand how frustrating this must feel. There is still hope. Would you "
+    "like to tell me a bit more about your situation?",
+]
+
+
+@pytest.mark.parametrize("reply", _SPECIFIC_REPLIES, ids=lambda r: r[:28])
+def test_a_reply_built_on_her_details_passes(reply):
+    _SPECIFIC_TO_HER.measure(LLMTestCase(input=_HER_MESSAGE, actual_output=reply))
+    assert _SPECIFIC_TO_HER.score >= _SPECIFIC_TO_HER.threshold, (
+        f"score={_SPECIFIC_TO_HER.score} reason={_SPECIFIC_TO_HER.reason}")
+
+
+@pytest.mark.parametrize("reply", _INTERCHANGEABLE_REPLIES, ids=lambda r: r[:28])
+def test_an_interchangeable_reply_fails(reply):
+    """Sonia's complaint in one sentence: replies that "could fit any
+    conversation", sent across very different situations."""
+    _SPECIFIC_TO_HER.measure(LLMTestCase(input=_HER_MESSAGE, actual_output=reply))
+    assert _SPECIFIC_TO_HER.score < _SPECIFIC_TO_HER.threshold, (
+        f"judge passed a reply that would fit any conversation: "
+        f"score={_SPECIFIC_TO_HER.score} reason={_SPECIFIC_TO_HER.reason}")
+
+
+@pytest.mark.parametrize("phrase", [
+    "everyone's journey is different", "trust the process", "you've got this",
+    "holistic approach", "root cause", "I completely understand",
+], ids=lambda p: p[:22])
+def test_appendix_a_phrases_are_caught_for_free(phrase):
+    """No model needed: these are exact strings from her own Appendix A."""
+    from app.services.brain.checks import validate_draft
+    from app.services.brain.constants import ResponseMode
+
+    result = validate_draft([f"well, {phrase}, and we can go from there."],
+                            mode=ResponseMode.ANSWER, allow_urls=[], allow_price=False)
+    assert any(v.startswith("banned_phrase") for v in result.violations), phrase
+
+
 async def test_the_answered_judge_accepts_an_honest_no(openai_client):
     """The `answered` judge read a decline as a deflection.
 
