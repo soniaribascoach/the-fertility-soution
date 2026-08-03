@@ -209,6 +209,50 @@ def test_the_never_qualify_modes_all_have_a_playbook():
     assert {"CELEBRATE", "ACKNOWLEDGE", "HONEST_DECLINE"} <= covered
 
 
+# --- teaching the library from a reviewed turn --------------------------------
+# Sonia: "The biggest improvements will come from building the Conversation
+# Playbook Library with real, edited conversations." /admin/shadow has a button
+# for it; this is the rule behind the button.
+
+def test_a_reviewed_exchange_is_added_not_substituted():
+    """Her existing examples are the library. Promoting must never replace them."""
+    from app.repositories.playbook import next_examples
+
+    existing = [{"turns": [{"lead": "a", "sonia": "b"}]}]
+    updated = next_examples(existing, "I'm pregnant!", "congratulations!")
+    assert len(updated) == 2
+    assert updated[0] == existing[0]
+    assert updated[1]["turns"][0]["sonia"] == "congratulations!"
+
+
+def test_the_original_list_is_not_mutated():
+    """The JSON column has to be reassigned or SQLAlchemy never writes it."""
+    from app.repositories.playbook import next_examples
+
+    existing = [{"turns": [{"lead": "a", "sonia": "b"}]}]
+    next_examples(existing, "x", "y")
+    assert len(existing) == 1
+
+
+@pytest.mark.parametrize("lead,sonia", [("", "reply"), ("lead", ""), ("  ", "  ")])
+def test_a_half_empty_exchange_is_refused(lead, sonia):
+    from app.repositories.playbook import next_examples
+
+    assert next_examples([], lead, sonia) is None
+
+
+def test_a_promoted_example_is_retrievable_and_usable():
+    """Round trip: what the button saves must be what retrieval can read."""
+    from app.repositories.playbook import next_examples
+
+    examples = next_examples([], "I just got my positive test!", "congratulations!")
+    p = _pb("x", examples=examples)
+    assert pb.as_messages(pb.rotate_examples(p, "lead_a")) == [
+        {"role": "user", "content": "I just got my positive test!"},
+        {"role": "assistant", "content": "congratulations!"},
+    ]
+
+
 # --- priority signal (manual 2A section 9) ------------------------------------
 
 def test_a_dated_treatment_plan_counts_as_priority():

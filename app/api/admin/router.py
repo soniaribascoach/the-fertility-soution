@@ -85,6 +85,7 @@ async def shadow_get(request: Request, live: str = None, db: AsyncSession = Depe
         return RedirectResponse("/admin/login", status_code=302)
 
     from app.repositories.brain_turn import handoff_rate, mode_counts, recent_turns
+    from app.repositories.playbook import all_playbooks
 
     shadow = not (live in ("1", "true"))
     turns = await recent_turns(db, shadow=shadow, limit=60)
@@ -97,6 +98,9 @@ async def shadow_get(request: Request, live: str = None, db: AsyncSession = Depe
         {
             "turns": turns,
             "shadow": shadow,
+            # Offered as targets for "teach this": reviewing a real conversation
+            # into the library is the growth path Sonia asked for.
+            "playbooks": await all_playbooks(db),
             "modes": await mode_counts(db, shadow=shadow),
             "paused": paused,
             "total": total,
@@ -108,6 +112,36 @@ async def shadow_get(request: Request, live: str = None, db: AsyncSession = Depe
             "threshold": cfg.get("uncertainty_threshold") or "3",
         },
     )
+
+
+@router.post("/admin/turns/{turn_id}/promote")
+async def promote_turn(
+    turn_id: int,
+    request: Request,
+    slug: str = Form(...),
+    reply: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    """Turn a reviewed conversation into a playbook example.
+
+    Sonia: "The biggest improvements going forward will come from building the
+    Conversation Playbook Library with real, edited conversations." This is that
+    sentence as a button. `reply` carries her edit, so what gets learned is the
+    message she would have sent, not the one the bot sent.
+    """
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+
+    from app.models.brain_turn import BrainTurn
+    from app.repositories.playbook import append_example
+
+    turn = await db.get(BrainTurn, turn_id)
+    if turn is None:
+        return RedirectResponse("/admin/shadow", status_code=302)
+
+    await append_example(db, slug, turn.lead_message, reply or turn.reply)
+    return RedirectResponse(request.headers.get("referer") or "/admin/shadow",
+                            status_code=302)
 
 
 @router.get("/admin/login", response_class=HTMLResponse)

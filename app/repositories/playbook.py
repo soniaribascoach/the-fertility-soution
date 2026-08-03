@@ -43,6 +43,44 @@ async def get_active_playbooks(db: AsyncSession) -> list[Playbook]:
     return [_to_playbook(row) for row in result.scalars().all()]
 
 
+def next_examples(existing: list, lead: str, sonia: str):
+    """The examples list after adding this exchange, or None if it is unusable.
+
+    Pure, so the rule that matters - never replace what she already has, never
+    store a half-empty exchange - is testable without a database.
+    """
+    lead, sonia = (lead or "").strip(), (sonia or "").strip()
+    if not lead or not sonia:
+        return None
+    return list(existing or []) + [{"turns": [{"lead": lead, "sonia": sonia}]}]
+
+
+async def append_example(db: AsyncSession, slug: str, lead: str, sonia: str) -> bool:
+    """Add one reviewed exchange to a playbook's examples.
+
+    This is Sonia's stated iteration loop, closed: she reads a real turn, edits
+    the reply if it needs it, and the next matching conversation learns from it.
+    Before this, growing the library meant a developer editing a seed file.
+
+    The JSON column is reassigned rather than mutated in place, or SQLAlchemy
+    does not notice the change and the write is silently lost.
+    """
+    result = await db.execute(sa_select(PlaybookRow).where(PlaybookRow.slug == slug))
+    row = result.scalar_one_or_none()
+    if row is None:
+        return False
+    updated = next_examples(row.examples, lead, sonia)
+    if updated is None:
+        return False
+
+    row.examples = updated
+    # An entry with a reviewed example is no longer an unreviewed draft.
+    if row.source.startswith("DRAFT"):
+        row.source = "reviewed in /admin/shadow"
+    await db.commit()
+    return True
+
+
 async def all_playbooks(db: AsyncSession) -> list[PlaybookRow]:
     result = await db.execute(sa_select(PlaybookRow).order_by(PlaybookRow.mode, PlaybookRow.slug))
     return list(result.scalars().all())
