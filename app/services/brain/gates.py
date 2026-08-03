@@ -26,30 +26,22 @@ def _priority_ok(s: dict) -> bool:
     """Is having a baby clearly one of her biggest priorities right now?
 
     Manual 2A section 9 lists "she is preparing for treatment soon" as a
-    strong-priority signal in its own right, and it is a far better one than an
-    answer to a question: IUI and IVF cost money, time and injections, and nobody
-    goes through them casually.
+    strong-priority signal in its own right, and it is a better one than an
+    answer to a question: nobody goes through IUI or IVF casually. That signal
+    arrives as `strong_readiness` from the classifier, which is told explicitly
+    to set it for booked or imminent treatment.
 
-    This used to depend entirely on the classifier choosing to infer
-    `strong_readiness` from something like "I'm preparing for IVF in September".
-    It usually did, which is why it looked fine from the inside, and Sonia saw
-    the times it did not and reported being asked how much of a priority
-    pregnancy was by a woman with a cycle booked.
-
-    Deliberately NOT included: "deciding" (she is weighing it up, which is the
-    conversation, not the answer) and "natural" (trying naturally is the baseline
-    for everyone in the funnel, so accepting it would delete the question).
+    It is NOT read off `treatment_path`. That was tried and it was wrong: the
+    slot cannot tell "preparing for IVF in September" from "2 failed IUIs two
+    years ago", so accepting it skipped the priority question for anyone with
+    any treatment history at all. The live suite caught it. A wrongly-asked
+    question costs a little goodwill; a wrongly-booked call is the complaint that
+    caused the funnel to be built in the first place, so this errs toward asking.
     """
     score = s.get("priority_score")
     if isinstance(score, int) and score >= 8:
         return True
-    if s.get("strong_readiness") is True:
-        return True
-    if isinstance(score, int):
-        # She answered, and said it is not a priority. Her own answer beats
-        # anything inferred from her treatment path.
-        return False
-    return s.get("treatment_path") in ("ivf", "iui")
+    return s.get("strong_readiness") is True
 
 
 def _partner_resolved(s: dict) -> bool:

@@ -211,29 +211,28 @@ def test_the_never_qualify_modes_all_have_a_playbook():
 
 # --- priority signal (manual 2A section 9) ------------------------------------
 
-def test_treatment_prep_counts_as_priority_without_a_score():
-    """A woman with a cycle booked has answered the priority question by
-    booking it. Sonia reported being asked anyway."""
+def test_a_dated_treatment_plan_counts_as_priority():
+    """Manual 2A section 9: "preparing for treatment soon" is a strong-priority
+    signal on its own. It arrives as strong_readiness, which classify.py is told
+    explicitly to set for a booked or imminent cycle."""
     from app.services.brain.gates import _priority_ok
 
-    assert _priority_ok({"treatment_path": "ivf"}) is True
-    assert _priority_ok({"treatment_path": "iui"}) is True
+    assert _priority_ok({"strong_readiness": True}) is True
 
 
-def test_deciding_and_natural_do_not_count():
-    """"Deciding" is the conversation, not the answer, and trying naturally is
-    the baseline for everyone in the funnel."""
+def test_treatment_history_alone_does_not_count():
+    """Tried and reverted: reading priority off treatment_path cannot tell
+    "preparing for IVF in September" from "2 failed IUIs two years ago", so it
+    skipped the priority question for anyone with any treatment history. A
+    wrongly-booked call is far more costly than a wrongly-asked question."""
     from app.services.brain.gates import _priority_ok
 
-    assert _priority_ok({"treatment_path": "deciding"}) is False
-    assert _priority_ok({"treatment_path": "natural"}) is False
+    assert _priority_ok({"treatment_path": "ivf"}) is False
+    assert _priority_ok({"treatment_path": "iui"}) is False
 
 
-def test_her_own_low_score_beats_the_inference():
-    """She said 5 out of 10. That is an answer, and it must win over anything
-    inferred from her treatment path, or a lead who told us pregnancy is not a
-    priority gets a booking link."""
+def test_her_own_score_decides_when_she_gave_one():
     from app.services.brain.gates import _priority_ok
 
-    assert _priority_ok({"treatment_path": "ivf", "priority_score": 5}) is False
-    assert _priority_ok({"treatment_path": "ivf", "priority_score": 9}) is True
+    assert _priority_ok({"priority_score": 9}) is True
+    assert _priority_ok({"priority_score": 5}) is False

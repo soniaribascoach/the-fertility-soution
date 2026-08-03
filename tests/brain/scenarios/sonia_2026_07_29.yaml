@@ -88,6 +88,12 @@
       classify:
         intent: answers_question
         richness: partial
+      # A dated, active treatment plan. classify.py tells the classifier this
+      # counts as readiness on its own, and the live suite confirms it does; the
+      # fixture has to say so too, or it tests a broken classifier rather than
+      # the gate. `set_slots` is what merge_facts would have written.
+      set_slots:
+        strong_readiness: true
       expect:
         mode: QUALIFY
         next_question_not:
