@@ -10,10 +10,16 @@ QUALIFY turn must ask exactly one. The substance comes from retrieved knowledge
 rather than from a script, and a link is physically absent from the prompt unless
 the mode permits it - so the model cannot send one early even if it wants to.
 
-The prompt is deliberately small. The unmerged v7 design doc names a 600-word
-prompt wall as the root cause of Gen 1's hallucinations, and we are staying on
-gpt-4o-mini, so tone comes from real transcripts and retrieved substance rather
-than from more instructions.
+The instructions are not written here. `behavior/` compiles Sonia's Operating
+Manual into a persistent core plus one contract per mode, and `generate` loads
+core + the routed mode as the system message. Two consequences worth keeping:
+the prompt has exactly one source, so nothing can drift the way the hand-written
+persona here did (it claimed 15 years while the manual says 16); and the system
+message is byte-identical across every turn in a mode, which is what makes
+provider prompt caching pay for the larger prompt.
+
+Everything conversation-specific goes in the user message. Never move any of it
+into the system block.
 """
 import logging
 import os
@@ -24,7 +30,7 @@ from typing import Optional
 from openai import AsyncOpenAI
 from pydantic import BaseModel
 
-from app.services.brain import scripts
+from app.services.brain import behavior, scripts
 from app.services.brain.constants import ResponseMode
 from app.services.brain.knowledge import KnowledgeEntry
 from app.services.brain.llm import model_for, usage_of, with_retry
@@ -40,7 +46,8 @@ FORBIDDEN, OPTIONAL, REQUIRED, AT_MOST_ONE = "forbidden", "optional", "required"
 
 @dataclass(frozen=True)
 class ModeSpec:
-    objective: str
+    """The mechanical limits of a mode. What the reply is FOR is prose, and lives
+    in `behavior/modes/<MODE>.md` - one source, so the two cannot drift apart."""
     question_policy: str
     bubbles: tuple           # (min, max)
     max_chars: int           # per reply, across all bubbles
@@ -55,62 +62,31 @@ class ModeSpec:
 # conversation feel transactional."
 MODE_SPECS: dict[ResponseMode, ModeSpec] = {
     ResponseMode.CELEBRATE: ModeSpec(
-        objective=(
-            "She is sharing good news. Be genuinely happy for her and say so. "
-            "Nothing else: no coaching, no offer, no next step, and no question."
-        ),
         question_policy=FORBIDDEN, bubbles=(1, 2), max_chars=320, few_shots=False,
     ),
     ResponseMode.ACKNOWLEDGE: ModeSpec(
-        objective=(
-            "Sit with what she just said and let it land. Do not fix it, redirect "
-            "it, offer anything, or ask anything. Short is better than complete."
-        ),
         question_policy=FORBIDDEN, bubbles=(1, 2), max_chars=420,
     ),
     ResponseMode.ANSWER: ModeSpec(
-        objective=(
-            "Answer the question she actually asked, directly, using the approved "
-            "substance. Answer first; only then, if it is natural, go further."
-        ),
         question_policy=OPTIONAL, bubbles=(1, 3), max_chars=700,
     ),
     ResponseMode.EDUCATE: ModeSpec(
-        objective=(
-            "Explain what makes your approach different, grounded in the approved "
-            "substance. Be specific about what you look at that nobody has yet."
-        ),
         question_policy=OPTIONAL, bubbles=(1, 3), max_chars=700,
     ),
     ResponseMode.RESOURCE: ModeSpec(
-        objective="Share the resource she asked for, warmly and briefly.",
         question_policy=FORBIDDEN, bubbles=(1, 2), max_chars=420, few_shots=False,
         url_names=("register_link",), require_url=True,
     ),
     ResponseMode.QUALIFY: ModeSpec(
-        objective=(
-            "Acknowledge what she just shared, then ask the ONE thing you still "
-            "need. Never ask something she has already told you."
-        ),
         question_policy=REQUIRED, bubbles=(1, 3), max_chars=600,
     ),
     ResponseMode.BOOK: ModeSpec(
-        objective=(
-            "Invite her to book the call and include the booking link exactly as "
-            "given. Ask her to follow the next steps after booking so the call "
-            "gets confirmed. Do not ask for her email."
-        ),
         # No few-shots: nearly every transcript ends with the link, which is the
         # in-context prior that made Gen 2 send it far too freely.
         question_policy=AT_MOST_ONE, bubbles=(1, 2), max_chars=700, few_shots=False,
         url_names=("booking_link",), require_url=True,
     ),
     ResponseMode.HONEST_DECLINE: ModeSpec(
-        objective=(
-            "Tell her honestly that she may not need this level of support yet, "
-            "and why. Say what is worth doing on her own for now, and make clear "
-            "the door is open later. Do not pitch and do not ask anything."
-        ),
         question_policy=FORBIDDEN, bubbles=(1, 3), max_chars=700, few_shots=False,
     ),
 }
@@ -136,23 +112,6 @@ _STANCE = {
         "generalities."
     ),
 }
-
-
-_SYSTEM = """You are Sonia Ribas, a fertility coach of 15 years, replying in Instagram DMs.
-
-How you write: like a real person texting, not composing an email. Short. Warm. Specific to what she just said. Contractions. Often lowercase to start. Two or three short bubbles beat one long paragraph.
-
-Never open with gratitude or praise ("Thank you for sharing", "I appreciate", "I'm glad to hear", "I admire"), and never use the filler openers "I hear you" or "I get that" - react to what she actually said instead. Never use motivational-coach filler, "journey" talk, hype words, or cheerleading sign-offs. Never reuse a phrase or sentence shape you already used in this conversation.
-
-Every question you ask must come from the specifics she gave you. Never ask a floating question like "how do you feel about that?" or "how are you doing?" - those signal you were not listening.
-
-Hard rules: no medical advice, no diagnosis, no supplements, no dosages. Never state a fact about her that she did not tell you. Never state a claim about fertility or about your approach that is not in the APPROVED SUBSTANCE you are given - if it is not there, say less. Only include a link if you are given one. Plain text only: no markdown, no bullets, no em-dashes.
-
-You are given your goal for this turn, what she has told you, and the substance you may draw on. Write only Sonia's next message, as bubbles."""
-
-_SYSTEM_ES = """
-
-She writes in Spanish. Reply entirely in natural, warm, Latin-American-neutral Spanish, always "tu", never "usted". Do not mix in English and do not translate literally. Never open with "Gracias por compartir", "Te agradezco", "Aprecio tu honestidad", "Me alegra saber", "Que bueno escuchar", "Admiro". Links, phone numbers and price figures stay exactly as given."""
 
 
 class Draft(BaseModel):
@@ -273,7 +232,6 @@ def build_prompt(inp: WriterInput, history: list[dict], spec: ModeSpec) -> str:
     parts = [
         body,
         f"\nPACING: {_STANCE[inp.stance]}",
-        f"\nGOAL: {spec.objective}",
     ]
     if inp.question_asked:
         parts.append(
@@ -343,7 +301,7 @@ async def generate(
     spec = MODE_SPECS[inp.mode]
     model = model or model_for("writer", cfg)
 
-    system = _SYSTEM + (_SYSTEM_ES if inp.language == "es" else "")
+    system = behavior.system_prompt(inp.mode, inp.language)
     messages = [{"role": "system", "content": system}]
 
     convo_text = " ".join(m.get("content", "") for m in history if m.get("role") == "user")
