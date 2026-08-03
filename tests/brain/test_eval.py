@@ -170,6 +170,46 @@ def test_voice_spanish_is_natural_and_safe():
     )
 
 
+async def test_the_answered_judge_accepts_an_honest_no(openai_client):
+    """The `answered` judge read a decline as a deflection.
+
+    It flagged 5 of 6 HONEST_DECLINE turns and suppressed one outright. The
+    suppressed reply was "at 29 and only three months of trying, most people
+    conceive without help, it wouldn't be honest to sell you a program you
+    probably don't need yet" - which is exactly what Sonia asked for, vetoed for
+    not being the answer the lead wanted. A negative answer is still an answer.
+
+    Both directions are pinned, because a judge that stops flagging real
+    deflections is a worse failure than one that is red.
+    """
+    from app.services.brain import checker
+
+    question = "so should I join your program?"
+
+    async def flagged(*bubbles):
+        violations, _ = await checker.check(
+            openai_client, list(bubbles),
+            history=[{"role": "user", "content": question}],
+            known_facts={}, knowledge_texts=[], question_asked=question,
+            gate_passed=True,
+        )
+        return [v for v in violations if v.startswith("answered")]
+
+    assert not await flagged(
+        "at 29 and only three months of trying, most people conceive without help. "
+        "it wouldn't be honest to sell you a program you probably don't need yet."
+    ), "an honest decline was judged a deflection"
+    assert not await flagged(
+        "yes, I think it would genuinely help given everything you've described."
+    )
+    assert await flagged(
+        "before I answer that, how long have you been trying and what have you tried?"
+    ), "a reply that answers with a question was not flagged"
+    assert await flagged(
+        "low AMH is something I see a lot. the number tells you about quantity, not quality."
+    ), "a reply that changed the subject was not flagged"
+
+
 def test_the_spanish_judge_still_discriminates():
     """Guard the judge itself.
 

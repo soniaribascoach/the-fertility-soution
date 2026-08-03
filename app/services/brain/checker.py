@@ -42,7 +42,13 @@ You are given the QUESTION the lead asked and the REPLY.
 
 Answer one question: does the REPLY leave her question unanswered - by deflecting it, changing the subject, or replying only with a question of its own?
 
-problem=true means she did NOT get an answer. A brief but real answer is fine. Put the reason in `offending`."""
+problem=true means she did NOT get an answer. A brief but real answer is fine.
+
+A NEGATIVE answer is still an answer. If she asked whether she should join, sign up for, or needs the programme, then a reply telling her she probably does NOT need it yet, and why, is a COMPLETE answer. Saying "most people in your situation conceive without help, so it would not be honest to sell you this" answers the question fully. Do NOT mark that as a deflection.
+
+Judge whether she received an answer, not whether she received the answer she was hoping for.
+
+Put the reason in `offending`."""
 
 _PREMATURE = """You check for one specific thing: offering the next commercial step before the lead has been qualified.
 
