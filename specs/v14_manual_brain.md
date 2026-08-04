@@ -50,8 +50,7 @@ link, the worst possible thing to show before congratulating someone.
 
 ## 3. Pipeline
 
-`turn.py: run_turn_v2`. Two LLM calls on a normal turn, three when something
-already looks off.
+`turn.py: run_turn_v2`.
 
 | # | Stage | LLM | Module |
 |---|---|---|---|
@@ -63,6 +62,31 @@ already looks off.
 | 6 | Code checks | no | `checks.py` |
 | 7 | Veto panel, conditional | #3 | `checker.py` |
 | 8 | Uncertainty → a person | no | `uncertainty.py` |
+
+### How many calls, measured
+
+Earlier drafts of this document claimed "two calls typical, three worst case".
+That was reasoning from the code, and it is wrong. Measured across the 12
+scenarios:
+
+| calls in the turn | turns |
+|---|---|
+| 2 (classify + write) | 6 |
+| 3 | 1 |
+| 5 | 5 |
+
+By role: classifier 12, writer 16, `checker:faithful` 4, `checker:premature` 4,
+`checker:answered` 2. The writer count exceeds one per turn because a draft that
+fails the code checks is regenerated once, and the three judges are separate
+calls that run in parallel.
+
+**The ceiling is 6**: classify, write, re-write, and up to three judges. Every
+call defaults to `gpt-4o-mini`, overridable per role via `model_classifier`,
+`model_writer` and `model_checker`.
+
+Note the corpus is Sonia's reported failures, so it is deliberately weighted
+toward hard cases. Real traffic should sit lower, and shadow mode is where that
+gets measured.
 
 The writer's system message is `core.md` + the mode contract, in that order,
 because it is then byte-identical across every turn in a mode. **87% of writer

@@ -132,7 +132,13 @@ def combine_usage(*usages: dict) -> dict:
         out["completion_tokens"] += u.get("completion_tokens", 0) or 0
         out["token_cost"] += u.get("token_cost", 0.0) or 0.0
         out["ai_model"] = u.get("ai_model") or out["ai_model"]
-        out["calls"].append(u)
+        # Flatten, never nest. A combined usage carries no `role` of its own, so
+        # appending one buries the individual calls inside it and the breakdown
+        # this list exists for silently turns into a row labelled None. That is
+        # what happened to the writer's regeneration and to the checker panel:
+        # 7 of 28 calls were unattributable.
+        nested = u.get("calls")
+        out["calls"].extend(nested if nested else [u])
     return out
 
 

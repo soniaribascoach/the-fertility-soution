@@ -6,16 +6,18 @@ these are data rather than prompt text: the running code claimed "15 years" in
 `writer.py` while claiming "over 700 families" in `prompt_builder.py`, because a
 fact stated in two prompts drifts.
 
-WHAT IS DELIBERATELY INACTIVE
------------------------------
-`pricing_range` ships with `active=False`. The manual says $1,500 to $10,000;
-`scripts.py` and the live config say $1,500 to $14,000. That figure is quoted to
-real prospects, so it is not something to change on a document's say-so without
-Sonia confirming which is current. The entry is in the table, visible in the
-admin panel, one checkbox away from live.
+WHERE THE MANUAL IS OUT OF DATE
+-------------------------------
+The manual is the source of truth for facts, but it is a document and the
+business moves. `pricing_range` shipped inactive because the manual says $1,500
+to $10,000 while `scripts.py` and the live config say $1,500 to $14,000, and a
+figure quoted to real prospects is not something to change on a document's
+say-so. The client confirmed on 2026-08-04 that **$1,500 to $14,000 is current**,
+so the entry is now active with that figure and the manual's is superseded.
 
-Everything else here is either uncontested in the manual or a correction to
-content that was already wrong.
+The price appears in two places by necessity - here for the routed brain, and
+`scripts._PLACEHOLDER_DEFAULTS` for the funnel brain - so a test asserts they
+agree. Two different numbers reaching two different leads is the failure mode.
 """
 from app.services.brain.knowledge import Kind, KnowledgeEntry
 
@@ -89,18 +91,19 @@ PART5: list[KnowledgeEntry] = [
                   r"\bnatalia\b", r"discovery call"],
         source=MANUAL,
     ),
-    # See the module docstring: the manual and the live config disagree, and the
-    # figure is quoted to prospects, so this waits for Sonia rather than shipping.
+    # RESOLVED 2026-08-04: the client confirmed $1,500 to $14,000 is current, so
+    # the manual's "$1,500 to $10,000" (2B.2 section 6) is out of date and the
+    # live config was right. Now active. The figure must stay identical to
+    # `scripts._PLACEHOLDER_DEFAULTS["price_range"]`, or a lead can be quoted two
+    # different numbers depending on which brain answers her; a test enforces it.
     KnowledgeEntry(
         kind=Kind.FACT,
         topic="pricing_range",
         content=(
-            "Programs currently range from approximately $1,500 to $10,000, "
-            "depending on the level of support."
+            "Programs currently range from approximately $1,500 to $14,000, "
+            "depending on the level of support someone needs."
         ),
         triggers=[r"how.{0,10}much", r"price", r"cost", r"range", r"ballpark"],
-        source=f"{MANUAL} 2B.2 section 6 - CONFLICTS with live config ($14,000). "
-               f"Inactive until Sonia confirms which is current.",
-        active=False,
+        source="client confirmed 2026-08-04; supersedes manual v1.0 2B.2 section 6",
     ),
 ]
