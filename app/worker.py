@@ -21,7 +21,7 @@ from app.repositories.user_state import (
     get_lead_state,
     save_lead_state,
 )
-from app.services.brain import HUMAN_REVIEW_TAG
+from app.services.brain import HUMAN_REVIEW_TAG, run_turn
 from app.services.message_splitter import split_reply
 from app.services.typing_delay import calculate_delay
 from config import settings
@@ -142,18 +142,17 @@ async def _send_bubbles(app_state, manychat_contact_id: str, text: str) -> None:
 async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
                           batch_texts) -> None:
     """Run the brain for one batch and apply its side effects."""
-    from app.repositories.brain_turn import save_turn
-
     history = await get_history(db, ig_user_id, limit=20)
     history_dicts = [{"role": r.role, "content": r.content} for r in history]
     lead_state = await get_lead_state(db, ig_user_id)
-    lead_message = "\n".join(batch_texts)
 
-    result = await _routed_turn(db, app_state, history_dicts, cfg, lead_state,
-                                ig_user_id, batch_texts)
-
-    await save_turn(db, ig_user_id, brain_version="v14", result=result,
-                    lead_message=lead_message)
+    result = await run_turn(
+        app_state.openai_client, history_dicts, cfg,
+        # The brain writes into what it is handed, so it gets a copy: a turn
+        # that fails halfway must not leave the stored state half-updated.
+        copy.deepcopy(lead_state),
+        ig_user_id=ig_user_id, new_texts=batch_texts,
+    )
 
     await save_lead_state(db, ig_user_id, result.lead_state)
 
@@ -177,32 +176,7 @@ async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
         await app_state.manychat_client.add_tag(manychat_contact_id, tag_id)
 
     logger.info(
-        "Brain turn for %s: action=%s phase=%s pause=%s violations=%s",
-        ig_user_id, result.action, result.lead_state.get("phase"), result.pause,
-        result.violations,
+        "Brain turn for %s: action=%s pause=%s violations=%s",
+        ig_user_id, result.action, result.pause, result.violations,
     )
 
-
-
-def _flag(cfg: dict, key: str) -> bool:
-    return (cfg.get(key) or "").strip().lower() in ("1", "true", "yes", "on")
-
-
-async def _routed_turn(db, app_state, history_dicts, cfg, lead_state, ig_user_id, batch_texts):
-    """Run the routed brain. Shared by the live path and shadow mode so the two
-    can never drift apart."""
-    from app.repositories.conversation import recent_opening_sentences
-    from app.repositories.knowledge import get_active_knowledge
-    from app.repositories.playbook import get_active_playbooks
-    from app.services.brain.turn import run_turn_v2
-
-    return await run_turn_v2(
-        app_state.openai_client, history_dicts, cfg,
-        # Shadow must not mutate the lead's real state, and `run_turn_v2` writes
-        # into what it is handed, so it gets a copy.
-        copy.deepcopy(lead_state),
-        ig_user_id=ig_user_id, new_texts=batch_texts,
-        knowledge_entries=await get_active_knowledge(db),
-        playbook_entries=await get_active_playbooks(db),
-        recent_openings=await recent_opening_sentences(db, ig_user_id),
-    )

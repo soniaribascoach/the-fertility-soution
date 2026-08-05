@@ -18,14 +18,8 @@ from app.admin.views import (
     UserStateAdmin,
     PendingMessageAdmin,
     AppConfigAdmin,
-    KnowledgeAdmin,
-    PlaybookAdmin,
-    BrainTurnAdmin,
 )
 from app.db.database import engine, Base, AsyncSessionLocal
-from app.models import brain_turn as brain_turn_model  # noqa: F401
-from app.models import knowledge as knowledge_model  # noqa: F401
-from app.models import playbook as playbook_model  # noqa: F401
 from app.models import simulation  # noqa: F401
 from app.services.manychat_client import ManyChatClient
 from app.worker import start_worker
@@ -79,9 +73,6 @@ sqladmin.add_view(ConversationAdmin)
 sqladmin.add_view(UserStateAdmin)
 sqladmin.add_view(PendingMessageAdmin)
 sqladmin.add_view(AppConfigAdmin)
-sqladmin.add_view(KnowledgeAdmin)
-sqladmin.add_view(PlaybookAdmin)
-sqladmin.add_view(BrainTurnAdmin)
 
 app.include_router(health.router, tags=["Health"])
 app.include_router(admin_router.router, tags=["Admin"])

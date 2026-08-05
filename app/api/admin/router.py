@@ -11,6 +11,7 @@ from app.db.database import get_db
 from app.models.few_shot_version import FewShotVersion
 from app.models.user_state import UserState
 from app.repositories.config import get_all_config, set_config
+from app.services.brain import run_turn
 from app.services.resume import resume_lead
 from app.services.few_shots import load_few_shot_scenarios, get_few_shot_scenarios
 from app.api.admin.auth import (
@@ -70,76 +71,6 @@ async def lead_resume(request: Request, ig_user_id: str, db: AsyncSession = Depe
         return RedirectResponse("/admin/login", status_code=302)
     await resume_lead(db, ig_user_id)
     return RedirectResponse("/admin/dashboard", status_code=302)
-
-
-@router.get("/admin/shadow", response_class=HTMLResponse)
-async def shadow_get(request: Request, live: str = None, db: AsyncSession = Depends(get_db)):
-    """Review what the routed brain would have said.
-
-    In shadow mode the routed brain runs on real traffic without sending, so its
-    tone and handoff rate can be judged against the reply the lead actually got
-    before the flag is flipped. `?live=1` shows the turns that WERE sent.
-    """
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-
-    from app.repositories.brain_turn import handoff_rate, mode_counts, recent_turns
-    from app.repositories.playbook import all_playbooks
-
-    shadow = not (live in ("1", "true"))
-    turns = await recent_turns(db, shadow=shadow, limit=60)
-    paused, total = await handoff_rate(db, shadow=shadow)
-    cfg = await get_all_config(db)
-
-    return templates.TemplateResponse(
-        request,
-        "admin/shadow.html",
-        {
-            "turns": turns,
-            "shadow": shadow,
-            # Offered as targets for "teach this": reviewing a real conversation
-            # into the library is the growth path Sonia asked for.
-            "playbooks": await all_playbooks(db),
-            "modes": await mode_counts(db, shadow=shadow),
-            "paused": paused,
-            "total": total,
-            "handoff_pct": round(100 * paused / total, 1) if total else 0.0,
-            "cost": round(sum(t.token_cost or 0 for t in turns), 4),
-            "shadow_enabled": (cfg.get("brain_shadow_enabled") or "").strip().lower()
-            in ("1", "true", "yes", "on"),
-            "threshold": cfg.get("uncertainty_threshold") or "3",
-        },
-    )
-
-
-@router.post("/admin/turns/{turn_id}/promote")
-async def promote_turn(
-    turn_id: int,
-    request: Request,
-    slug: str = Form(...),
-    reply: str = Form(""),
-    db: AsyncSession = Depends(get_db),
-):
-    """Turn a reviewed conversation into a playbook example.
-
-    Sonia: "The biggest improvements going forward will come from building the
-    Conversation Playbook Library with real, edited conversations." This is that
-    sentence as a button. `reply` carries her edit, so what gets learned is the
-    message she would have sent, not the one the bot sent.
-    """
-    if not is_authenticated(request):
-        return RedirectResponse("/admin/login", status_code=302)
-
-    from app.models.brain_turn import BrainTurn
-    from app.repositories.playbook import append_example
-
-    turn = await db.get(BrainTurn, turn_id)
-    if turn is None:
-        return RedirectResponse("/admin/shadow", status_code=302)
-
-    await append_example(db, slug, turn.lead_message, reply or turn.reply)
-    return RedirectResponse(request.headers.get("referer") or "/admin/shadow",
-                            status_code=302)
 
 
 @router.get("/admin/login", response_class=HTMLResponse)
@@ -242,64 +173,26 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
 
     cfg = await get_all_config(db)
 
-    # One brain. The sandbox is stateless server-side, so lead_state is
-    # round-tripped via the client.
-    from app.repositories.brain_turn import save_turn
-    from app.repositories.knowledge import get_active_knowledge
-    from app.repositories.playbook import get_active_playbooks
-    from app.services.brain.turn import run_turn_v2
-
-    result = await run_turn_v2(
-        request.app.state.openai_client, messages, cfg,
-        body.get("lead_state"), ig_user_id="admin_sandbox",
-        knowledge_entries=await get_active_knowledge(db),
-        playbook_entries=await get_active_playbooks(db),
-    )
-
-    # Record sandbox turns too. This is the surface the team actually tests on,
-    # and without this a turn that goes wrong here leaves no trace at all.
+    # The sandbox is stateless server-side, so lead_state is round-tripped via
+    # the client. This is the surface the team tests on: it calls exactly what
+    # the worker calls, so the two can never drift apart.
     last_user = next((m["content"] for m in reversed(messages)
                       if m.get("role") == "user"), "")
-    await save_turn(db, "admin_sandbox", brain_version="v14",
-                    result=result, lead_message=last_user)
+    result = await run_turn(
+        request.app.state.openai_client, messages, cfg,
+        body.get("lead_state"), ig_user_id="admin_sandbox",
+        new_texts=[last_user] if last_user else [],
+    )
 
     return JSONResponse({
         "reply": result.reply_text,
         "human_takeover": result.pause,
         "takeover_reason": result.pause_reason,
         "lead_state": result.lead_state,
-        "phase": result.lead_state.get("phase"),
         "action": result.action,
         "violations": result.violations,
-        # So an "uncertain" banner in the sandbox says WHY, instead of being an
-        # opaque dead end.
-        "uncertainty": result.trace.get("uncertainty_score"),
-        "signals": result.trace.get("uncertainty_signals") or [],
-        "intent": result.trace.get("intent"),
-        "mode": result.trace.get("mode"),
+        "trace": result.trace,
     })
-
-
-    last_user_text = next(
-        (m["content"].lower() for m in reversed(messages) if m.get("role") == "user"), ""
-    )
-
-    import re
-    if re.match(r"^https?://\S+$", last_user_text):
-        return JSONResponse({"reply": None, "human_takeover": True, "takeover_reason": "media"})
-
-    triggers = [t.strip().lower() for t in cfg.get("human_takeover_triggers", "").split("\n") if t.strip()]
-    if triggers and any(t in last_user_text for t in triggers):
-        return JSONResponse({"reply": None, "human_takeover": True, "takeover_reason": "keyword"})
-
-    # Phase 1 — CTA keyword bypass (first ever message only)
-    opening = check_phase1(cfg, messages)
-    if opening:
-        return JSONResponse({"reply": opening, "human_takeover": False})
-
-    client = request.app.state.openai_client
-    raw_text, _ = await generate_reply(db, client, get_few_shot_scenarios(request.app.state), "admin_sandbox", messages)
-    return JSONResponse({"reply": raw_text, "human_takeover": False})
 
 
 @router.post("/admin/config/save")
