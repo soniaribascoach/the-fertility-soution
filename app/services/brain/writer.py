@@ -141,6 +141,10 @@ class WriterInput:
     allow_urls: list = field(default_factory=list)
     playbook: Optional[object] = None
     ig_user_id: str = ""
+    # What the previous attempt got wrong. Regenerating with the IDENTICAL
+    # prompt at a lower temperature was near-useless: a banned phrase came back
+    # a second time and was sent to the lead anyway.
+    fix: list = field(default_factory=list)
     # Length ceiling for THIS reply. Sonia: "if someone writes one short
     # sentence, avoid responding with a long essay."
     max_chars: Optional[int] = None
@@ -317,6 +321,11 @@ def build_prompt(inp: WriterInput, history: list[dict], spec: ModeSpec) -> str:
     reqs.append(f"{spec.bubbles[0]} to {spec.bubbles[1]} bubbles, "
                 f"{inp.max_chars or spec.max_chars} characters total at most.")
     parts.append("\nREQUIREMENTS:\n" + "\n".join(f"- {r}" for r in reqs))
+    if inp.fix:
+        parts.append(
+            "\nYOUR PREVIOUS ATTEMPT WAS REJECTED. Fix exactly this and change "
+            "nothing else:\n" + "\n".join(f"- {f}" for f in inp.fix)
+        )
     parts.append("\nWrite Sonia's next message now, in Spanish."
                  if inp.language == "es" else "\nWrite Sonia's next message now.")
     return "\n".join(parts)

@@ -11,7 +11,6 @@ from app.db.database import get_db
 from app.models.few_shot_version import FewShotVersion
 from app.models.user_state import UserState
 from app.repositories.config import get_all_config, set_config
-from app.services.ai_pipeline import generate_reply, check_phase1
 from app.services.resume import resume_lead
 from app.services.few_shots import load_few_shot_scenarios, get_few_shot_scenarios
 from app.api.admin.auth import (
@@ -20,7 +19,7 @@ from app.api.admin.auth import (
     record_failed_attempt,
     reset_attempts,
 )
-from config import settings, APP_VERSION, DEFAULT_BRAIN
+from config import settings, APP_VERSION
 
 FEW_SHOTS_DIR = "few_shots"
 
@@ -108,7 +107,6 @@ async def shadow_get(request: Request, live: str = None, db: AsyncSession = Depe
             "cost": round(sum(t.token_cost or 0 for t in turns), 4),
             "shadow_enabled": (cfg.get("brain_shadow_enabled") or "").strip().lower()
             in ("1", "true", "yes", "on"),
-            "brain_version": cfg.get("brain_version") or DEFAULT_BRAIN,
             "threshold": cfg.get("uncertainty_threshold") or "3",
         },
     )
@@ -244,56 +242,43 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
 
     cfg = await get_all_config(db)
 
-    # New qualification-funnel brain (behind a config flag). The sandbox is
-    # stateless server-side, so lead_state is round-tripped via the client.
-    brain_version = (cfg.get("brain_version") or DEFAULT_BRAIN).strip().lower()
-    # `brain_version` may be overridden per request so the routed brain can be
-    # exercised in the sandbox without switching it on for live traffic.
-    brain_version = (body.get("brain_version") or brain_version).strip().lower()
+    # One brain. The sandbox is stateless server-side, so lead_state is
+    # round-tripped via the client.
+    from app.repositories.brain_turn import save_turn
+    from app.repositories.knowledge import get_active_knowledge
+    from app.repositories.playbook import get_active_playbooks
+    from app.services.brain.turn import run_turn_v2
 
-    if brain_version in ("funnel", "routed"):
-        if brain_version == "routed":
-            from app.repositories.knowledge import get_active_knowledge
-            from app.repositories.playbook import get_active_playbooks
-            from app.services.brain.turn import run_turn_v2
+    result = await run_turn_v2(
+        request.app.state.openai_client, messages, cfg,
+        body.get("lead_state"), ig_user_id="admin_sandbox",
+        knowledge_entries=await get_active_knowledge(db),
+        playbook_entries=await get_active_playbooks(db),
+    )
 
-            result = await run_turn_v2(
-                request.app.state.openai_client, messages, cfg,
-                body.get("lead_state"), ig_user_id="admin_sandbox",
-                knowledge_entries=await get_active_knowledge(db),
-                playbook_entries=await get_active_playbooks(db),
-            )
-        else:
-            from app.services.brain import run_turn
-            result = await run_turn(
-                request.app.state.openai_client, messages, cfg,
-                body.get("lead_state"), ig_user_id="admin_sandbox",
-            )
-        # Record sandbox turns too. This is the surface the team actually tests
-        # on, and without this a turn that goes wrong here leaves no trace at
-        # all - which is exactly what happened the first time one did.
-        from app.repositories.brain_turn import save_turn
-        last_user = next((m["content"] for m in reversed(messages)
-                          if m.get("role") == "user"), "")
-        await save_turn(db, "admin_sandbox", brain_version=brain_version,
-                        result=result, lead_message=last_user)
+    # Record sandbox turns too. This is the surface the team actually tests on,
+    # and without this a turn that goes wrong here leaves no trace at all.
+    last_user = next((m["content"] for m in reversed(messages)
+                      if m.get("role") == "user"), "")
+    await save_turn(db, "admin_sandbox", brain_version="v14",
+                    result=result, lead_message=last_user)
 
-        return JSONResponse({
-            "reply": result.reply_text,
-            "human_takeover": result.pause,
-            "takeover_reason": result.pause_reason,
-            "lead_state": result.lead_state,
-            "phase": result.lead_state.get("phase"),
-            "action": result.action,
-            "violations": result.violations,
-            "brain_version": brain_version,
-            # So an "uncertain" banner in the sandbox says WHY, instead of being
-            # an opaque dead end.
-            "uncertainty": result.trace.get("uncertainty_score"),
-            "signals": result.trace.get("uncertainty_signals") or [],
-            "intent": result.trace.get("intent"),
-            "mode": result.trace.get("mode"),
-        })
+    return JSONResponse({
+        "reply": result.reply_text,
+        "human_takeover": result.pause,
+        "takeover_reason": result.pause_reason,
+        "lead_state": result.lead_state,
+        "phase": result.lead_state.get("phase"),
+        "action": result.action,
+        "violations": result.violations,
+        # So an "uncertain" banner in the sandbox says WHY, instead of being an
+        # opaque dead end.
+        "uncertainty": result.trace.get("uncertainty_score"),
+        "signals": result.trace.get("uncertainty_signals") or [],
+        "intent": result.trace.get("intent"),
+        "mode": result.trace.get("mode"),
+    })
+
 
     last_user_text = next(
         (m["content"].lower() for m in reversed(messages) if m.get("role") == "user"), ""

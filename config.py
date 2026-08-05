@@ -5,10 +5,6 @@ from pydantic_settings import BaseSettings
 # v1.1 = qualification-funnel brain (see specs/brain_architecture.md).
 APP_VERSION = "v1.1"
 
-# Which brain answers when `brain_version` is absent from app_config. The key is
-# seeded by migration, so this only applies to a database predating it.
-# "funnel" and "legacy" stay selectable; rollback is that one config field.
-DEFAULT_BRAIN = "routed"
 
 
 class Settings(BaseSettings):

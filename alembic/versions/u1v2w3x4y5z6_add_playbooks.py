@@ -29,37 +29,52 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def _table_exists(name: str) -> bool:
+    """`main.py` runs `create_all` at startup, so on a dev database these tables
+    can already exist before the migration runs. Creating one twice is a hard
+    error that strands the whole upgrade - which is how a database ends up five
+    migrations behind with an empty knowledge table and the old brain live."""
+    return sa.inspect(op.get_bind()).has_table(name)
+
+
 def upgrade() -> None:
-    op.create_table(
-        "playbooks",
-        sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("slug", sa.String(length=80), nullable=False, unique=True, index=True),
-        sa.Column("title", sa.String(length=160), nullable=False),
-        sa.Column("mode", sa.String(length=32), nullable=False, server_default="", index=True),
-        sa.Column("intents", sa.Text(), nullable=False, server_default=""),
-        sa.Column("stages", sa.Text(), nullable=False, server_default=""),
-        sa.Column("triggers", sa.Text(), nullable=False, server_default=""),
-        sa.Column("language", sa.String(length=8), nullable=False, server_default="en"),
-        sa.Column("situation", sa.Text(), nullable=False, server_default=""),
-        sa.Column("goal", sa.Text(), nullable=False, server_default=""),
-        sa.Column("emotional_outcome", sa.Text(), nullable=False, server_default=""),
-        sa.Column("communication_priorities", sa.Text(), nullable=False, server_default=""),
-        sa.Column("mistakes_to_avoid", sa.Text(), nullable=False, server_default=""),
-        sa.Column("examples", sa.JSON(), nullable=False, server_default="[]"),
-        sa.Column("conversation_state", sa.Text(), nullable=False, server_default=""),
-        sa.Column("success_criteria", sa.Text(), nullable=False, server_default=""),
-        sa.Column("information_that_matters", sa.Text(), nullable=False, server_default=""),
-        sa.Column("decision_outcome", sa.Text(), nullable=False, server_default=""),
-        sa.Column("why_this_works", sa.Text(), nullable=False, server_default=""),
-        sa.Column("source", sa.String(length=120), nullable=False, server_default=""),
-        sa.Column("active", sa.Boolean(), nullable=False, server_default=sa.true()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-    )
+    if not _table_exists("playbooks"):
+        op.create_table(
+            "playbooks",
+            sa.Column("id", sa.Integer(), primary_key=True),
+            sa.Column("slug", sa.String(length=80), nullable=False, unique=True, index=True),
+            sa.Column("title", sa.String(length=160), nullable=False),
+            sa.Column("mode", sa.String(length=32), nullable=False, server_default="", index=True),
+            sa.Column("intents", sa.Text(), nullable=False, server_default=""),
+            sa.Column("stages", sa.Text(), nullable=False, server_default=""),
+            sa.Column("triggers", sa.Text(), nullable=False, server_default=""),
+            sa.Column("language", sa.String(length=8), nullable=False, server_default="en"),
+            sa.Column("situation", sa.Text(), nullable=False, server_default=""),
+            sa.Column("goal", sa.Text(), nullable=False, server_default=""),
+            sa.Column("emotional_outcome", sa.Text(), nullable=False, server_default=""),
+            sa.Column("communication_priorities", sa.Text(), nullable=False, server_default=""),
+            sa.Column("mistakes_to_avoid", sa.Text(), nullable=False, server_default=""),
+            sa.Column("examples", sa.JSON(), nullable=False, server_default="[]"),
+            sa.Column("conversation_state", sa.Text(), nullable=False, server_default=""),
+            sa.Column("success_criteria", sa.Text(), nullable=False, server_default=""),
+            sa.Column("information_that_matters", sa.Text(), nullable=False, server_default=""),
+            sa.Column("decision_outcome", sa.Text(), nullable=False, server_default=""),
+            sa.Column("why_this_works", sa.Text(), nullable=False, server_default=""),
+            sa.Column("source", sa.String(length=120), nullable=False, server_default=""),
+            sa.Column("active", sa.Boolean(), nullable=False, server_default=sa.true()),
+            sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        )
 
     # Imported here so the migration seeds exactly what the app will retrieve.
     import json
 
     from app.services.brain.playbook_seed import SEED
+
+    # Seeding is skipped when rows already exist, so a re-run cannot
+    # duplicate the library or collide with an edit Sonia has made.
+    if op.get_bind().execute(
+            sa.text("SELECT count(*) FROM playbooks")).scalar():
+        return  # already seeded
 
     conn = op.get_bind()
     insert = sa.text(

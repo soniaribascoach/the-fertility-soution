@@ -33,36 +33,49 @@ _CONFIG = {
 }
 
 
+def _table_exists(name: str) -> bool:
+    """`main.py` runs `create_all` at startup, so on a dev database these tables
+    can already exist before the migration runs. Creating one twice is a hard
+    error that strands the whole upgrade - which is how a database ends up five
+    migrations behind with an empty knowledge table and the old brain live."""
+    return sa.inspect(op.get_bind()).has_table(name)
+
+
 def upgrade() -> None:
-    op.create_table(
-        "brain_turns",
-        sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("instagram_user_id", sa.String(length=64), nullable=False, index=True),
-        sa.Column("created_at", sa.DateTime(timezone=True),
-                  server_default=sa.func.now(), index=True),
-        sa.Column("brain_version", sa.String(length=16), nullable=False),
-        sa.Column("shadow", sa.Boolean(), nullable=False, server_default=sa.false(), index=True),
-        sa.Column("lead_message", sa.Text(), nullable=False, server_default=""),
-        sa.Column("intent", sa.String(length=48), nullable=False, server_default="", index=True),
-        sa.Column("intent_certainty", sa.String(length=16), nullable=False, server_default=""),
-        sa.Column("stage", sa.String(length=16), nullable=False, server_default=""),
-        sa.Column("mode", sa.String(length=24), nullable=False, server_default="", index=True),
-        sa.Column("reason", sa.String(length=64), nullable=False, server_default=""),
-        sa.Column("action", sa.String(length=48), nullable=False, server_default=""),
-        sa.Column("question_asked", sa.Text(), nullable=False, server_default=""),
-        sa.Column("reply", sa.Text(), nullable=False, server_default=""),
-        sa.Column("live_reply", sa.Text(), nullable=False, server_default=""),
-        sa.Column("trace", sa.JSON(), nullable=False, server_default="{}"),
-        sa.Column("violations", sa.JSON(), nullable=False, server_default="[]"),
-        sa.Column("uncertainty_score", sa.Integer(), nullable=False,
-                  server_default="0", index=True),
-        sa.Column("pause", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("pause_reason", sa.String(length=48), nullable=False, server_default=""),
-        sa.Column("qualified", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("usage", sa.JSON(), nullable=False, server_default="{}"),
-        sa.Column("token_cost", sa.Float(), nullable=False, server_default="0"),
-    )
-    op.create_index("ix_brain_turns_shadow_created", "brain_turns", ["shadow", "created_at"])
+    if not _table_exists("brain_turns"):
+        op.create_table(
+            "brain_turns",
+            sa.Column("id", sa.Integer(), primary_key=True),
+            sa.Column("instagram_user_id", sa.String(length=64), nullable=False, index=True),
+            sa.Column("created_at", sa.DateTime(timezone=True),
+                      server_default=sa.func.now(), index=True),
+            sa.Column("brain_version", sa.String(length=16), nullable=False),
+            sa.Column("shadow", sa.Boolean(), nullable=False, server_default=sa.false(), index=True),
+            sa.Column("lead_message", sa.Text(), nullable=False, server_default=""),
+            sa.Column("intent", sa.String(length=48), nullable=False, server_default="", index=True),
+            sa.Column("intent_certainty", sa.String(length=16), nullable=False, server_default=""),
+            sa.Column("stage", sa.String(length=16), nullable=False, server_default=""),
+            sa.Column("mode", sa.String(length=24), nullable=False, server_default="", index=True),
+            sa.Column("reason", sa.String(length=64), nullable=False, server_default=""),
+            sa.Column("action", sa.String(length=48), nullable=False, server_default=""),
+            sa.Column("question_asked", sa.Text(), nullable=False, server_default=""),
+            sa.Column("reply", sa.Text(), nullable=False, server_default=""),
+            sa.Column("live_reply", sa.Text(), nullable=False, server_default=""),
+            sa.Column("trace", sa.JSON(), nullable=False, server_default="{}"),
+            sa.Column("violations", sa.JSON(), nullable=False, server_default="[]"),
+            sa.Column("uncertainty_score", sa.Integer(), nullable=False,
+                      server_default="0", index=True),
+            sa.Column("pause", sa.Boolean(), nullable=False, server_default=sa.false()),
+            sa.Column("pause_reason", sa.String(length=48), nullable=False, server_default=""),
+            sa.Column("qualified", sa.Boolean(), nullable=False, server_default=sa.false()),
+            sa.Column("usage", sa.JSON(), nullable=False, server_default="{}"),
+            sa.Column("token_cost", sa.Float(), nullable=False, server_default="0"),
+        )
+        # Inside the guard: `create_all` builds the index along with the table,
+        # so creating it unconditionally fails on exactly the databases the
+        # guard above exists to rescue.
+        op.create_index("ix_brain_turns_shadow_created", "brain_turns",
+                        ["shadow", "created_at"])
 
     for key, value in _CONFIG.items():
         op.execute(

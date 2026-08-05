@@ -2,7 +2,7 @@
 
 Same entry-point contract as the funnel brain's `run_turn` - three callers and
 five test modules depend on the signature and on `TurnResult` - so this can be
-swapped in behind the `brain_version` flag with no changes upstream.
+the only turn implementation: there is no brain flag to be set wrongly.
 
     0. safety gate        no LLM   (reused unchanged from the funnel brain)
     1. phase-1 CTA        no LLM   (reused unchanged)
@@ -15,6 +15,7 @@ swapped in behind the `brain_version` flag with no changes upstream.
     8. uncertainty        no LLM   -> a person, if anything is off
 """
 import logging
+from dataclasses import replace
 from typing import Optional
 
 from openai import AsyncOpenAI
@@ -40,6 +41,56 @@ logger = logging.getLogger(__name__)
 # later contradictory reading. "She said 2 years, now she says 6 months" is a
 # person's job, not a state update.
 _STABLE_SLOTS = ("age", "trying_duration", "partner_status", "email_collected")
+
+
+def repair_notes(violations: list[str]) -> list[str]:
+    """Turn check failures into instructions the writer can actually act on.
+
+    The retry used to be the same prompt at a lower temperature, which is not a
+    correction, it is a coin flip. A banned phrase Sonia named by name came back
+    a second time and was sent to her lead.
+    """
+    notes = []
+    for violation in violations:
+        name, _, detail = violation.partition(":")
+        if name == "banned_phrase":
+            notes.append(f'Remove the phrase "{detail}". React to what she '
+                         f'actually said instead of opening with a stock line.')
+        elif name == "question_not_allowed":
+            notes.append("Remove the question. This reply must contain no "
+                         "question mark at all.")
+        elif name == "expected_exactly_one_question":
+            notes.append("End with exactly one question.")
+        elif name == "too_many_questions":
+            notes.append("Keep at most one question.")
+        elif name == "repeat":
+            notes.append(f'You already said something too close to "{detail}". '
+                         f'Say it in a completely different shape.')
+        elif name == "stock_opening":
+            notes.append("That opening line has been used on other leads. Open "
+                         "differently, from something specific she said.")
+        elif name == "echoed_lead":
+            notes.append("Do not repeat her own words back to her.")
+        elif name == "too_long":
+            notes.append("Too long. Cut it down to match the length of her message.")
+        elif name == "em_dash":
+            notes.append("Remove the em-dash; use a comma or a full stop.")
+        elif name == "markdown":
+            notes.append("Plain text only: no bullets, bold or headings.")
+        elif name in ("disallowed_url", "unexpected_price"):
+            notes.append(f"Remove the {'link' if 'url' in name else 'price'}; "
+                         f"you were not given one to share.")
+        elif name == "missing_required_url":
+            notes.append("You must include the link exactly as given.")
+        elif name == "medical_advice":
+            notes.append("Remove the dosage or medical instruction.")
+        elif name == "formal_address":
+            notes.append('Address her informally with "tu", never "usted".')
+        elif name.startswith("invented"):
+            notes.append("Remove the number or detail she never gave you.")
+        elif name == "reask":
+            notes.append(f"She already told you {detail}. Do not ask again.")
+    return notes
 
 
 def merge_facts(state: dict, verified: dict) -> list[str]:
@@ -190,7 +241,14 @@ async def run_turn_v2(
     classification, usage_classify = await classify(
         openai_client, history, state["slots"], cfg=cfg
     )
-    evidence = verify_evidence(classification, recent)
+    # Verify quotes against EVERYTHING she has written, not just this message.
+    # Checking only the current batch marked a genuine quote from two turns ago
+    # as fabricated, which pushed uncertainty to the threshold and silenced the
+    # turn: a woman who said "I have given up now" got nothing back, because the
+    # classifier had correctly cited "i tried for 2 years" from her first
+    # message. A quote is fabricated only if she never said it at all.
+    said_so_far = [m.get("content", "") for m in history if m.get("role") == "user"]
+    evidence = verify_evidence(classification, said_so_far + list(recent))
     # Drop a question the model paraphrased or invented from a statement: a
     # phantom question makes the `answered` judge veto a perfectly good reply.
     classification.question_asked = verify_question(classification, recent)
@@ -292,8 +350,9 @@ async def run_turn_v2(
     if not result.ok:
         logger.info("Draft failed checks %s; regenerating", result.violations)
         regenerated = True
+        retry_input = replace(winput, fix=repair_notes(result.violations))
         draft2, usage_write2 = await writer.generate(
-            openai_client, history, winput, cfg=cfg, temperature=0.0
+            openai_client, history, retry_input, cfg=cfg, temperature=0.0
         )
         usage_write = combine_usage(usage_write, usage_write2)
         result2 = checks.run_all(

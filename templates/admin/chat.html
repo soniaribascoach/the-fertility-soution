@@ -100,14 +100,6 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-      <!-- Which brain answers, for this sandbox only. Leaving it on "Config
-           default" uses whatever brain_version is set to for live traffic. -->
-      <select id="brain-select" onchange="clearChat()" title="Which brain answers (sandbox only)"
-        style="font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; color:var(--ink-soft); padding:6px 9px; border-radius:9px; border:1px solid #e4e4e7; background:#fff; cursor:pointer;">
-        <option value="">Config default</option>
-        <option value="routed">Routed brain</option>
-        <option value="funnel">Funnel brain</option>
-      </select>
       <button onclick="clearChat()"
         style="font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500; color:var(--ink-muted); padding:6px 13px; border-radius:9px; border:1px solid transparent; background:transparent; cursor:pointer; transition:all 0.15s;"
         onmouseover="this.style.color='#52525b'; this.style.background='#f4f4f5'; this.style.borderColor='#e4e4e7';"
@@ -353,12 +345,9 @@
       const res = await fetch('/admin/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Per-request brain override, so the routed brain can be exercised here
-        // without switching it on for live traffic.
         body: JSON.stringify({
           messages: conversationHistory,
           lead_state: leadState,
-          brain_version: document.getElementById('brain-select')?.value || undefined,
         }),
       });
       const data = await res.json();

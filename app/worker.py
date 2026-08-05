@@ -21,13 +21,10 @@ from app.repositories.user_state import (
     get_lead_state,
     save_lead_state,
 )
-from app.services.ai_pipeline import generate_reply, check_phase1
-from app.services.brain import run_turn, HUMAN_REVIEW_TAG
-from app.services.few_shots import get_few_shot_scenarios
+from app.services.brain import HUMAN_REVIEW_TAG
 from app.services.message_splitter import split_reply
-from app.services.output_parser import parse_ai_output
 from app.services.typing_delay import calculate_delay
-from config import settings, DEFAULT_BRAIN
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -117,102 +114,15 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             batch_texts = [r.content.lower() for r in rows]
             cfg = await get_all_config(db)
 
-            # Behind a config flag for safe rollout:
-            #   "routed" - intent classifier + router + knowledge (current work)
-            #   "funnel" - the qualification-funnel brain
-            #   anything else - the legacy monolith
-            # Rollback is this one field in AppConfig, with no deploy.
-            brain_version = (cfg.get("brain_version") or DEFAULT_BRAIN).strip().lower()
-            if brain_version in ("funnel", "routed"):
-                await _run_brain_turn(
-                    db, ig_user_id, manychat_contact_id, cfg, app_state,
-                    [r.content for r in rows], routed=(brain_version == "routed"),
-                )
-                await mark_batch_processed(db, ig_user_id)
-                logger.info("Processed conversation (%s) for user %s",
-                            brain_version, ig_user_id)
-                return
-
-            # Shadow mode is only meaningful for the two brains above; the legacy
-            # monolith keeps no lead state to run the routed brain against.
-
-            if any(_is_media_url(txt) for txt in batch_texts):
-                logger.info("Media message detected (batch) for user %s", ig_user_id)
-                await pause_ai(db, ig_user_id, "media_message")
-                await mark_batch_processed(db, ig_user_id)
-                await app_state.manychat_client.add_tag(manychat_contact_id, 86596410)
-                return
-
-            blocklist = [p.strip().lower() for p in cfg.get("medical_blocklist", "").split("\n") if p.strip()]
-            if blocklist and any(any(phrase in txt for phrase in blocklist) for txt in batch_texts):
-                deflection = cfg.get("medical_deflection", "").strip()
-                logger.info("Medical blocklist triggered (batch) for user %s", ig_user_id)
-                if deflection:
-                    await app_state.manychat_client.send_message(manychat_contact_id, deflection)
-                await pause_ai(db, ig_user_id, "medical_deflection")
-                await mark_batch_processed(db, ig_user_id)
-                await app_state.manychat_client.add_tag(manychat_contact_id, 86596410)
-                return
-
-            handover_triggers = [t.strip().lower() for t in cfg.get("human_takeover_triggers", "").split("\n") if t.strip()]
-            if handover_triggers and any(any(trigger in txt for trigger in handover_triggers) for txt in batch_texts):
-                logger.info("Human handover triggered (batch) for user %s", ig_user_id)
-                await pause_ai(db, ig_user_id, "human_handover")
-                await mark_batch_processed(db, ig_user_id)
-                await app_state.manychat_client.add_tag(manychat_contact_id, 86596410)
-                return
-
-            history = await get_history(db, ig_user_id, limit=20)
-            history_dicts = [{"role": r.role, "content": r.content} for r in history]
-
-            # Phase 1 — CTA keyword bypass (first ever message only)
-            opening = check_phase1(cfg, history_dicts)
-            if opening:
-                logger.info("Phase 1 CTA keyword triggered for user %s", ig_user_id)
-                chunks = split_reply(opening)
-                delay = calculate_delay(chunks[0], settings.max_typing_delay)
-                await asyncio.sleep(delay)
-                for i, chunk in enumerate(chunks):
-                    if i > 0:
-                        await asyncio.sleep(calculate_delay(chunk, settings.max_typing_delay))
-                    await app_state.manychat_client.send_message(manychat_contact_id, chunk)
-                await save_message(db, ig_user_id, "assistant", opening)
-                await mark_batch_processed(db, ig_user_id)
-                return
-
-            raw_text, usage = await generate_reply(
-                db=db,
-                openai_client=app_state.openai_client,
-                few_shot_scenarios=get_few_shot_scenarios(app_state),
-                ig_user_id=ig_user_id,
-                messages=history_dicts,
-                cfg=cfg,
+            # One brain. There is no version flag: a system that can silently
+            # be "the old one" is a system that can be handed over broken.
+            await _run_brain_turn(
+                db, ig_user_id, manychat_contact_id, cfg, app_state,
+                [r.content for r in rows],
             )
-
-            parsed = parse_ai_output(raw_text)
-
-            await save_message(
-                db,
-                ig_user_id,
-                "assistant",
-                raw_text,
-                token_cost=usage.get("token_cost"),
-                prompt_tokens=usage.get("prompt_tokens"),
-                completion_tokens=usage.get("completion_tokens"),
-                ai_model=usage.get("ai_model"),
-            )
-
-            if parsed.clean_text:
-                chunks = split_reply(parsed.clean_text)
-                delay = calculate_delay(chunks[0], settings.max_typing_delay)
-                await asyncio.sleep(delay)
-                for i, chunk in enumerate(chunks):
-                    if i > 0:
-                        await asyncio.sleep(calculate_delay(chunk, settings.max_typing_delay))
-                    await app_state.manychat_client.send_message(manychat_contact_id, chunk)
-
             await mark_batch_processed(db, ig_user_id)
             logger.info("Processed conversation for user %s", ig_user_id)
+            return
 
     except Exception:
         logger.exception("Error handling conversation for user %s", ig_user_id)
@@ -230,12 +140,8 @@ async def _send_bubbles(app_state, manychat_contact_id: str, text: str) -> None:
 
 
 async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
-                          batch_texts, *, routed: bool = False) -> None:
-    """Run a brain for one batch and apply its side effects.
-
-    Both brains share this function because they share `TurnResult`; only the
-    turn implementation and the knowledge lookup differ.
-    """
+                          batch_texts) -> None:
+    """Run the brain for one batch and apply its side effects."""
     from app.repositories.brain_turn import save_turn
 
     history = await get_history(db, ig_user_id, limit=20)
@@ -243,17 +149,11 @@ async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
     lead_state = await get_lead_state(db, ig_user_id)
     lead_message = "\n".join(batch_texts)
 
-    if routed:
-        result = await _routed_turn(db, app_state, history_dicts, cfg, lead_state,
-                                    ig_user_id, batch_texts)
-    else:
-        result = await run_turn(
-            app_state.openai_client, history_dicts, cfg, lead_state,
-            ig_user_id=ig_user_id, new_texts=batch_texts,
-        )
+    result = await _routed_turn(db, app_state, history_dicts, cfg, lead_state,
+                                ig_user_id, batch_texts)
 
-    await save_turn(db, ig_user_id, brain_version="routed" if routed else "funnel",
-                    result=result, lead_message=lead_message)
+    await save_turn(db, ig_user_id, brain_version="v14", result=result,
+                    lead_message=lead_message)
 
     await save_lead_state(db, ig_user_id, result.lead_state)
 
@@ -282,21 +182,6 @@ async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
         result.violations,
     )
 
-    # Shadow: run the routed brain on the same input WITHOUT sending, so its
-    # tone and handoff rate can be reviewed against real traffic before the flag
-    # is flipped. Deliberately last and fully isolated - a shadow failure must
-    # never affect the lead who already got her reply.
-    if not routed and _flag(cfg, "brain_shadow_enabled"):
-        try:
-            shadow = await _routed_turn(
-                db, app_state, history_dicts, cfg, lead_state, ig_user_id, batch_texts,
-            )
-            await save_turn(
-                db, ig_user_id, brain_version="routed", result=shadow, shadow=True,
-                lead_message=lead_message, live_reply=result.reply_text or "",
-            )
-        except Exception:
-            logger.exception("Shadow turn failed for %s", ig_user_id)
 
 
 def _flag(cfg: dict, key: str) -> bool:

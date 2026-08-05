@@ -23,18 +23,13 @@
 </div>
 
 <!-- Status strip -->
-<div class="grid grid-cols-4 gap-4 mb-7">
+<div class="grid grid-cols-3 gap-4 mb-7">
   <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
     <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Shadow mode</div>
     <div class="text-lg font-bold {% if shadow_enabled %}text-emerald-600{% else %}text-slate-400{% endif %}">
       {% if shadow_enabled %}On{% else %}Off{% endif %}
     </div>
     <div class="text-xs text-slate-400 mt-1">brain_shadow_enabled</div>
-  </div>
-  <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-    <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Live brain</div>
-    <div class="text-lg font-bold text-slate-900">{{ brain_version }}</div>
-    <div class="text-xs text-slate-400 mt-1">rollback = this field</div>
   </div>
   <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
     <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Handed to a human</div>
