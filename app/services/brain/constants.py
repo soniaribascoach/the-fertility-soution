@@ -257,6 +257,7 @@ FLAG_KEYS = [
     "handed_off",       # booking sequence complete -> handed to a human
     "cost_declined",    # she said she can't afford it -> takeover if she keeps engaging
     "last_prompt",      # loop guard: key of the last question we sent
+    "pending_question",  # key of the question she is currently expected to answer
     "oos_reason",
     "takeover_reason",
 ]
@@ -278,6 +279,7 @@ _DEFAULT_FLAGS = {
     "handed_off": False,
     "cost_declined": False,
     "last_prompt": None,
+    "pending_question": None,
     "oos_reason": None,
     "takeover_reason": None,
 }
@@ -300,6 +302,9 @@ _RESUME_CLEARED_FLAGS = {
     "handed_off": False,
     "cost_declined": False,
     "last_prompt": None,
+    # A human has been talking to her; whatever the AI last asked is stale, and
+    # reading her next message as an answer to it would be a guess.
+    "pending_question": None,
     "oos_reason": None,
     "takeover_reason": None,
 }

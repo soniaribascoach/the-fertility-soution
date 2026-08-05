@@ -182,3 +182,30 @@ def test_seed_positioning_is_not_generic_wellness_copy():
     generic_only = {"nutrition", "hormones", "stress", "lifestyle"}
     words = set(positioning.replace(",", " ").split())
     assert not words.issubset(generic_only)
+
+
+# --- Pinning: her wording must not decide whether she gets an answer ----------
+
+def test_a_programme_question_retrieves_the_programme_even_in_odd_wording():
+    """"what does it include?" matched no trigger at all (the entry's trigger was
+    the literal "included"), so the writer was handed nothing and invented
+    "lifestyle, stress, and more" - complaint 5, live, on 2026-08-05."""
+    from app.services.brain.knowledge_seed import SEED
+
+    retrieved = select(SEED, mode=ResponseMode.ANSWER,
+                       intent=LeadIntent.ASKS_ABOUT_PROGRAM,
+                       text="what does it include?")
+    topics = [e.topic for e in retrieved]
+    assert "what_is_included" in topics, topics
+
+
+def test_the_caller_can_pin_what_this_turn_is_about():
+    entries = [
+        KnowledgeEntry(kind=Kind.BOUNDARY, topic="not_a_doctor", content="not a doctor",
+                       triggers=[r"doctor"]),
+        KnowledgeEntry(kind=Kind.REFRAME, topic="not_broken", content="not broken",
+                       triggers=[r"broken"]),
+    ]
+    retrieved = select(entries, mode=ResponseMode.QUALIFY, intent=LeadIntent.ANSWERS_QUESTION,
+                       text="yes", pin_topics=("not_a_doctor",))
+    assert [e.topic for e in retrieved] == ["not_a_doctor"]

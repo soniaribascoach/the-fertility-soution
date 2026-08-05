@@ -67,8 +67,7 @@
         treatment_path: ivf
       expect:
         not_mode: [BOOK]
-        next_question_not:
-          - "how long she has been trying, and what she has already tried"
+        next_question_not: [trying_duration]
         not_contains: ["what else have you tried", "what have you already tried"]
 
 - id: ivf_prep_is_priority_enough
@@ -96,8 +95,7 @@
         strong_readiness: true
       expect:
         mode: QUALIFY
-        next_question_not:
-          - "how much of a priority getting pregnant is for her right now"
+        next_question_not: [priority]
         not_contains: ["scale of 1 to 10", "top priority"]
 
 - id: answer_the_question_before_qualifying

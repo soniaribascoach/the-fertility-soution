@@ -20,7 +20,7 @@ from typing import Optional
 
 from openai import AsyncOpenAI
 
-from app.services.brain import checker, checks, scripts, uncertainty, writer
+from app.services.brain import answers, checker, checks, scripts, uncertainty, writer
 from app.services.brain import playbooks as pb
 from app.services.brain import knowledge as kb
 from app.services.brain.classify import classify, verify_evidence, verify_question
@@ -135,29 +135,17 @@ def _still_needed(state: dict) -> list[str]:
 
 _DISCOVERY_ORDER = ["trying_duration", "age", "treatment_path", "done_testing", "diagnosis"]
 
-
-_ASKED_MARKERS = {
-    "how long she has been trying, and what she has already tried":
-        ("how long have you been trying", "how long you have been trying",
-         "cuanto tiempo llevan intentando"),
-    "her age": ("how old are you", "cuantos anos tienes"),
-    "whether she is trying naturally, doing IUI or IVF, or still deciding":
-        ("trying naturally", "iui", "still deciding"),
-    "whether she has had any fertility testing": ("fertility testing", "any testing"),
-    "whether a doctor has given her a diagnosis": ("diagnosis",),
-    "how much of a priority getting pregnant is for her right now":
-        ("scale of 1 to 10", "top priority"),
-    "whether this is the kind of support she is looking for":
-        ("kind of support", "looking for"),
-    "whether she is open to this being a paid programme, if it feels right":
-        ("paid program", "paid coaching"),
-    "whether she is doing this with a partner or on her own":
-        ("with a partner", "on your own"),
-    "whether her partner could join the call": ("join the call",),
+# Substance a QUALIFY turn must have in hand for a specific question, whatever her
+# message happened to trigger. Asking "is this the kind of support you're looking
+# for?" without saying what the support IS is how that question ended up meaning
+# nothing to the lead - and how she was expected to say yes to it.
+_PINNED_FOR_QUESTION = {
+    "role": ("not_a_doctor", "complements_treatment", "what_is_included"),
+    "financial": ("what_is_included", "whole_system"),
 }
 
 
-def already_asked(question: Optional[str], history: list[dict]) -> bool:
+def already_asked(question_key: Optional[str], history: list[dict]) -> bool:
     """Has this topic already been put to her?
 
     The phase-1 opener asks about duration and what she has tried, so a lead who
@@ -165,9 +153,7 @@ def already_asked(question: Optional[str], history: list[dict]) -> bool:
     needs asking - but the writer has to reword it, or the repeat check rejects
     the reply and she gets silence instead.
     """
-    if not question:
-        return False
-    markers = _ASKED_MARKERS.get(question)
+    markers = answers.ASKED_MARKERS.get(question_key or "")
     if not markers:
         return False
     said = " ".join(m.get("content", "") for m in history
@@ -176,34 +162,56 @@ def already_asked(question: Optional[str], history: list[dict]) -> bool:
 
 
 def _next_question(state: dict) -> Optional[str]:
-    """The one thing to ask on a QUALIFY turn, as a topic rather than a script.
+    """The KEY of the one thing to ask on a QUALIFY turn (see `answers.QUESTIONS`).
 
-    Handing over the approved sentence is what made every discovery message
-    identical, so the writer gets the subject and phrases it itself.
+    A key rather than a sentence, for two reasons: the writer is handed the topic
+    and phrases it itself (handing over the approved sentence is what made every
+    discovery message identical), and the key is what the state remembers, so her
+    next message can be read as an answer to it however the writer worded it.
+
+    Pure: it decides, it does not mark anything as done. `explained_role` used to
+    be set right here, which claimed the role had been explained at the moment we
+    decided to ask about it - before the reply was written, and even when the turn
+    was later suppressed.
     """
     from app.services.brain import gates
     s = state["slots"]
     if not gates._discovery_complete(s) and not state["flags"].get("situation_rich"):
         missing = next((k for k in _DISCOVERY_ORDER if not s.get(k)), "trying_duration")
-        return {
-            "trying_duration": "how long she has been trying, and what she has already tried",
-            "age": "her age",
-            "treatment_path": "whether she is trying naturally, doing IUI or IVF, or still deciding",
-            "done_testing": "whether she has had any fertility testing",
-            "diagnosis": "whether a doctor has given her a diagnosis",
-        }[missing]
+        return missing
     if not gates._priority_ok(s):
-        return "how much of a priority getting pregnant is for her right now"
+        return "priority"
     if not gates._role_ok(state):
-        state["flags"]["explained_role"] = True
-        return "whether this is the kind of support she is looking for"
-    if not gates._financial_ok(s):
-        return "whether she is open to this being a paid programme, if it feels right"
+        return "role"
+    # She has said no to paying. Asking again is nagging, and the booking gate
+    # keeps the link in until she says otherwise.
+    if not gates._financial_ok(s) and s.get("financial_ready") is not False:
+        return "financial"
     if not gates._partner_resolved(s):
-        if s.get("partner_status") is None:
-            return "whether she is doing this with a partner or on her own"
-        return "whether her partner could join the call"
+        return "partner" if s.get("partner_status") is None else "partner_join"
     return None
+
+
+def _loop_guard(state: dict, question_key: Optional[str]) -> bool:
+    """True when we are about to ask the same thing for the third turn running.
+
+    The funnel brain had this (`controller._guard_repeats`) and the routed brain
+    shipped without it: `last_prompt` and `repeat_count` were left in the state
+    schema with nothing writing them, so the AMH lead was asked the same question
+    five times. Three identical asks means she is stuck or we are, and either way
+    it is a person's job.
+    """
+    f, c = state["flags"], state["counters"]
+    if question_key is None:
+        f["last_prompt"] = None
+        c["repeat_count"] = 0
+        return False
+    if question_key == f.get("last_prompt"):
+        c["repeat_count"] = c.get("repeat_count", 0) + 1
+    else:
+        c["repeat_count"] = 0
+        f["last_prompt"] = question_key
+    return c["repeat_count"] >= 2
 
 
 async def run_turn_v2(
@@ -252,7 +260,13 @@ async def run_turn_v2(
     # Drop a question the model paraphrased or invented from a statement: a
     # phantom question makes the `answered` judge veto a perfectly good reply.
     classification.question_asked = verify_question(classification, recent)
-    contradictions = merge_facts(state, evidence.verified)
+    # Her answer to the question WE asked, read in code against the key we stored
+    # rather than against whatever sentence the writer produced. This is what the
+    # classifier cannot do reliably, and skipping it is what looped the AMH lead
+    # through four identical "would you be open to the paid programme?" turns.
+    pending = state["flags"].get("pending_question")
+    resolved = answers.resolve(pending, recent) if not classification.question_asked else {}
+    contradictions = merge_facts(state, {**resolved, **evidence.verified})
     if classification.situation_richness == "rich":
         # Complaint 2: a woman who has described four IVF cycles and years of
         # interventions has finished discovery, whatever named slots are empty.
@@ -310,8 +324,26 @@ async def run_turn_v2(
     # 4) Retrieve the substance this turn is allowed to use.
     language = state["slots"].get("language") or "en"
     entries = knowledge_entries if knowledge_entries is not None else []
+    next_q = _next_question(state) if mode is ResponseMode.QUALIFY else None
+    if _loop_guard(state, next_q):
+        logger.info("Asked %r three times running -> human for %s", next_q, ig_user_id)
+        state["phase"] = Phase.TAKEOVER.value
+        state["flags"]["takeover_reason"] = "stuck_repeating"
+        state["flags"]["pending_question"] = None
+        return TurnResult(
+            reply_text=None, lead_state=state, pause=True, pause_reason="stuck_repeating",
+            add_tag=True, action=ResponseMode.HANDOFF.value, usage=usage_classify,
+            trace=trace(stuck_on=next_q),
+        )
+    state["flags"]["pending_question"] = next_q
+
     retrieved = kb.select(
-        entries, mode=mode, intent=r.intent, text=" ".join(recent), language=language
+        entries, mode=mode, intent=r.intent, text=" ".join(recent), language=language,
+        # The role question IS the explain-the-role step, so the boundary has to
+        # be in front of the writer for it. Without this, QUALIFY retrieves
+        # reframes only and "is this the kind of support you're looking for?"
+        # went out with nothing said about what the support actually is.
+        pin_topics=_PINNED_FOR_QUESTION.get(next_q or ""),
     )
     knowledge_texts = [e.content for e in retrieved]
 
@@ -328,11 +360,11 @@ async def run_turn_v2(
     known_facts = {k: v for k, v in state["slots"].items()
                    if v is not None and k not in ("language", "closer_assigned")}
 
-    next_q = _next_question(state) if mode is ResponseMode.QUALIFY else None
     winput = writer.WriterInput(
         mode=mode, known_facts=known_facts, knowledge=retrieved,
         question_asked=r.question_asked, still_needed=_still_needed(state),
-        next_question=next_q, already_asked=already_asked(next_q, history),
+        next_question=answers.QUESTIONS.get(next_q or ""),
+        already_asked=already_asked(next_q, history),
         language=language, stance=writer.stance_for(history), allow_urls=allow_urls,
         playbook=playbook, ig_user_id=ig_user_id,
         max_chars=writer.energy_max_chars(spec, recent),
@@ -418,6 +450,9 @@ async def run_turn_v2(
         logger.info("Uncertainty %s (%s) -> human for %s", u.score, u.signals, ig_user_id)
         state["phase"] = Phase.TAKEOVER.value
         state["flags"]["takeover_reason"] = "uncertain"
+        # Nothing was sent, so there is no question outstanding: reading her next
+        # message as an answer to one she never received would be a guess.
+        state["flags"]["pending_question"] = None
         if mode is ResponseMode.BOOK:
             state["flags"]["booking_sent"] = False  # the link never went out
         return TurnResult(
@@ -428,6 +463,11 @@ async def run_turn_v2(
             # most useful thing to review, and it is invisible otherwise.
             trace=dict(turn_trace, aborted=True, suppressed_reply="\n\n".join(draft.bubbles)),
         )
+
+    # The role step counts as done only now, because only now has she actually
+    # been sent the message that explains it.
+    if next_q == "role":
+        state["flags"]["explained_role"] = True
 
     return TurnResult(
         reply_text="\n\n".join(draft.bubbles), lead_state=state, pause=r.pause,

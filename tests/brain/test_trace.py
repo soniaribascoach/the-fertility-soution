@@ -144,17 +144,15 @@ def test_a_question_the_opener_already_asked_is_flagged():
     from app.services.brain.turn import already_asked
 
     history = [{"role": "assistant", "content": _OPENER}]
-    assert already_asked(
-        "how long she has been trying, and what she has already tried", history) is True
+    assert already_asked("trying_duration", history) is True
 
 
 def test_an_unasked_question_is_not_flagged():
     from app.services.brain.turn import already_asked
 
     history = [{"role": "assistant", "content": _OPENER}]
-    assert already_asked("her age", history) is False
-    assert already_asked(
-        "how much of a priority getting pregnant is for her right now", history) is False
+    assert already_asked("age", history) is False
+    assert already_asked("priority", history) is False
 
 
 def test_already_asked_ignores_what_the_lead_said():

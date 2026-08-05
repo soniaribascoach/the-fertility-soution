@@ -107,6 +107,41 @@ def test_fabricated_quote_loses_the_fact():
     assert rejected == ["age"]
 
 
+def test_a_number_that_is_not_in_the_quote_is_not_her_number():
+    """The live AMH turn: "very high" came back as priority_score=10, quoting
+    "very high". The quote is real, so the substring check passes it - and she
+    still never said ten. A number the quote does not contain is an inference,
+    and inferences are dropped."""
+    c = _classification(
+        slot_deltas=SlotDeltas(
+            **{**{k: None for k in SlotDeltas.model_fields}, "priority_score": 10}),
+        evidence=[Evidence(slot="priority_score", quote="very high", certainty="certain")],
+    )
+    result = verify_evidence(c, ["very high"])
+    assert result.verified == {}
+    assert result.unevidenced == ["priority_score"]
+    assert result.fabricated == []   # she did say the words; the reading was wrong
+
+
+def test_a_number_she_did_write_survives():
+    for quote in ("i'd say 9", "nine out of ten"):
+        c = _classification(
+            slot_deltas=SlotDeltas(
+                **{**{k: None for k in SlotDeltas.model_fields}, "priority_score": 9}),
+            evidence=[Evidence(slot="priority_score", quote=quote, certainty="certain")],
+        )
+        assert verify_evidence(c, [quote]).verified == {"priority_score": 9}, quote
+
+
+def test_the_number_check_does_not_touch_booleans():
+    c = _classification(
+        slot_deltas=SlotDeltas(
+            **{**{k: None for k in SlotDeltas.model_fields}, "open_to_holistic": True}),
+        evidence=[Evidence(slot="open_to_holistic", quote="yes", certainty="certain")],
+    )
+    assert verify_evidence(c, ["yes"]).verified == {"open_to_holistic": True}
+
+
 def test_unevidenced_fact_is_dropped():
     # A delta with no evidence entry at all: if she really said it, there would
     # be something to quote.

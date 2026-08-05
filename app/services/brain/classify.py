@@ -252,6 +252,23 @@ def _norm(text: str) -> str:
     return _WS_RE.sub(" ", (text or "")).strip().casefold()
 
 
+# Numbers she wrote as words. Anything outside this is not a number she gave.
+_WORD_NUMBERS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+    "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12,
+    "uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5, "seis": 6, "siete": 7,
+    "ocho": 8, "nueve": 9, "diez": 10,
+}
+
+
+def _quotes_number(value: int, quote: str) -> bool:
+    """Does her quoted sentence actually contain this number?"""
+    norm = _norm(quote)
+    if re.search(rf"\b{value}\b", norm):
+        return True
+    return any(word in norm.split() for word, n in _WORD_NUMBERS.items() if n == value)
+
+
 @dataclass
 class EvidenceResult:
     """Outcome of checking extracted facts against what she actually wrote.
@@ -323,6 +340,17 @@ def verify_evidence(classification: Classification, lead_texts: list[str]) -> Ev
         if value is None:
             continue
         if slot in quoted:
+            if isinstance(value, int) and not isinstance(value, bool) and not _quotes_number(
+                value, next((e.quote for e in classification.evidence if e.slot == slot), "")
+            ):
+                # A number she never said. "very high" came back as
+                # priority_score=10 with "very high" as the quote, which passes a
+                # quote check and is still invented: the number is not in it.
+                # Counted as unevidenced, not fabricated - she really did say the
+                # words, so this is an over-reading to drop, not invented speech.
+                logger.info("Numeric slot %s=%s not in its own quote", slot, value)
+                result.unevidenced.append(slot)
+                continue
             result.verified[slot] = value
         elif slot in fabricated:
             result.fabricated.append(slot)

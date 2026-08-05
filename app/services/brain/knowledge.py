@@ -72,6 +72,17 @@ _OBJECTION_TOPICS = {
     LeadIntent.OBJECTION_PAYING_TWICE: "paying_twice",
 }
 
+# Topics an intent needs REGARDLESS of which words she used. Trigger matching is
+# literal, so "what does it include?" missed the `what_is_included` entry (its
+# trigger was "included") and the writer was left with nothing but the
+# instruction not to invent - which it then ignored, describing the programme as
+# "lifestyle, stress, and more". That generic answer is complaint 5 verbatim.
+_INTENT_TOPICS = {
+    LeadIntent.ASKS_ABOUT_PROGRAM: ("what_is_included", "whole_system",
+                                    "complements_treatment"),
+    LeadIntent.ASKS_RESULTS_PROOF: ("track_record",),
+}
+
 
 def _matches(entry: KnowledgeEntry, haystack: str) -> int:
     """How many of an entry's triggers appear in the text. 0 means no match."""
@@ -99,22 +110,27 @@ def select(
     text: str,
     language: str = "en",
     limit: int = 3,
+    pin_topics: Optional[tuple] = None,
 ) -> list[KnowledgeEntry]:
     """The approved substance for this turn, most relevant first.
 
-    Objection entries matching the specific objection come first and always
-    survive the limit: they are the reason the four objection types stopped
-    collapsing into one reply.
+    Pinned entries come first and always survive the limit. Three things pin:
+    the exact objection she raised, the topics her intent always needs, and
+    `pin_topics` from the caller (the funnel question this turn is about). Pinning
+    exists because trigger matching is literal and her wording is not.
     """
     haystack = (text or "").casefold()
     wanted = KINDS_FOR_MODE.get(mode, ())
     pool = [e for e in entries if e.active and e.language == language]
 
-    # 1. The exact objection, if this is one.
+    # 1. What this turn needs whatever she wrote: the exact objection, the intent's
+    # own topics, then the caller's.
     pinned = []
     topic = _OBJECTION_TOPICS.get(intent)
     if topic:
         pinned = [e for e in pool if e.kind == Kind.OBJECTION and e.topic == topic]
+    for wanted_topic in tuple(_INTENT_TOPICS.get(intent, ())) + tuple(pin_topics or ()):
+        pinned += [e for e in pool if e.topic == wanted_topic and e not in pinned]
 
     # 2. Everything else this mode can use, ranked by trigger hits.
     scored = []
@@ -132,7 +148,10 @@ def select(
     if mode is ResponseMode.EDUCATE and not any(e.kind == Kind.POSITIONING for e in chosen):
         chosen += [e for e in pool if e.kind == Kind.POSITIONING][:1]
 
-    return chosen[:max(limit, len(pinned))]
+    # Pinned entries always survive, and never at the cost of everything her own
+    # words matched: a programme question pins the three positioning entries, and
+    # "are you a doctor?" must still reach the boundary AND the credentials fact.
+    return chosen[:max(limit, len(pinned) + 2)]
 
 
 def parse_pattern_responses(raw: str, *, source: str = "prompt_pattern_responses") -> list:

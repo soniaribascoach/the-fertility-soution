@@ -274,3 +274,61 @@ async def test_hard_out_of_scope_still_stops_everything(openai_client):
     r = await turn(openai_client, "can you help me get pregnant?", state=st)
     assert r.pause is True
     assert "free-call" not in (r.reply_text or "")
+
+
+# --- The AMH transcript of 2026-08-05 ----------------------------------------
+
+async def test_a_yes_moves_her_forward_instead_of_repeating_the_question(openai_client):
+    """Sonia's live test: the lead answered "yes" four times and was asked the
+    same question four times, because a bare "yes" set no slot. Each yes must
+    settle the question it answers, and the chain must end at the link.
+    """
+    st = empty_lead_state()
+    st["slots"].update({
+        "trying_duration": "2 years", "age": 34,
+        "what_tried": "my amh score came back low", "strong_readiness": True,
+        "open_to_holistic": True,
+    })
+    st["flags"].update({"situation_shared": True, "explained_role": True})
+
+    history = [
+        {"role": "user", "content": "i've been trying 2 years, my amh came back low"},
+        {"role": "assistant", "content": "is that the kind of support you're looking for?"},
+    ]
+    asked, modes = [], []
+    for _ in range(4):
+        history.append({"role": "user", "content": "yes"})
+        r = await run_turn_v2(
+            openai_client, history, CFG, st, ig_user_id="test_amh_yes",
+            new_texts=["yes"], knowledge_entries=KNOWLEDGE, playbook_entries=PLAYBOOKS,
+        )
+        st = r.lead_state
+        modes.append(r.action)
+        asked.append(st["flags"].get("pending_question"))
+        if r.reply_text:
+            history.append({"role": "assistant", "content": r.reply_text})
+        if r.action == ResponseMode.BOOK.value:
+            break
+
+    questions = [q for q in asked if q]
+    assert len(questions) == len(set(questions)), (
+        f"asked the same thing twice: {asked} (modes {modes})"
+    )
+    assert ResponseMode.BOOK.value in modes, (
+        f"four yeses and still no link: questions={asked}, modes={modes}, "
+        f"slots={ {k: v for k, v in st['slots'].items() if v is not None} }"
+    )
+
+
+async def test_what_does_it_include_gets_a_real_answer(openai_client):
+    """It got silence (the checker vetoed an invented answer), then "lifestyle,
+    stress, and more" - which is complaint 5 word for word. The programme
+    entries are pinned to the intent now, so there is something true to say."""
+    r = await turn(
+        openai_client,
+        "i've been trying 2 years and my amh is low",
+        "what does it include?",
+        sonia=[None, "there's a lot we can look at together"],
+    )
+    assert r.reply_text, f"no reply at all: {r.violations}"
+    assert "what_is_included" in (r.trace.get("knowledge_topics") or []), r.trace

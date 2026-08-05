@@ -64,8 +64,8 @@ SEED: list[KnowledgeEntry] = [
             "cycle tracking, nervous system regulation, subconscious and emotional "
             "work, and partner support."
         ),
-        triggers=[r"included", r"what.{0,10}(do|does).{0,10}(i|she|you).{0,10}get",
-                  r"what.{0,10}happens", r"support"],
+        triggers=[r"includ", r"what.{0,10}(do|does).{0,10}(i|she|you).{0,10}get",
+                  r"what.{0,10}happens", r"support", r"what.{0,10}(is|does).{0,10}it"],
         source="manual v1.0 Part 1 sections 4 and 16",
     ),
 
