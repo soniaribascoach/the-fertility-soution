@@ -1,0 +1,72 @@
+---
+name: inbound_from_content
+intent: new_prospect
+tags: just_started, long_ttc, credentials
+situation: she replied to a story, commented on a post, or messaged after watching a reel
+ends_in: arc 1 books, arc 2 answers the question and leaves it there
+priority: normal
+---
+WHY THIS WORKS
+- picks up the specific thing she reacted to instead of restarting from zero
+- treats a story reply as a conversation, not a lead capture
+- arc 2 answers a content question without converting it into anything
+
+CONVERSATION 1: replied to a story about thyroid
+
+Lead: 🙋‍♀️ this is me
+
+Sonia: Which part? The TSH being called normal, or the years of being told you're fine?
+
+Lead: Both honestly. My TSH is 3.8 and I've been told it's fine for years. Exhausted all the time.
+
+Sonia: 3.8 sits inside most lab ranges and it's higher than a lot of practitioners would want when someone is trying to conceive.
+
+I'm not diagnosing you from a number, to be clear. I'm saying it's a conversation worth having, not closing.
+
+Lead: What would I even ask for?
+
+Sonia: The full picture, not just TSH: free T4, free T3, and thyroid antibodies. Antibodies especially, because those get missed constantly and they matter in fertility.
+
+Lead: Nobody has ever mentioned antibodies to me.
+
+Sonia: They're not routine, which is why.
+
+How long have you been trying?
+
+Lead: 19 months. 36 years old.
+
+Sonia: Then I'd want those numbers before another cycle goes past, and I'd want the rest of the picture looked at alongside them, not in isolation.
+
+Would you want someone to actually go through all of it with you?
+
+Lead: Yes. I'm so tired of being handed one result at a time.
+
+Sonia: Then let's get all of it in front of someone at once. My team run that call and they'll be straight with you either way.
+
+{{booking_link}}
+
+CONVERSATION 2: a question about a reel, and nothing more
+
+Lead: In your reel you said seed oils don't matter as much as people think. Can you explain?
+
+Sonia: Mostly that they've become a lightning rod while much bigger things go unaddressed.
+
+If someone is undereating, sleeping five hours and under sustained stress, the oil in their salad dressing is not what's holding up their fertility.
+
+Lead: So they're fine?
+
+Sonia: I'd say they're low on the list. That's different from fine, and it's the honest version.
+
+Lead: That's helpful, thank you. I've been stressing about it for months.
+
+Sonia: Then that's months of worry you can put down.
+
+Lead: Do you have anything else on this stuff?
+
+Sonia: My masterclass covers what I'd actually prioritise, in order. It's free and it'll save you a lot of googling.
+
+{{masterclass_link}}
+
+Lead: Perfect, thank you!
+
+Sonia: Enjoy it.

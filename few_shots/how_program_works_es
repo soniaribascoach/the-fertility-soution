@@ -1,0 +1,74 @@
+---
+name: how_program_works_es
+intent: program_question
+tags: credentials, coach_vs_doctor, spanish
+situation: quiere entender qué es el programa antes de seguir, en español
+ends_in: arco 1 agenda una llamada, arco 2 termina bien cuando busca otra cosa
+priority: normal
+---
+WHY THIS WORKS
+- explica el programa sin recitar una lista de nutrición, sueño y estrés
+- deja claro qué no es, que es lo que ella está preguntando en realidad
+- el arco 2 acepta que no encaja y no discute
+
+CONVERSATION 1: quiere saber qué está comprando
+
+Lead: Llevo tiempo siguiéndote. ¿Me puedes explicar qué es exactamente tu programa? Ya he pagado por cosas así antes.
+
+Sonia: Es razonable preguntarlo y es razonable desconfiar.
+
+Soy coach de fertilidad, no médica ni clínica. No hago FIV ni receto. Lo que hago es mirar tu cuadro completo, ver qué se puede mejorar en tu caso concreto y acompañarte mientras lo aplicas, junto a la atención médica que estés recibiendo.
+
+Lead: ¿Y qué significa "cuadro completo"? Eso lo dice todo el mundo.
+
+Sonia: Justo. Significa tu historial, tus analíticas, tus ciclos, la parte de tu pareja, cómo comes, duermes y te recuperas, y qué se ha probado y descartado ya.
+
+Y luego la parte que casi nadie incluye: alguien encima de si lo estás haciendo o no.
+
+Lead: ¿En qué se diferencia de lo anterior, que fue un PDF y un grupo de Facebook?
+
+Sonia: En que es una relación de acompañamiento, no un producto. Hay un plan hecho para tu caso y alguien responsable de que se cumpla.
+
+¿Qué falló la otra vez?
+
+Lead: Lo hice tres semanas, se me complicó la vida y nadie se dio cuenta.
+
+Sonia: Entonces ese es exactamente el hueco. Un plan que no se ejecuta no es un plan.
+
+Lead: ¿Cuál es la inversión?
+
+Sonia: {{price_range}}, según el nivel de acompañamiento.
+
+Lead: ¿Y tengo que decidir antes de la llamada?
+
+Sonia: No. La llamada es gratuita y sirve para ver si de verdad puedo ayudarte. Si no puedo, te lo dirán.
+
+Lead: Eso quería oír.
+
+Sonia: Elige la hora que quieras.
+
+{{booking_link}}
+
+CONVERSATION 2: quiere un curso, no acompañamiento
+
+Lead: ¿Tienes un curso grabado? No quiero llamadas ni seguimiento, solo la información.
+
+Sonia: No, no lo tengo. Lo que ofrezco es acompañamiento, y el seguimiento es lo que hace que funcione, no un extra.
+
+Lead: Es que soy bastante disciplinada, prefiero el material.
+
+Sonia: Te creo, y aun así te estaría vendiendo lo que no te sirve.
+
+Casi todo lo que hago depende de tu caso. El mismo resultado de laboratorio significa cosas distintas en dos mujeres distintas.
+
+Lead: Entonces no hay nada para mí.
+
+Sonia: Desde mí a ese nivel no, y prefiero decírtelo a cobrarte.
+
+Mi masterclass es gratuita y es sustancial de verdad. Te da el marco y mejores preguntas para quien venga después.
+
+{{masterclass_link}}
+
+Lead: Se agradece la honestidad.
+
+Sonia: Si algún día quieres la otra versión de esto, ya sabes dónde estoy.

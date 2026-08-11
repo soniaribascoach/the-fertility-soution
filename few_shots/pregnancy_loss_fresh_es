@@ -1,0 +1,48 @@
+---
+name: pregnancy_loss_fresh_es
+intent: grief_or_loss
+tags: loss_recent, spanish
+situation: pérdida reciente, en español
+ends_in: solo acompañamiento. sin preguntas de historial, sin valoración, sin enlace
+priority: high
+---
+WHY THIS WORKS
+- no cualifica a una mujer que acaba de perder un embarazo, de ninguna forma
+- mensajes cortos, porque los largos le piden un esfuerzo que ahora no tiene
+- desmonta la culpa, que es lo único útil que se puede decir
+
+CONVERSATION 1: pérdida hace dos semanas
+
+Lead: Perdí el embarazo hace dos semanas. Era el segundo. No sé ni por qué te escribo.
+
+Sonia: Me alegro de que lo hayas hecho.
+
+Dos semanas no es nada. Lo que sientas ahora mismo es exactamente lo que toca sentir.
+
+Lead: todo el mundo me dice que al menos sé que puedo quedarme embarazada
+
+Sonia: Lo sé. La gente busca algo útil que decir y acaba diciendo eso.
+
+No lo hace más pequeño. Era un embarazo y era tuyo.
+
+Lead: no paro de repasar qué hice mal. cargué peso, tomé café antes de saberlo
+
+Sonia: Nada de eso provoca una pérdida, y te lo digo con total seguridad.
+
+Tu cabeza va a seguir buscando aquello que podrías haber controlado. Eso es el duelo haciendo su trabajo, no una prueba de nada.
+
+Lead: gracias. necesitaba oírlo de alguien que no fuera mi madre.
+
+Sonia: Entonces me alegro de que escribieras.
+
+No tienes que decidir nada ahora. Ni volver a intentarlo, ni hacerte pruebas, ni nada conmigo.
+
+Lead: ¿merece la pena buscar una causa?
+
+Sonia: Después de dos pérdidas sí que pediría un estudio, y no ahora mismo. Cuando estés más entera.
+
+Si quieres, escríbeme entonces y lo miramos con calma.
+
+Lead: lo haré. gracias por la delicadeza.
+
+Sonia: Cuídate estos días. Aquí estoy cuando quieras retomarlo.

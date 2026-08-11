@@ -1,0 +1,76 @@
+---
+name: pricing_es
+intent: price_question
+tags: pricing, spanish
+situation: pregunta directa por el precio, en español, a veces antes de contar nada
+ends_in: arco 1 agenda una llamada, arco 2 termina con un recurso gratuito
+priority: high
+---
+WHY THIS WORKS
+- da la cifra en el mismo mensaje en el que la pide, sin rodeos
+- no se disculpa por el precio ni lo justifica antes de decirlo
+- el arco 2 deja de vender en cuanto ella dice que no puede
+
+CONVERSATION 1: precio primero
+
+Lead: Buenas, ¿cuánto cuesta tu programa?
+
+Sonia: {{price_range}}, según el nivel de acompañamiento que necesites.
+
+El rango es amplio porque las necesidades varían mucho: hay quien necesita unos meses de guía cercana y quien necesita bastante más.
+
+¿Qué está pasando en tu caso?
+
+Lead: Llevo 4 años intentando. Dos inseminaciones fallidas. Tengo 38.
+
+Sonia: Cuatro años y dos inseminaciones es muchísimo esfuerzo para tan poca respuesta.
+
+¿Llegaron a darte alguna explicación, o quedó como infertilidad sin causa?
+
+Lead: Sin causa. Odio esa palabra.
+
+Sonia: Es normal. Describe lo que cubrieron las pruebas, no lo que ocurre en realidad.
+
+¿A tu pareja le hicieron un estudio completo o solo un seminograma básico?
+
+Lead: Uno básico hace tres años. Dijeron que estaba bien.
+
+Sonia: Bien en los parámetros estándar no es lo mismo que bien estudiado, y después de cuatro años yo lo repetiría.
+
+Lead: El precio está en el límite de lo que podemos. ¿Merece la pena?
+
+Sonia: Eso no puedo decidirlo por ti y no voy a fingir que sí. Lo que sí te digo es que la llamada no cuesta nada y sirve justo para responder esa pregunta.
+
+Si mi equipo cree que no puedo ayudarte, te lo van a decir.
+
+Lead: Vale. Eso me parece justo. Hagamos la llamada.
+
+Sonia: Elige la hora que mejor te venga.
+
+{{booking_link}}
+
+CONVERSATION 2: no puede permitírselo
+
+Lead: cuánto vale
+
+Sonia: {{price_range}}, según cuánto seguimiento necesites.
+
+Lead: uf. eso no lo tenemos. se nos fue todo en un ciclo de FIV.
+
+Sonia: Entonces no voy a intentar convencerte. Un ciclo ya es mucho dinero fuera y sé lo que eso supone en casa.
+
+Lead: me frustra porque creo que es justo lo que necesito
+
+Sonia: Puede que sí, y va a seguir estando aquí más adelante. Esto no es una puerta que se cierre.
+
+¿Hay algo concreto en lo que estés atascada ahora mismo? Igual puedo orientarte.
+
+Lead: sobre todo qué hacer mientras tanto. siento que estoy parada.
+
+Sonia: Empieza por mi masterclass. Es gratuita, es el marco que uso de verdad, y te da algo sobre lo que trabajar en lugar de esperar.
+
+{{masterclass_link}}
+
+Lead: gracias por no presionar.
+
+Sonia: No tendría ningún sentido. Escríbeme si cambia la situación.

@@ -1,73 +1,134 @@
+"""The conversation library: loading, and choosing which conversations go into a turn.
+
+Each file in `few_shots/` is one scenario holding one or two COMPLETE conversations, first message
+to final outcome. Fragments teach wording; whole arcs teach pacing, when to stop asking, and how a
+conversation resolves, including the arcs that correctly end without a booking link.
+
+Selection is driven by the intent and tags the READ call returned, not by matching patterns against
+the prospect's prose. The old regex table misfired often (`ivf_failed` firing for a woman preparing
+for her first cycle, `partner_hesitation` firing on the word "afford") and it stopped at the first
+hit, so the most relevant example frequently lost to whichever pattern happened to be earlier in
+the dict.
+"""
 import logging
 import os
 import re
+from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
-_SKIP = {"about.md", "price_objection"}
+FEW_SHOTS_DIR = "few_shots"
 
-ALWAYS_INCLUDE = {"tried_everything", "infertility"}
-
-SCENARIO_PATTERNS: dict[str, str] = {
-    "low_amh":                r"\b(amh|anti.{0,10}mullerian|egg.{0,5}reserve|egg.{0,5}quality)\b",
-    "pcos":                   r"\b(pcos|polycystic)\b",
-    "ivf_failed":             r"\b(ivf|in.{0,5}vitro|failed.{0,5}cycle|failed.{0,5}round|ivf.{0,5}trauma)\b",
-    "miscarriage":            r"\b(miscarr|pregnancy.{0,5}loss|chemical.{0,5}preg|recurrent.{0,5}loss)\b",
-    "partner_hesitation":     r"\b(husband|partner|spouse|financial|afford|together|decide)\b",
-    "doing_everything_right": r"\b(organic|supplement|track.{0,10}ovul|doing.{0,5}everything|everything.{0,5}right)\b",
-    "secondary_infertility":  r"\b(second.{0,10}preg|already.{0,10}child|had.{0,10}child|secondary.{0,5}infert)\b",
-    "male_factor":            r"\b(sperm|morphology|motility|semen|male.{0,5}factor|husband.{0,20}result)\b",
-    "donor_eggs":             r"\b(donor.{0,5}egg|egg.{0,5}donor)\b",
-    "body_failing":           r"\b(hopeless|give.{0,5}up|broken|nothing.{0,5}works?|traumat|body.{0,5}fail|can.{0,5}t.{0,5}take)\b",
-    "not_urgent":             r"\b(just.{0,5}start|few.{0,5}months?|haven.{0,5}t.{0,5}tried.{0,5}long|proactive)\b",
-    "waiting_for_tests":      r"\b(waiting|test.{0,5}result|results?.{0,10}week|panel.{0,10}week)\b",
-    "non_english_lead":       r"[^\x00-\x7F]{4,}|hola|necesito|embarazada",
-    "credentials":            r"\b(certified|qualified|different.{0,20}coach|what.{0,10}makes.{0,10}differ)\b",
-    "direct_call":            r"\b(speak.{0,10}sonia|talk.{0,10}sonia|sonia.{0,10}herself|directly.{0,10}you)\b",
-}
+_FRONT_MATTER_RE = re.compile(r"\A---\s*\n(?P<body>.*?)\n---\s*\n", re.DOTALL)
+_SECTION_RE = re.compile(
+    r"^(?P<head>WHY THIS WORKS|CONVERSATION\b.*|DO NOT WRITE THIS)\s*$",
+    re.MULTILINE,
+)
+_BOOKING_PLACEHOLDER = "{{booking_link}}"
 
 
-def parse_few_shot(text: str, label: str) -> list[dict]:
-    """Parse a User:/Sonia: dialogue into OpenAI message pairs."""
-    messages = []
-    parts = re.split(r'\n(?=User:|Sonia:)', text.strip())
-    for part in parts:
-        part = part.strip()
-        if not part:
+@dataclass
+class Playbook:
+    name: str
+    intent: str = ""
+    tags: list[str] = field(default_factory=list)
+    situation: str = ""
+    ends_in: str = ""
+    priority: str = "normal"          # "high" wins a slot whenever it matches at all
+    why: str = ""
+    conversations: list[str] = field(default_factory=list)
+    counter_example: str = ""
+    raw: str = ""
+
+    @property
+    def books(self) -> bool:
+        return any(_BOOKING_PLACEHOLDER in c for c in self.conversations)
+
+    def render(self, *, allow_booking: bool) -> str:
+        """The example as it appears in the WRITE prompt.
+
+        When this turn may not invite a booking, arcs that end in the link are dropped rather than
+        stripped: a conversation with its ending removed teaches the wrong shape. Two-arc files
+        degrade to their non-booking arc, which is why the high-traffic scenarios carry both.
+        """
+        arcs = self.conversations
+        if not allow_booking:
+            arcs = [c for c in arcs if _BOOKING_PLACEHOLDER not in c]
+        if not arcs:
+            return ""
+
+        parts = [f"### EXAMPLE: {self.name}"]
+        if self.situation:
+            parts.append(f"Situation: {self.situation}")
+        if self.why:
+            parts.append(self.why)
+        parts.extend(arcs)
+        if self.counter_example:
+            parts.append(self.counter_example)
+        return "\n\n".join(p.strip() for p in parts if p.strip())
+
+
+def _parse_front_matter(text: str) -> tuple[dict, str]:
+    match = _FRONT_MATTER_RE.match(text)
+    if not match:
+        return {}, text
+    meta = {}
+    for line in match.group("body").splitlines():
+        if ":" not in line:
             continue
-        if part.startswith("User:"):
-            content = part[len("User:"):].strip()
-            if not messages:
-                content = f"[EXAMPLE: {label}]\n{content}"
-            messages.append({"role": "user", "content": content})
-        elif part.startswith("Sonia:"):
-            content = part[len("Sonia:"):].strip()
-            messages.append({"role": "assistant", "content": content})
-    return messages
+        key, _, value = line.partition(":")
+        meta[key.strip()] = value.strip()
+    return meta, text[match.end():]
 
 
-def load_few_shot_scenarios(directory: str) -> dict[str, list[dict]]:
-    """Load all scenario files and return a dict keyed by scenario name."""
-    scenarios: dict[str, list[dict]] = {}
-    for filename in sorted(f for f in os.listdir(directory) if f not in _SKIP and not f.startswith(".")):
+def parse_playbook(text: str, name: str) -> Playbook:
+    meta, body = _parse_front_matter(text)
+
+    why = ""
+    counter = ""
+    conversations: list[str] = []
+
+    matches = list(_SECTION_RE.finditer(body))
+    for i, match in enumerate(matches):
+        head = match.group("head").strip()
+        start = match.start()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(body)
+        section = body[start:end].strip()
+        if head == "WHY THIS WORKS":
+            why = section
+        elif head == "DO NOT WRITE THIS":
+            counter = section
+        else:
+            conversations.append(section)
+
+    return Playbook(
+        name=name,
+        intent=meta.get("intent", ""),
+        tags=[t.strip() for t in meta.get("tags", "").split(",") if t.strip()],
+        situation=meta.get("situation", ""),
+        ends_in=meta.get("ends_in", ""),
+        priority=meta.get("priority", "normal"),
+        why=why,
+        conversations=conversations,
+        counter_example=counter,
+        raw=text,
+    )
+
+
+def load_few_shot_scenarios(directory: str = FEW_SHOTS_DIR) -> dict[str, Playbook]:
+    """Load every conversation file. Name kept for the admin editor, which refreshes this cache."""
+    playbooks: dict[str, Playbook] = {}
+    for filename in sorted(os.listdir(directory)):
         path = os.path.join(directory, filename)
-        if not os.path.isfile(path):
+        if filename.startswith(".") or not os.path.isfile(path):
             continue
         with open(path, "r", encoding="utf-8") as fh:
-            text = fh.read()
-        scenarios[filename] = parse_few_shot(text, label=filename)
-    logger.info("Loaded %d few-shot scenarios: %s", len(scenarios), sorted(scenarios))
-    return scenarios
+            playbooks[filename] = parse_playbook(fh.read(), name=filename)
+    logger.info("Loaded %d conversation playbooks", len(playbooks))
+    return playbooks
 
 
-def get_few_shot_scenarios(app_state, directory: str = "few_shots") -> dict[str, list[dict]]:
-    """Lazy accessor for the LEGACY brain's few-shots.
-
-    The funnel brain doesn't use these, so they are no longer loaded at app
-    boot. On the first legacy-path call (brain_version=legacy) they are loaded
-    once and cached on app.state; the admin few-shots editor refreshes the
-    same cache on save/rollback.
-    """
+def get_few_shot_scenarios(app_state, directory: str = FEW_SHOTS_DIR) -> dict[str, Playbook]:
     cached = getattr(app_state, "few_shot_scenarios", None)
     if cached is None:
         cached = load_few_shot_scenarios(directory)
@@ -75,33 +136,98 @@ def get_few_shot_scenarios(app_state, directory: str = "few_shots") -> dict[str,
     return cached
 
 
-def select_few_shots(
-    scenarios: dict[str, list[dict]],
-    conversation_text: str,
-    max_dynamic: int = 3,
-) -> list[dict]:
-    """Return relevant few-shot messages for this conversation (dynamic + universal)."""
-    dynamic: list[str] = []
-    for name, pattern in SCENARIO_PATTERNS.items():
-        if name in scenarios and name not in ALWAYS_INCLUDE:
-            if re.search(pattern, conversation_text, re.IGNORECASE):
-                dynamic.append(name)
-                if len(dynamic) >= max_dynamic:
-                    break
+def score_playbook(pb: Playbook, intent: str, tags: set[str], language: str) -> int:
+    """Tags decide, intent breaks ties.
 
-    selected = dynamic + [n for n in ALWAYS_INCLUDE if n in scenarios]
-    logger.debug("select_few_shots matched=%s always=%s", dynamic, list(ALWAYS_INCLUDE))
+    Intent is coarse, a dozen files answer to `fertility_question`, so scoring it heavily fills
+    the prompt with conversations that merely belong to the same category as hers. A shared tag is
+    what actually means "this is her situation", so tags carry the weight and intent alone is not
+    enough to earn a slot.
+    """
+    # Spanish variants only exist for Spanish conversations, and are preferred within them.
+    is_spanish = "spanish" in pb.tags
+    if is_spanish != (language == "es"):
+        # An English conversation never sees a Spanish file. A Spanish one still falls back to the
+        # English library when no Spanish version of her situation exists.
+        if is_spanish:
+            return 0
 
-    result: list[dict] = []
-    for name in selected:
-        result.extend(scenarios[name])
-    return result
+    overlap = len(tags & set(pb.tags))
+    score = overlap * 6
+    if pb.intent and pb.intent == intent:
+        score += 2
+    if is_spanish and overlap:
+        score += 5
+    if pb.priority == "high" and overlap:
+        score += 8
+    return score
 
 
-def load_few_shots(directory: str) -> list[dict]:
-    """Legacy flat loader — kept for backward compatibility."""
-    scenarios = load_few_shot_scenarios(directory)
-    result: list[dict] = []
-    for msgs in scenarios.values():
-        result.extend(msgs)
-    return result
+# Below this, a file only matched on intent, which is not a reason to show a whole conversation.
+_RELEVANT = 6
+
+
+def select_playbooks(
+    playbooks: dict[str, Playbook],
+    *,
+    intent: str,
+    tags: list[str] | None = None,
+    language: str = "en",
+    allow_booking: bool = True,
+    limit: int = 3,
+) -> list[Playbook]:
+    """Return the conversations most worth showing the writer this turn.
+
+    Full arcs are long, so fewer and sharper beats more and vaguer, two relevant conversations
+    teach more than two relevant plus one that merely shares a category. Anything that renders
+    empty under the current gating (a booking-only file on a turn that may not book) is discarded
+    here rather than silently occupying a slot.
+    """
+    tag_set = set(tags or [])
+    scored = []
+    for pb in playbooks.values():
+        score = score_playbook(pb, intent, tag_set, language)
+        if score <= 0 or not pb.render(allow_booking=allow_booking):
+            continue
+        scored.append((score, pb.name, pb))
+    scored.sort(key=lambda row: (-row[0], row[1]))
+
+    chosen = [pb for score, _, pb in scored[:limit] if score >= _RELEVANT]
+    if not chosen and scored:
+        # She said nothing that maps to a tag. A vague opener, say. One example of the right kind
+        # of conversation is better than three of roughly the right category.
+        chosen = [scored[0][2]]
+
+    logger.debug(
+        "select_playbooks intent=%s tags=%s -> %s", intent, sorted(tag_set),
+        [pb.name for pb in chosen],
+    )
+    return chosen
+
+
+def render_examples(
+    playbooks: list[Playbook],
+    *,
+    allow_booking: bool,
+    values: dict | None = None,
+) -> str:
+    """Assemble the chosen conversations for the prompt, with their placeholders resolved.
+
+    The conversations hold no facts of their own, `{{booking_link}}`, `{{price_range}}` and the
+    rest are filled from config here, at the same moment and from the same source as the knowledge
+    base. Without this the writer would be shown literal braces and would cheerfully send them.
+    """
+    from app.services.prompts import fill_placeholders
+
+    rendered = [pb.render(allow_booking=allow_booking) for pb in playbooks]
+    body = "\n\n\n".join(r for r in rendered if r)
+    if not body:
+        return ""
+    body = fill_placeholders(body, values or {})
+    return (
+        "# HOW THESE CONVERSATIONS GO\n\n"
+        "Complete conversations of mine, start to finish. Learn the judgment and the pacing from "
+        "them. Never copy a sentence out of one. Notice where they end: some in a call, some in "
+        "an honest no, some in nothing more than a good answer.\n\n"
+        f"{body}"
+    )

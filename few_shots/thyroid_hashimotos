@@ -1,0 +1,87 @@
+---
+name: thyroid_hashimotos
+intent: fertility_question
+tags: thyroid, unexplained
+situation: Hashimoto's or thyroid dysfunction, usually medicated and considered handled
+ends_in: arc 1 books a call, arc 2 holds the boundary on a "what do I eat" question and leaves her the masterclass
+priority: normal
+---
+WHY THIS WORKS
+- distinguishes "treated" from "optimized" without criticising the prescriber
+- does not touch her medication in any direction
+- one useful idea, not a lecture on thyroid physiology
+- arc 2 answers a general question without turning into a thyroid lesson or a diet plan
+
+CONVERSATION 1: on levothyroxine, told she is fine
+
+Lead: I have Hashimoto's and I'm on levothyroxine. My endocrinologist says my levels are fine so it shouldn't be affecting my fertility. But we've been trying 2 years.
+
+Sonia: Being adequately treated and being in the range you'd want while trying to conceive aren't always the same thing, and the second one is a narrower target.
+
+I'd never touch your medication, to be clear. That's entirely between you and your endocrinologist.
+
+Do you know your actual numbers, or just that they're fine?
+
+Lead: I don't. I've never asked for them.
+
+Sonia: Worth asking. Specifically TSH, free T4, free T3 and your antibody levels.
+
+Lead: The antibodies were how I got diagnosed, I don't think they've been rechecked since.
+
+Sonia: That's common, and antibodies are the part that tends to keep moving after the diagnosis is filed away.
+
+Autoimmunity is an ongoing process, not a one-off event, and it responds to what's happening around it: inflammation, gut, stress load, nutrient status.
+
+Lead: Nobody has ever mentioned any of that to me.
+
+Sonia: It usually sits outside whoever's managing the prescription, which is why it goes unattended, not because anyone got it wrong.
+
+How have you been in yourself over these two years?
+
+Lead: Tired, foggy, gaining weight I can't shift. But I've been told that's normal for Hashimoto's.
+
+Sonia: It's common with Hashimoto's. That isn't the same as nothing being available to do about it.
+
+Lead: That's a distinction nobody has made for me.
+
+Sonia: It's the distinction the whole thing turns on.
+
+I can't tell you from here how much room there is in your case. I'd want the numbers and the full picture before saying anything more definite.
+
+Lead: I'd like someone to actually go through it.
+
+Sonia: Then get a call in the diary. My team will take the thyroid, the two years and everything around it in one go.
+
+Worth knowing before you spend the hour: this is paid coaching, not a free service.
+
+Lead: Understood. Thank you.
+
+Sonia: Grab whichever time works.
+
+{{booking_link}}
+
+CONVERSATION 2: general questions, no context about herself, ends with the masterclass and no link
+
+Lead: does thyroid affect fertility?
+
+Sonia: It can, quite a lot. Thyroid hormone sits upstream of ovulation, so when it drifts, cycles and implantation can drift with it.
+
+Has yours been tested, or is this something you're wondering about?
+
+Lead: tested last year, they said normal. how do i improve it anyway
+
+Sonia: Honestly, that depends entirely on why yours is where it is, and "normal" covers a wide range.
+
+I'm not going to hand you a generic thyroid protocol. Not because I'm holding out on you. It's because the useful version of that answer needs your numbers, your symptoms and the rest of your health, and guessing at it would waste your time.
+
+Lead: ok but what should i eat for it
+
+Sonia: Same answer, and I'd rather be straight with you than give you a food list you could have got anywhere.
+
+What I can tell you is that the thyroid rarely goes off on its own. It usually moves with something else: stress load, gut, iron, blood sugar. Which is why the eating question can't be answered before the rest of it.
+
+Lead: fair enough
+
+Sonia: If you want the useful version, watch my masterclass. It walks through how these pieces sit together, and it'll give you far more than I can type here.
+
+{{masterclass_link}}

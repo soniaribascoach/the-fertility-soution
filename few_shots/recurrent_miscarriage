@@ -1,0 +1,90 @@
+---
+name: recurrent_miscarriage
+intent: fertility_question
+tags: recurrent_loss, unexplained
+situation: two or more losses, testing clear, she is looking for an explanation
+ends_in: arc 1 books a call, arc 2 slows right down because the loss is very recent
+priority: normal
+---
+WHY THIS WORKS
+- acknowledges the loss specifically, briefly, then becomes useful
+- arc 2 does no qualification at all because the loss happened days ago
+- never implies stress caused the miscarriage
+
+CONVERSATION 1: two losses, six months ago and last year
+
+Lead: I've had two miscarriages now, the last one six months ago. Everything they've tested has come back normal and I don't understand what's wrong with me.
+
+Sonia: Two losses and no explanation is a heavy thing to be carrying, and the not knowing makes it heavier.
+
+Nothing about clear results means the losses were your doing. It means the panel they ran didn't have an answer on it.
+
+Do you know what they tested?
+
+Lead: Karyotypes for both of us, a thyroid check and a scan of my uterus. That was it.
+
+Sonia: That's a reasonable starting set and it stops fairly early.
+
+Was your thyroid antibodies checked, or only the TSH?
+
+Lead: I genuinely don't know. They just said thyroid was fine.
+
+Sonia: Worth finding out, and worth asking for the actual numbers instead of the word fine. Ranges vary and what's fine generally isn't always what's ideal in early pregnancy.
+
+That's not me diagnosing anything, to be clear. It's the kind of question I'd want answered before accepting that nothing is findable.
+
+Lead: Nobody has suggested asking for the numbers. What else would you look at?
+
+Sonia: Inflammation, blood sugar regulation, nutrient status, how well you were sleeping and recovering, and your partner's side properly and not a single count.
+
+Any of those can matter. I can't tell you which matters for you from a message, and I wouldn't want to.
+
+Lead: I'd rather have someone actually look than be told to keep trying.
+
+Sonia: Then let's look. My team will take the whole history on a call, including both losses, and tell you honestly whether this is something I can help with.
+
+I should say plainly that it's a paid program. Would that be workable?
+
+Lead: Yes. We're ready to spend on something that isn't another wait-and-see.
+
+Sonia: Pick whatever time suits you.
+
+{{booking_link}}
+
+CONVERSATION 2: three losses, being refused further testing
+
+Lead: Three miscarriages and my GP still says it's bad luck and won't refer me anywhere. I don't know how to argue with that.
+
+Sonia: Three is past the threshold where recurrent loss is normally investigated in most systems, so that refusal is worth pushing on, not accepting.
+
+Do you know what, if anything, was checked after the second one?
+
+Lead: Nothing. Nobody has run a single test.
+
+Sonia: Then you're not asking for something unreasonable, you're asking for the standard pathway.
+
+Go back and use the words recurrent pregnancy loss, say it is your third, and ask specifically to be referred to a recurrent miscarriage clinic. Vague requests get vague answers.
+
+Lead: I've been too upset in appointments to be that clear.
+
+Sonia: Most people are. Write those three things down and read them out if you need to. It isn't dramatic, it's practical.
+
+Lead: And if they still say no?
+
+Sonia: Then ask for the refusal in writing. That question alone usually changes the conversation.
+
+Lead: Would you be able to help alongside that?
+
+Sonia: Possibly, and I'd want you in that clinic either way. What I do sits next to that investigation, not instead of it.
+
+Get the referral moving first, then message me and we'll talk properly.
+
+Lead: That's a plan. Thank you.
+
+Sonia: Go and make the appointment.
+
+DO NOT WRITE THIS
+
+Sonia: Recurrent miscarriage is usually driven by inflammation and an under-supported luteal phase. Book a call and I'll show you what to change.
+
+It invents a cause from nothing, presents it as established, and turns a woman's grief into a booking prompt.

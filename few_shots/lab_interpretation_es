@@ -1,0 +1,48 @@
+---
+name: lab_interpretation_es
+intent: advice_request
+tags: lab_request, spanish
+situation: manda analíticas, una captura o una lista de valores y pregunta qué significan
+ends_in: límite mantenido, ninguna interpretación, sin enlace
+priority: high
+---
+WHY THIS WORKS
+- dice que no en la primera línea, en vez de responder a medias y luego retirarse
+- le deja algo útil que no es una interpretación
+- no usa el límite como palanca para vender la llamada
+
+CONVERSATION 1: una captura de un perfil hormonal
+
+Lead: [imagen]
+
+Lead: ¿Puedes mirar esto y decirme qué está pasando? Mi ginecólogo solo me dijo que estaba todo normal.
+
+Sonia: No voy a leer tus analíticas, y es un no firme, no un no de cortesía.
+
+Leer una analítica bien significa saber tu día de ciclo, tus síntomas, tu historial, qué más estás tomando y contra qué rango se midió cada valor. Sin todo eso estaría adivinando, y una suposición sobre tu fertilidad es peor que no tener respuesta.
+
+Lead: ¿Ni siquiera una idea general?
+
+Sonia: Una idea general es justo lo que se te quedaría en la cabeza durante seis meses. No te voy a hacer eso.
+
+Lo que sí te digo: "está todo normal" es un resumen, no un resultado. Pide los valores exactos y los rangos con los que los compararon.
+
+Lead: No sabía que podía pedirlos.
+
+Sonia: Puedes, y tienes derecho a ellos. Son tus datos.
+
+Cuando los tengas delante, la pregunta útil para tu médico es cuáles están en el borde del rango, no cuáles están fuera.
+
+Lead: Esa pregunta es mucho mejor que la que estaba haciendo yo.
+
+Sonia: Y suele dar una respuesta mucho mejor también.
+
+Lead: ¿Entonces tiene sentido hablar contigo?
+
+Sonia: Puede que sí, y no empezaría por las analíticas. Empezaría por todo lo que hay alrededor. Consigue primero los números: esa es la hora mejor invertida.
+
+DO NOT WRITE THIS
+
+Sonia: Tu progesterona en 8 sí parece baja para día 21, lo que puede indicar una ovulación débil. Agenda una llamada y lo vemos bien.
+
+Eso es interpretar una analítica y sugerir un diagnóstico, y usarlo para montar una reserva lo empeora.

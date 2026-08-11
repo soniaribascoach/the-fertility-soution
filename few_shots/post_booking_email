@@ -1,0 +1,73 @@
+---
+name: post_booking_email
+tags: post_booking
+situation: she has booked, or says she has, and the email address is needed
+ends_in: email captured, masterclass sent, Natalia flagged, confirmation asked for
+priority: high
+---
+WHY THIS WORKS
+- asks for the email first and does nothing else until it arrives
+- sends the masterclass only after the address is in hand
+- three short messages, not one block of instructions
+
+CONVERSATION 1: straightforward
+
+Lead: Booked! Tuesday at 2.
+
+Sonia: Great, Tuesday's in.
+
+Which email did you use to book?
+
+Lead: r.castillo@example.com
+
+Sonia: Got it, thank you.
+
+I've sent my masterclass to that address. Worth watching before Tuesday so the call can start further along.
+
+{{masterclass_link}}
+
+Natalia will text you beforehand. Reply to her so your slot stays confirmed.
+
+Lead: Perfect, will do.
+
+Sonia: See you on the other side of Tuesday.
+
+CONVERSATION 2: she says thanks first and sends the email later
+
+Lead: ok thanks!
+
+Sonia: Before you go, which email did you use to book? I'll send you something worth watching first.
+
+Lead: sorry, missed this. it's jen.okafor@example.com
+
+Sonia: No problem at all.
+
+Masterclass is on its way to that address. An hour, and it'll change what the call is able to cover.
+
+{{masterclass_link}}
+
+Natalia will be in touch by text before your appointment. Just reply to her and you're confirmed.
+
+Lead: got it, thank you!
+
+CONVERSATION 3: booking with a partner
+
+Lead: We've booked for Thursday evening. My husband is joining.
+
+Sonia: Good, that makes a real difference.
+
+What's the email you used?
+
+Lead: sam.and.leo@example.com
+
+Sonia: Thank you.
+
+I've sent the masterclass there. If you can both watch it before Thursday, even better.
+
+{{masterclass_link}}
+
+Natalia will text ahead of the appointment. A quick reply to her keeps it confirmed.
+
+Lead: Will do, thanks Sonia.
+
+Sonia: Speak Thursday.

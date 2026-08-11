@@ -6,7 +6,12 @@ import re
 
 from app.db.database import AsyncSessionLocal
 from app.repositories.config import get_all_config
-from app.repositories.conversation import get_history, get_last_assistant_time, save_message
+from app.repositories.conversation import (
+    get_history,
+    get_last_assistant_time,
+    recent_opening_sentences,
+    save_message,
+)
 from app.repositories.pending_message import (
     get_locked_batch,
     get_users_ready_to_process,
@@ -96,16 +101,16 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
 
             if await is_ai_paused(db, ig_user_id):
                 if not await _is_booking_email(db, ig_user_id, rows):
-                    logger.info("AI paused for user %s — skipping", ig_user_id)
+                    logger.info("AI paused for user %s. Skipping", ig_user_id)
                     await mark_batch_processed(db, ig_user_id)
                     return
-                logger.info("Paused lead %s sent a booking email — capturing it", ig_user_id)
+                logger.info("Paused lead %s sent a booking email. Capturing it", ig_user_id)
 
             # Duplicate guard: skip if an assistant reply was already sent after these messages
             last_user_msg_time = max(r.received_at for r in rows).replace(tzinfo=None)
             last_reply_time = await get_last_assistant_time(db, ig_user_id)
             if last_reply_time and last_reply_time > last_user_msg_time:
-                logger.info("Reply already sent for user %s — skipping duplicate", ig_user_id)
+                logger.info("Reply already sent for user %s. Skipping duplicate", ig_user_id)
                 await mark_batch_processed(db, ig_user_id)
                 return
 
@@ -142,9 +147,14 @@ async def _send_bubbles(app_state, manychat_contact_id: str, text: str) -> None:
 async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
                           batch_texts) -> None:
     """Run the brain for one batch and apply its side effects."""
-    history = await get_history(db, ig_user_id, limit=20)
+    history = await get_history(db, ig_user_id, limit=40)
     history_dicts = [{"role": r.role, "content": r.content} for r in history]
     lead_state = await get_lead_state(db, ig_user_id)
+
+    # Sonia's complaint was cross-conversation: the same acknowledgement turning up across very
+    # different threads. Nothing inside one conversation can see that, so the openings actually
+    # sent to other leads recently ride along in cfg and land in the writer's prompt.
+    cfg = {**cfg, "_recent_openings": await recent_opening_sentences(db, ig_user_id)}
 
     result = await run_turn(
         app_state.openai_client, history_dicts, cfg,

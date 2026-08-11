@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 
+{% set input_cls = "w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400" %}
+{% set textarea_cls = input_cls ~ " resize-y min-h-[80px] leading-relaxed" %}
+
 {# ── Macro: reusable dynamic list section ─────────────────────────────────── #}
 {% macro dynamic_list(list_id, hidden_name, items, placeholder, add_label) %}
 <textarea hidden id="{{ hidden_name }}_hidden" name="{{ hidden_name }}"></textarea>
@@ -18,14 +21,7 @@
 </button>
 {% endmacro %}
 
-{# ── Macro: reusable section card ─────────────────────────────────────────── #}
-{% macro section_card(panel) %}
-<section data-panel="{{ panel }}" {% if not loop.first %}hidden{% endif %} class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-  {{ caller() }}
-</section>
-{% endmacro %}
-
-{# ── Macro: field block (label + description + input/textarea) ────────────── #}
+{# ── Macro: label + description + control ─────────────────────────────────── #}
 {% macro field(label, description, extra_class="mb-7") %}
 <div class="{{ extra_class }}">
   <h3 class="text-base font-semibold text-slate-800 mb-1.5">{{ label }}</h3>
@@ -42,13 +38,16 @@
 
 <div class="mb-6">
   <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Settings</h1>
-  <p class="mt-1 text-sm text-slate-500">Configure AI behavior, scoring, and messaging for your lead funnel.</p>
+  <p class="mt-1 text-sm text-slate-500">
+    Everything the AI is allowed to state as fact lives here. The prompts in <code class="text-violet-600">prompts/</code>
+    carry behaviour only, if a price, a link or a credential is wrong, this is the page that fixes it.
+  </p>
 </div>
 
 <!-- ── Tab Navigation ──────────────────────────────────────────────────── -->
 <div class="border-b border-slate-200 mb-6">
   <nav class="-mb-px flex gap-0" aria-label="Settings sections">
-    {% for tab in [('phase1','Phase 1 — Opening'), ('qualification','Lead Qualification'), ('behaviour','AI Behaviour'), ('coaching','Advanced Coaching'), ('safety','Safety Guardrails')] %}
+    {% for tab in [('about','About & Program'), ('money','Pricing & Links'), ('team','Team & FAQ'), ('safety','Safety & Handover'), ('engine','Engine')] %}
     <button type="button" data-tab="{{ tab[0] }}"
       class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap">
       {{ tab[1] }}
@@ -59,117 +58,121 @@
 
 <form method="post" action="/admin/config/save">
 
-  <!-- ── Phase 1 — Opening ────────────────────────────────────────────── -->
-  <section data-panel="phase1" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Phase 1 — Opening</h2>
+  <!-- ── About & Program ──────────────────────────────────────────────── -->
+  <section data-panel="about" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">About &amp; Program</h2>
 
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">CTA Keywords</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">One keyword per line (case-insensitive). When a lead's very first message exactly matches any of these, the AI is bypassed and the opening message below is sent immediately.</p>
-      {{ dynamic_list('phase1-keywords-list', 'phase1_cta_keywords', phase1_keyword_items, 'e.g. BABY', 'Add Keyword') }}
+    {% call field('About Sonia', 'Who she is, credentials, languages, geography. The AI may state anything written here and nothing that is not.') %}
+      <textarea name="kb_about" rows="8" class="{{ textarea_cls }}">{{ cfg.kb_about or '' }}</textarea>
+    {% endcall %}
+
+    <div class="grid grid-cols-2 gap-5 mb-7">
+      <div>
+        <h3 class="text-base font-semibold text-slate-800 mb-1.5">Years of Experience</h3>
+        <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Used wherever experience is referenced.</p>
+        <input type="text" name="years_experience" value="{{ cfg.years_experience or '' }}" placeholder="16 years" class="{{ input_cls }}">
+      </div>
+      <div>
+        <h3 class="text-base font-semibold text-slate-800 mb-1.5">Babies Welcomed</h3>
+        <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">The only outcome number the AI is permitted to quote.</p>
+        <input type="text" name="babies_welcomed" value="{{ cfg.babies_welcomed or '' }}" placeholder="735" class="{{ input_cls }}">
+      </div>
     </div>
 
-    <div>
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Opening Message</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Sent verbatim when a CTA keyword is detected. Keep it warm and open-ended — no booking link, no fertility advice.</p>
-      <textarea name="phase1_opening_message" rows="4"
-        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.phase1_opening_message or '' }}</textarea>
-    </div>
+    {% call field('The Program', 'What The Fertility Solution is, the support levels, duration, format and what is included.') %}
+      <textarea name="kb_program" rows="10" class="{{ textarea_cls }}">{{ cfg.kb_program or '' }}</textarea>
+    {% endcall %}
+
+    {% call field('Scope, what she does and does not provide', 'Kept factual. The AI quotes this when someone asks for something out of scope.', 'mb-0') %}
+      <textarea name="kb_boundaries" rows="8" class="{{ textarea_cls }}">{{ cfg.kb_boundaries or '' }}</textarea>
+    {% endcall %}
   </section>
 
-  <!-- ── Lead Qualification ────────────────────────────────────────────── -->
-  <section data-panel="qualification" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Lead Qualification</h2>
+  <!-- ── Pricing & Links ──────────────────────────────────────────────── -->
+  <section data-panel="money" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Pricing &amp; Links</h2>
 
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Booking Link</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Sent automatically once when a lead's score reaches the threshold. Include UTM params if you're tracking conversions.</p>
-      <input type="url" name="booking_link" value="{{ cfg.booking_link or '' }}" placeholder="https://calendly.com/your-link"
-        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
-    </div>
+    {% call field('Price Range', 'Stated verbatim the first time someone asks what it costs. The AI never deflects a pricing question.') %}
+      <input type="text" name="price_range" value="{{ cfg.price_range or '' }}" placeholder="$1,500 to $14,000" class="{{ input_cls }}">
+    {% endcall %}
 
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Call Prep Page</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Sent after a lead tells us she booked, alongside the request for the email she booked with. This page must be live: the AI is required to include the link.</p>
-      <input type="url" name="prep_link" value="{{ cfg.prep_link or '' }}" placeholder="https://www.thefertilitysolution.com/call-scheduled"
-        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400">
-    </div>
+    {% call field('Pricing Detail', 'Payment plans, what drives the range, current promotions. Shown alongside the range when it is relevant.') %}
+      <textarea name="kb_pricing" rows="6" class="{{ textarea_cls }}">{{ cfg.kb_pricing or '' }}</textarea>
+    {% endcall %}
 
+    {% call field('Booking Link', 'Rendered into the prompt only on turns where a consultation is genuinely appropriate. Include UTM params here if you track them, nothing else in the system hardcodes a URL.') %}
+      <input type="url" name="booking_link" value="{{ cfg.booking_link or '' }}" placeholder="https://www.thefertilitysolution.com/free-call" class="{{ input_cls }}">
+    {% endcall %}
+
+    {% call field('Masterclass Link', 'Sent after someone books, and offered to anyone who is not ready or cannot invest right now.') %}
+      <input type="url" name="masterclass_link" value="{{ cfg.masterclass_link or '' }}" placeholder="https://www.thefertilitysolution.com/watch-replay" class="{{ input_cls }}">
+    {% endcall %}
+
+    {% call field('Free Resource Wording', 'How the free option is offered to someone who is not ready. Warm, no pressure.', 'mb-0') %}
+      <textarea name="kb_free_resource" rows="5" class="{{ textarea_cls }}">{{ cfg.kb_free_resource or '' }}</textarea>
+    {% endcall %}
   </section>
 
-  <!-- ── AI Behaviour ──────────────────────────────────────────────────── -->
-  <section data-panel="behaviour" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">AI Behaviour</h2>
+  <!-- ── Team & FAQ ───────────────────────────────────────────────────── -->
+  <section data-panel="team" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Team &amp; FAQ</h2>
 
-    {% set textarea_cls = "w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed" %}
+    {% call field('Team', 'Who the AI may name and what each person does. Only people listed here can be mentioned by name.') %}
+      <textarea name="kb_team" rows="6" class="{{ textarea_cls }}">{{ cfg.kb_team or '' }}</textarea>
+    {% endcall %}
 
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">About the Business</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Describe your clinic, mission, and what makes you unique. This shapes the AI's foundational persona.</p>
-      <textarea name="prompt_about" rows="12" class="{{ textarea_cls }}">{{ cfg.prompt_about or '' }}</textarea>
-    </div>
-
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Service Offerings</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">List the treatments, programmes, and support you offer. The AI uses this to match leads with relevant options.</p>
-      <textarea name="prompt_services" rows="12" class="{{ textarea_cls }}">{{ cfg.prompt_services or '' }}</textarea>
-    </div>
-
+    {% call field('Frequently Asked Questions', 'Approved answers to the questions that come up constantly. One question and answer per block.', 'mb-0') %}
+      <textarea name="kb_faq" rows="16" class="{{ textarea_cls }}">{{ cfg.kb_faq or '' }}</textarea>
+    {% endcall %}
   </section>
 
-  <!-- ── Advanced AI Coaching ─────────────────────────────────────────── -->
-  <section data-panel="coaching" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Advanced AI Coaching</h2>
-
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Pattern Recognition Responses</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Responses for common scenarios such as low AMH, PCOS, unexplained infertility, or failed IVF.</p>
-      {{ dynamic_list('pattern-responses-list', 'prompt_pattern_responses', pattern_response_items, 'e.g. Low AMH: acknowledge the worry, share that natural conception is still possible…', 'Add Pattern') }}
-    </div>
-
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Objection Handling Library</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Responses for common objections like cost, feeling overwhelmed, or scepticism.</p>
-      {{ dynamic_list('objection-handling-list', 'prompt_objection_handling', objection_handling_items, 'e.g. Cost objection: I completely understand — let\'s talk about what\'s included…', 'Add Objection') }}
-    </div>
-
-  </section>
-
-  <!-- ── Safety Guardrails ─────────────────────────────────────────────── -->
+  <!-- ── Safety & Handover ────────────────────────────────────────────── -->
   <section data-panel="safety" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Safety Guardrails</h2>
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Safety &amp; Handover</h2>
 
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Hard Rules / Non-Negotiables</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Strict behaviour rules the AI must always follow. These override all other instructions.</p>
-      {{ dynamic_list('hard-rules-list', 'prompt_hard_rules', hard_rule_items, 'e.g. Never give medical advice', 'Add Rule') }}
+    <div class="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 mb-6 text-xs text-slate-600 leading-relaxed">
+      Hard boundaries are enforced in code, not here: age over 48, confirmed menopause, no uterus, both tubes
+      unavailable without IVF, and an unanswered booking checklist all remove the booking link from the prompt
+      entirely, so it cannot be sent. Medication and surgery questions, requests for a human, and existing or
+      former clients pause the AI automatically.
+      <br><br>
+      <strong>When a conversation is handed over, the AI writes nothing.</strong> It stops, pauses itself and tags
+      the contact. Most handovers send no message at all. The three below are the exceptions, and they are sent
+      exactly as typed here, so they are the only messages a lead ever receives that the AI did not write.
     </div>
 
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Medical Blocklist</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">One keyword or phrase per line. If the lead's <em>incoming message</em> contains any of these, the AI is skipped and a medical deflection reply is sent immediately.</p>
-      {{ dynamic_list('blocklist-list', 'medical_blocklist', blocklist_items, 'e.g. miscarriage', 'Add Term') }}
-    </div>
+    {% call field('Handover Message: My Team', 'Sent when she asks for a person, or asks whether she is talking to a bot. Silence there reads as a broken account.') %}
+      <textarea name="handover_message_team" rows="4" class="{{ textarea_cls }}">{{ cfg.handover_message_team or '' }}</textarea>
+    {% endcall %}
 
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Human Takeover Triggers</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">One keyword or phrase per line. If any phrase is detected in an incoming message, the AI immediately stops, the conversation is paused, and the contact is tagged in ManyChat for your VA team to take over manually.</p>
+    {% call field('Handover Message: Crisis', 'Sent when someone writes about not wanting to be alive. Include a helpline. This is the one message that must never be left empty.') %}
+      <textarea name="handover_message_crisis" rows="5" class="{{ textarea_cls }}">{{ cfg.handover_message_crisis or '' }}</textarea>
+    {% endcall %}
+
+    {% call field('Handover Message: Urgent Medical', 'Sent for acute symptoms: heavy bleeding, severe pain, a suspected ectopic. Tell her to be seen today.') %}
+      <textarea name="handover_message_urgent_medical" rows="5" class="{{ textarea_cls }}">{{ cfg.handover_message_urgent_medical or '' }}</textarea>
+    {% endcall %}
+
+    {% call field('Extra Handover Triggers', 'One phrase per line. Anything here pauses the AI and tags the contact in ManyChat on top of the built-in rules.') %}
       {{ dynamic_list('takeover-list', 'human_takeover_triggers', takeover_items, 'e.g. I want to speak to someone', 'Add Trigger') }}
-    </div>
+    {% endcall %}
 
-    <div class="mb-7">
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Medical Deflection Message</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">The message sent when a blocklist term is detected. Leave blank to use the default compassionate response. Tip: the blocklist and takeover lists above apply to Spanish too — add Spanish phrases (with and without accents) directly to those lists.</p>
-      <textarea name="medical_deflection" rows="6"
-        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.medical_deflection or '' }}</textarea>
-    </div>
+    {% call field('Qualified Tag ID', 'ManyChat tag applied when a lead books, instead of the human-review tag.', 'mb-0') %}
+      <input type="text" name="qualified_tag_id" value="{{ cfg.qualified_tag_id or '' }}" placeholder="86596410" class="{{ input_cls }}">
+    {% endcall %}
+  </section>
 
-    <div>
-      <h3 class="text-base font-semibold text-slate-800 mb-1.5">Medical Deflection Message (Spanish)</h3>
-      <p class="text-xs text-slate-500 mb-3.5 leading-relaxed">Sent instead of the English deflection when the lead's conversation is in Spanish. Leave blank to fall back to the English message.</p>
-      <textarea name="medical_deflection_es" rows="6"
-        class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-slate-400 resize-y min-h-[80px] leading-relaxed">{{ cfg.medical_deflection_es or '' }}</textarea>
-    </div>
+  <!-- ── Engine ───────────────────────────────────────────────────────── -->
+  <section data-panel="engine" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Engine</h2>
+
+    {% call field('Model', 'Used for both the read pass and the write pass. Leave blank for the default.') %}
+      <input type="text" name="brain_model" value="{{ cfg.brain_model or '' }}" placeholder="gpt-4.1-mini" class="{{ input_cls }}">
+    {% endcall %}
+
+    {% call field('Temperature', 'Applies to the reply only, the read pass is always deterministic. Higher means more variation between conversations.', 'mb-0') %}
+      <input type="text" name="brain_temperature" value="{{ cfg.brain_temperature or '' }}" placeholder="0.8" class="{{ input_cls }}">
+    {% endcall %}
   </section>
 
   <div class="mt-6 flex items-center gap-3">
@@ -183,7 +186,7 @@
 
 <script>
 // ── Tabs ──────────────────────────────────────────────────────────────────────
-const TABS = ['phase1', 'qualification', 'behaviour', 'coaching', 'safety'];
+const TABS = ['about', 'money', 'team', 'safety', 'engine'];
 
 function activateTab(name) {
   const target = TABS.includes(name) ? name : TABS[0];
@@ -242,7 +245,6 @@ function removeRow(btn) {
   btn.closest('.dynamic-row').remove();
 }
 
-// Initialise auto-resize for pre-filled rows
 document.querySelectorAll('.dynamic-row textarea').forEach(ta => {
   autoResize(ta);
   ta.addEventListener('input', () => autoResize(ta));
@@ -250,12 +252,7 @@ document.querySelectorAll('.dynamic-row textarea').forEach(ta => {
 
 // ── Sync hidden textareas on submit ──────────────────────────────────────────
 const DYNAMIC_LISTS = {
-  'phase1-keywords-list':    'phase1_cta_keywords_hidden',
-  'hard-rules-list':         'prompt_hard_rules_hidden',
-  'pattern-responses-list':  'prompt_pattern_responses_hidden',
-  'objection-handling-list': 'prompt_objection_handling_hidden',
-  'blocklist-list':          'medical_blocklist_hidden',
-  'takeover-list':           'human_takeover_triggers_hidden',
+  'takeover-list': 'human_takeover_triggers_hidden',
 };
 
 document.querySelector('form').addEventListener('submit', function () {

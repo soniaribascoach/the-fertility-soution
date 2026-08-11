@@ -44,7 +44,7 @@ async def get_lead_state(db: AsyncSession, ig_user_id: str) -> dict:
     """Return the qualification-funnel state for a lead as a plain dict.
 
     Shape: {"phase": str | None, "slots": dict, "flags": dict, "counters": dict}.
-    New/unseen leads come back with phase=None and empty sub-dicts — the brain
+    New/unseen leads come back with phase=None and empty sub-dicts, the brain
     treats that as the OPENING phase.
     """
     state = await get_or_create_state(db, ig_user_id)

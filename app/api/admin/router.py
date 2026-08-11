@@ -11,9 +11,10 @@ from app.db.database import get_db
 from app.models.few_shot_version import FewShotVersion
 from app.models.user_state import UserState
 from app.repositories.config import get_all_config, set_config
-from app.services.brain import run_turn
+from app.services.brain import reload_playbooks, run_turn
 from app.services.resume import resume_lead
-from app.services.few_shots import load_few_shot_scenarios, get_few_shot_scenarios
+from app.services.few_shots import load_few_shot_scenarios
+from app.services.prompts import reload_layers
 from app.api.admin.auth import (
     is_authenticated,
     check_rate_limit,
@@ -30,16 +31,17 @@ templates.env.filters["fromjson"] = lambda s: _json.loads(s) if s else {}
 templates.env.filters["split_bubbles"] = lambda s: [b.strip() for b in s.split("\n\n") if b.strip()] or [s]
 templates.env.globals["app_version"] = APP_VERSION
 
+# The knowledge base and the operational knobs. Everything the brain may state as fact lives
+# here, so Sonia can correct a price or a link without a deploy, and the prompt layers in
+# `prompts/` carry only behaviour, never facts.
 CONFIG_KEYS = [
-    "phase1_cta_keywords", "phase1_opening_message",
-    "medical_deflection_es",
-    "booking_link", "prep_link", "score_threshold", "prompt_scoring_rules",
-    "prompt_about", "prompt_services", "prompt_tone", "prompt_flow",
-    "prompt_hard_rules", "prompt_opening_variants", "prompt_qualification_questions",
-    "prompt_pattern_responses", "prompt_objection_handling", "prompt_authority_proof",
-    "prompt_cta_transitions",
-    "medical_blocklist", "medical_deflection",
-    "human_takeover_triggers",
+    "kb_about", "kb_program", "kb_pricing", "kb_boundaries", "kb_team", "kb_faq",
+    "kb_free_resource",
+    "booking_link", "masterclass_link", "price_range",
+    "years_experience", "babies_welcomed",
+    "human_takeover_triggers", "qualified_tag_id",
+    "handover_message_team", "handover_message_crisis", "handover_message_urgent_medical",
+    "brain_model", "brain_temperature",
 ]
 
 
@@ -122,35 +124,14 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
     for key in CONFIG_KEYS:
         cfg.setdefault(key, "")
 
-    def _split(key):
-        return [t for t in cfg.get(key, "").split("\n") if t.strip()]
-
-    phase1_keyword_items = _split("phase1_cta_keywords")
-    blocklist_items = _split("medical_blocklist")
-    takeover_items = _split("human_takeover_triggers")
-    hard_rule_items = _split("prompt_hard_rules")
-    opening_variant_items = _split("prompt_opening_variants")
-    qualification_question_items = _split("prompt_qualification_questions")
-    pattern_response_items = _split("prompt_pattern_responses")
-    objection_handling_items = _split("prompt_objection_handling")
-    authority_proof_items = _split("prompt_authority_proof")
-    cta_transition_items = _split("prompt_cta_transitions")
+    takeover_items = [t for t in cfg.get("human_takeover_triggers", "").split("\n") if t.strip()]
 
     return templates.TemplateResponse(
         request,
         "admin/config.html",
         {
             "cfg": cfg,
-            "phase1_keyword_items": phase1_keyword_items,
-            "blocklist_items": blocklist_items,
             "takeover_items": takeover_items,
-            "hard_rule_items": hard_rule_items,
-            "opening_variant_items": opening_variant_items,
-            "qualification_question_items": qualification_question_items,
-            "pattern_response_items": pattern_response_items,
-            "objection_handling_items": objection_handling_items,
-            "authority_proof_items": authority_proof_items,
-            "cta_transition_items": cta_transition_items,
             "saved": saved == "true",
         },
     )
@@ -189,63 +170,31 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
         "human_takeover": result.pause,
         "takeover_reason": result.pause_reason,
         "lead_state": result.lead_state,
+        "phase": (result.lead_state or {}).get("phase"),
         "action": result.action,
         "violations": result.violations,
         "trace": result.trace,
+        "usage": result.usage,
     })
 
 
 @router.post("/admin/config/save")
-async def config_save(
-        request: Request,
-        phase1_cta_keywords: str = Form(""),
-        phase1_opening_message: str = Form(""),
-        medical_deflection_es: str = Form(""),
-        booking_link: str = Form(""),
-        prep_link: str = Form(""),
-        score_threshold: str = Form(""),
-        prompt_scoring_rules: str = Form(""),
-        prompt_about: str = Form(""),
-        prompt_services: str = Form(""),
-        prompt_tone: str = Form(""),
-        prompt_flow: str = Form(""),
-        prompt_hard_rules: str = Form(""),
-        prompt_opening_variants: str = Form(""),
-        prompt_qualification_questions: str = Form(""),
-        prompt_pattern_responses: str = Form(""),
-        prompt_objection_handling: str = Form(""),
-        prompt_authority_proof: str = Form(""),
-        prompt_cta_transitions: str = Form(""),
-        medical_blocklist: str = Form(""),
-        medical_deflection: str = Form(""),
-        human_takeover_triggers: str = Form(""),
-        db: AsyncSession = Depends(get_db),
-):
+async def config_save(request: Request, db: AsyncSession = Depends(get_db)):
+    """Persist whichever of `CONFIG_KEYS` the form posted.
+
+    Reading the keys off the form rather than declaring twenty `Form(...)` parameters means adding
+    a knowledge-base field is a template change plus one entry in `CONFIG_KEYS`, and a field that
+    is temporarily absent from the form no longer silently blanks its stored value.
+    """
     if not is_authenticated(request):
         return RedirectResponse("/admin/login", status_code=302)
 
-    await set_config(db, "phase1_cta_keywords", phase1_cta_keywords)
-    await set_config(db, "phase1_opening_message", phase1_opening_message)
-    await set_config(db, "medical_deflection_es", medical_deflection_es)
-    await set_config(db, "booking_link", booking_link)
-    await set_config(db, "prep_link", prep_link)
-    await set_config(db, "score_threshold", score_threshold)
-    await set_config(db, "prompt_scoring_rules", prompt_scoring_rules)
-    await set_config(db, "prompt_about", prompt_about)
-    await set_config(db, "prompt_services", prompt_services)
-    await set_config(db, "prompt_tone", prompt_tone)
-    await set_config(db, "prompt_flow", prompt_flow)
-    await set_config(db, "prompt_hard_rules", prompt_hard_rules)
-    await set_config(db, "prompt_opening_variants", prompt_opening_variants)
-    await set_config(db, "prompt_qualification_questions", prompt_qualification_questions)
-    await set_config(db, "prompt_pattern_responses", prompt_pattern_responses)
-    await set_config(db, "prompt_objection_handling", prompt_objection_handling)
-    await set_config(db, "prompt_authority_proof", prompt_authority_proof)
-    await set_config(db, "prompt_cta_transitions", prompt_cta_transitions)
-    await set_config(db, "medical_blocklist", medical_blocklist)
-    await set_config(db, "medical_deflection", medical_deflection)
-    await set_config(db, "human_takeover_triggers", human_takeover_triggers)
+    form = await request.form()
+    for key in CONFIG_KEYS:
+        if key in form:
+            await set_config(db, key, str(form[key]))
 
+    reload_layers()
     return RedirectResponse("/admin/config?saved=true", status_code=302)
 
 
@@ -311,6 +260,7 @@ async def few_shots_save(request: Request, name: str, content: str = Form(...), 
     await db.commit()
 
     request.app.state.few_shot_scenarios = load_few_shot_scenarios(FEW_SHOTS_DIR)
+    reload_playbooks()
 
     return RedirectResponse(f"/admin/few-shots?scenario={name}&saved=true", status_code=302)
 
@@ -335,6 +285,7 @@ async def few_shots_rollback(request: Request, name: str, version_id: int, db: A
     await db.commit()
 
     request.app.state.few_shot_scenarios = load_few_shot_scenarios(FEW_SHOTS_DIR)
+    reload_playbooks()
 
     return RedirectResponse(f"/admin/few-shots?scenario={name}&saved=true", status_code=302)
 

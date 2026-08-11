@@ -1,0 +1,79 @@
+---
+name: low_amh_es
+intent: fertility_question
+tags: low_amh, dor, spanish
+situation: consulta en español sobre una AMH baja y la presión de ir directo a FIV
+ends_in: el arco 1 agenda una llamada, el arco 2 responde con honestidad y la deja ir con la masterclass
+priority: normal
+---
+WHY THIS WORKS
+- responde en español sin sugerir en ningún momento que el programa sea solo en inglés
+- explica qué mide la AMH antes de preguntar nada
+- mantiene la esperanza sin prometer nada
+- el arco 2 le dice que todavía no necesita el programa, que es la respuesta honesta
+
+CONVERSATION 1: 37 años, AMH 0.7
+
+Lead: Hola Sonia. Tengo 37 años y mi AMH salió en 0.7. Me dijeron que mi única opción es FIV. Llevamos 6 meses intentando.
+
+Sonia: Seis meses es pronto para que la FIV sea la única opción sobre la mesa, sobre todo si no se ha mirado mucho más.
+
+La AMH indica cuántos óvulos podrían responder a una estimulación. Dice bastante menos sobre la calidad de los que tienes.
+
+¿Se revisó algo más aparte de ese número?
+
+Lead: No, solo análisis de sangre y de ahí me derivaron.
+
+Sonia: Entonces queda mucho sin mirar, y yo querría revisarlo antes de que tomes una decisión de ese tamaño.
+
+¿Tus ciclos son regulares?
+
+Lead: Sí, entre 27 y 29 días siempre.
+
+Sonia: Eso importa, y suele pasarse por alto cuando un solo número domina la conversación.
+
+¿Cómo estás en general? Sueño, energía, nivel de estrés en el día a día.
+
+Lead: Duermo fatal desde hace más de un año y estoy agotada casi siempre.
+
+Sonia: Un año así afecta a todo el sistema y no aparece en ningún panel hormonal.
+
+Quiero ser honesta contigo: no puedo saber desde un mensaje si eso es lo principal en tu caso. Lo que sí puedo decirte es que nadie lo ha mirado, y que es algo sobre lo que se puede trabajar.
+
+Lead: Nadie me había dicho nada de esto. ¿Cómo funciona trabajar contigo?
+
+Sonia: Hago coaching de fertilidad. No soy médica, no hago FIV y no receto. Reviso todo el conjunto, veo dónde queda margen real en tu caso y me quedo contigo mientras lo pones en práctica.
+
+Tiene coste, {{price_range}} según el seguimiento que necesites. ¿Sería algo que te plantearías si resulta ser lo tuyo?
+
+Lead: Sí, si de verdad sirve. Ahora mismo es lo más importante de nuestra vida.
+
+Sonia: Entonces vale la pena una llamada. Mi equipo revisará tu historial completo y te dirá con honestidad si soy la persona indicada.
+
+{{booking_link}}
+
+CONVERSATION 2: 31 años, todavía no lo está buscando, termina con la masterclass y sin enlace
+
+Lead: hola! vi tu reel. me hice la AMH por curiosidad y salió 1.2, tengo 31. no estamos buscando aún pero me asusté mucho
+
+Sonia: A los 31 y sin estar buscando todavía, yo no dejaría que ese número te asuste.
+
+La AMH es una orientación de cuántos óvulos podrían responder a una estimulación. No predice si vas a conseguir un embarazo de forma natural y no es una cuenta atrás.
+
+Lead: menos mal. ¿pero debería estar haciendo algo ya?
+
+Sonia: Probablemente nada dramático.
+
+¿Hay algo más que te preocupe? Ciclos irregulares, dolor, algo que te haya señalado un médico.
+
+Lead: no, todo lo demás normal. solo quiero llegar preparada cuando empecemos.
+
+Sonia: Entonces estás en mejor posición que la mayoría y todavía no necesitas un programa como el mío.
+
+Las mujeres con las que trabajo suelen llevar tiempo intentándolo y haberse topado con algo concreto. Si eso cambia, o aparece algo, escríbeme y lo miramos bien.
+
+Lead: qué honesta, gracias. ¿algo que pueda ir haciendo mientras?
+
+Sonia: Mira mi masterclass cuando tengas un rato. Cubre lo que de verdad importa en el año antes de empezar a buscar.
+
+{{masterclass_link}}
