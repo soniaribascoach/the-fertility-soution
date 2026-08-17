@@ -47,7 +47,7 @@
 <!-- ── Tab Navigation ──────────────────────────────────────────────────── -->
 <div class="border-b border-slate-200 mb-6">
   <nav class="-mb-px flex gap-0" aria-label="Settings sections">
-    {% for tab in [('about','About & Program'), ('money','Pricing & Links'), ('team','Team & FAQ'), ('safety','Safety & Handover'), ('engine','Engine')] %}
+    {% for tab in [('about','About & Program'), ('money','Pricing & Links'), ('team','Team & FAQ'), ('openers','Reel Keywords'), ('safety','Safety & Handover'), ('engine','Engine')] %}
     <button type="button" data-tab="{{ tab[0] }}"
       class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap">
       {{ tab[1] }}
@@ -126,6 +126,28 @@
     {% endcall %}
   </section>
 
+  <!-- ── Reel Keywords ────────────────────────────────────────────────── -->
+  <section data-panel="openers" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Reel Keywords</h2>
+
+    <div class="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 mb-6 text-xs text-slate-600 leading-relaxed">
+      When a conversation opens with one of these words and nothing else, the AI is not called at all.
+      The welcome below is sent exactly as typed, and then it waits for her answer.
+      <br><br>
+      The keyword tells us nothing about her, so it does not qualify her for anything: "READY" means she
+      watched a reel to the end, not that she is ready to book. Anything longer than a bare keyword, or a
+      keyword typed later in a conversation, goes to the AI as normal.
+    </div>
+
+    {% call field('CTA Keywords', 'One per line, the words you ask people to comment. Case, punctuation and emoji are ignored, so AMH, amh and "AMH 🤍" all match. A message that only contains a keyword inside a longer sentence does not.') %}
+      {{ dynamic_list('cta-list', 'cta_keywords', cta_items, 'e.g. AMH', 'Add Keyword') }}
+    {% endcall %}
+
+    {% call field('Welcome Message', 'Sent word for word when a keyword arrives, so it is one of the few messages a lead receives that the AI did not write. Welcome her and ask one or two discovery questions. Leave it empty to switch the whole thing off and let the AI answer keywords itself.', 'mb-0') %}
+      <textarea name="cta_welcome_message" rows="5" class="{{ textarea_cls }}">{{ cfg.cta_welcome_message or '' }}</textarea>
+    {% endcall %}
+  </section>
+
   <!-- ── Safety & Handover ────────────────────────────────────────────── -->
   <section data-panel="safety" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
     <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Safety &amp; Handover</h2>
@@ -166,8 +188,12 @@
   <section data-panel="engine" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
     <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Engine</h2>
 
-    {% call field('Model', 'Used for both the read pass and the write pass. Leave blank for the default.') %}
+    {% call field('Writer Model', 'Writes the reply. Leave blank for the default. A GPT-5 model here ignores the temperature below, so the variation between conversations stops being adjustable.') %}
       <input type="text" name="brain_model" value="{{ cfg.brain_model or '' }}" placeholder="gpt-4.1-mini" class="{{ input_cls }}">
+    {% endcall %}
+
+    {% call field('Reader Model', 'Reads the conversation and extracts the facts the gates run on. Never writes anything a lead sees. Leave blank for the default.') %}
+      <input type="text" name="read_model" value="{{ cfg.read_model or '' }}" placeholder="gpt-5-mini" class="{{ input_cls }}">
     {% endcall %}
 
     {% call field('Temperature', 'Applies to the reply only, the read pass is always deterministic. Higher means more variation between conversations.', 'mb-0') %}
@@ -186,7 +212,7 @@
 
 <script>
 // ── Tabs ──────────────────────────────────────────────────────────────────────
-const TABS = ['about', 'money', 'team', 'safety', 'engine'];
+const TABS = ['about', 'money', 'team', 'openers', 'safety', 'engine'];
 
 function activateTab(name) {
   const target = TABS.includes(name) ? name : TABS[0];
@@ -253,6 +279,7 @@ document.querySelectorAll('.dynamic-row textarea').forEach(ta => {
 // ── Sync hidden textareas on submit ──────────────────────────────────────────
 const DYNAMIC_LISTS = {
   'takeover-list': 'human_takeover_triggers_hidden',
+  'cta-list': 'cta_keywords_hidden',
 };
 
 document.querySelector('form').addEventListener('submit', function () {

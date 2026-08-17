@@ -1,5 +1,6 @@
 ---
 name: donor_eggs
+intent: ivf_question
 tags: donor_eggs, egg_quality
 situation: she is considering donor eggs, or has been told to, and wants help deciding or arranging it
 ends_in: boundary held on the service itself; support offered only for what is actually in scope
@@ -66,6 +67,10 @@ I'd also say this honestly: donor eggs may still turn out to be the right answer
 
 Lead: Would you work with me while I decide?
 
-Sonia: I would. Get a call in first and let my team pull both cycles apart. They'll tell you straight whether there's real room or not.
+Sonia: I would. It's paid coaching and the level of support varies, which I'd rather you heard now than on the call.
+
+Lead: I assumed it would be. That's not what's stopping me.
+
+Sonia: Then get a call in and let my team pull both cycles apart. They'll tell you straight whether there's real room or not.
 
 {{booking_link}}

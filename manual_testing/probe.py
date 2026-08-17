@@ -8,8 +8,8 @@ The config is the seed from the brain-v2 migration rather than whatever is in th
 because the local database still holds the old v14 keys and an empty knowledge base would make
 every reply look broken for the wrong reason.
 
-    python manual_testing/probe.py              # every scenario
-    python manual_testing/probe.py age_51 tubes # named scenarios only
+    python manual_testing/probe.py                             # every scenario
+    python manual_testing/probe.py 08_tubes_one_then_both_then_letrozole   # named scenarios only
 """
 import asyncio
 import importlib.util
@@ -29,18 +29,27 @@ from manual_testing.scenarios import SCENARIOS  # noqa: E402
 ALL_SCENARIOS = SCENARIOS
 
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "runs")
-MIGRATION = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "alembic", "versions", "r8s9t0u1v2w3_brain_v2_knowledge_base.py",
+_VERSIONS = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "alembic", "versions",
+)
+
+# Every migration whose `_SEED` is part of the config the brain runs on, oldest first. A key seeded
+# later wins, which is the order the database applies them in.
+MIGRATIONS = (
+    "r8s9t0u1v2w3_brain_v2_knowledge_base.py",
+    "t0u1v2w3x4y5_seed_cta_keywords.py",
 )
 
 
 def load_config() -> dict:
-    """The knowledge base exactly as the migration seeds it into `app_config`."""
-    spec = importlib.util.spec_from_file_location("_kb_seed", MIGRATION)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return dict(module._SEED)
+    """The knowledge base exactly as the migrations seed it into `app_config`."""
+    cfg: dict = {}
+    for filename in MIGRATIONS:
+        spec = importlib.util.spec_from_file_location("_kb_seed", os.path.join(_VERSIONS, filename))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        cfg.update(module._SEED)
+    return cfg
 
 
 def _fmt_read(read: dict) -> list[str]:
@@ -115,12 +124,19 @@ def write_markdown(run: dict) -> str:
         "",
         f"**Manual references:** {scenario['refs']}",
         "",
+        f"**Absorbs:** {', '.join(f'`{c}`' for c in scenario.get('covers') or []) or '-'}",
+        "",
         f"_Run {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}, "
         f"{len(run['turns'])} turns, ${total}_",
         "",
-        "---",
-        "",
     ]
+
+    if scenario.get("checkpoints"):
+        lines += ["**What each stretch has to prove:**", ""]
+        lines += [f"{i}. {c}" for i, c in enumerate(scenario["checkpoints"], 1)]
+        lines.append("")
+
+    lines += ["---", ""]
 
     for i, turn in enumerate(run["turns"], 1):
         gate = (turn["trace"] or {}).get("gate") or {}
@@ -159,6 +175,23 @@ def write_markdown(run: dict) -> str:
         lines += [f"**Conversation ended.** {run['ended']}", ""]
     else:
         lines += ["**Conversation ran to the end of the script; the AI never paused.**", ""]
+
+    # The dossier the conversation built. In a fifteen-turn run this is most of what the
+    # never-ask-twice and invented-fact findings are judged against.
+    state = run.get("final_state") or {}
+    if state:
+        slots = {k: v for k, v in (state.get("slots") or {}).items() if v not in (None, "", [])}
+        flags = {k: v for k, v in (state.get("flags") or {}).items() if v}
+        lines += [
+            "<details><summary>final dossier</summary>",
+            "",
+            f"- phase: `{state.get('phase')}`  turns counted: `{(state.get('counters') or {}).get('turns')}`",
+            f"- slots: `{json.dumps(slots, ensure_ascii=False)}`",
+            f"- flags: `{json.dumps(flags, ensure_ascii=False)}`",
+            "",
+            "</details>",
+            "",
+        ]
 
     lines += ["---", "", "## Verdict", "", "_(filled in during review)_", ""]
     return "\n".join(lines)

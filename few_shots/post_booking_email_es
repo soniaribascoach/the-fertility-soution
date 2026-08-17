@@ -1,5 +1,6 @@
 ---
 name: post_booking_email_es
+intent: post_booking
 tags: post_booking, spanish
 situation: ya ha agendado, o dice que sí, y hace falta el correo electrónico
 ends_in: correo recogido, masterclass enviada, Natalia avisada, confirmación pedida
@@ -22,7 +23,7 @@ Lead: r.castillo@example.com
 
 Sonia: Gracias.
 
-Te he mandado mi masterclass a esa dirección. Merece la pena verla antes del martes para que la llamada empiece más adelantada.
+Te he mandado mi masterclass a esa dirección. Merece la pena verla antes del martes, así la llamada arranca desde más lejos.
 
 {{masterclass_link}}
 
@@ -53,3 +54,23 @@ Natalia os escribirá antes de la cita. Con que le contestéis, queda confirmada
 Lead: Perfecto, gracias Sonia.
 
 Sonia: Hablamos el jueves.
+
+CONVERSATION 3: da las gracias primero y el correo llega después
+
+Lead: vale, ¡gracias!
+
+Sonia: Antes de que te vayas, ¿con qué correo la has reservado? Te mando algo que merece la pena ver antes.
+
+Lead: perdona, se me pasó. es jen.okafor@example.com
+
+Sonia: Sin problema.
+
+Te la mando ahí. Es una hora, y cambia bastante lo que la llamada puede cubrir.
+
+{{masterclass_link}}
+
+Natalia te escribirá por mensaje antes de la cita. Con que le contestes, queda confirmada.
+
+Lead: anotado, ¡gracias!
+
+Sonia: Nos vemos allí.

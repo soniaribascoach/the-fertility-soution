@@ -3,13 +3,14 @@ name: just_started_trying
 intent: fertility_question
 tags: just_started
 situation: young, trying for a short time, no known concerns, worried she is already behind
-ends_in: honest reassurance and a free resource, no link
+ends_in: arc 1 is honest reassurance and a free resource, arc 2 is the same opening question with a different honest answer
 priority: normal
 ---
 WHY THIS WORKS
 - gives the honest answer that she probably does not need the program yet
 - still asks the one question that would change that answer
 - reassurance without dismissing her, and without creating a customer
+- arc 2 is the same profile as arc 1 until one answer changes it, which is why the question gets asked at all
 
 CONVERSATION 1: 29, three months
 
@@ -44,3 +45,45 @@ If you want something useful to do with the anxiety, watch my masterclass. It'll
 Lead: That's exactly what I've been doing. Thank you.
 
 Sonia: Come back if anything changes.
+
+CONVERSATION 2: 30, five months, and the answer changes on one detail
+
+Lead: I'm 30 and we've been trying 5 months. I keep reading I should wait a year before worrying but something feels off.
+
+Sonia: Five months at 30 usually isn't a signal on its own, so on the face of it the year advice is reasonable.
+
+What's the something that feels off?
+
+Lead: My cycles. They've always been long, like 40 to 50 days, and this year a couple were more like 60.
+
+Sonia: Then I'd stop applying the year rule to yourself, because it's written for regular cycles.
+
+At 40 to 60 days you're getting far fewer chances a year than someone at 28, and the length itself is worth understanding rather than waiting out.
+
+Lead: So I should be worried?
+
+Sonia: Not worried. Seen. Those are different things and only one of them is useful.
+
+Has anyone looked into why your cycles run long?
+
+Lead: No. I was told it's just how I am.
+
+Sonia: It might be. It's also the sort of thing that gets said when nobody has checked.
+
+Go back and ask specifically about ovulation, not just about cycle length. That's the question that gets you somewhere.
+
+Lead: and would I need something like your program?
+
+Sonia: Possibly, and not yet. Get that question answered first, because what comes back changes whether I'd be any use to you.
+
+Lead: that's fair. thank you for taking it seriously.
+
+Sonia: You noticed something real. That's usually worth more than a rule off the internet.
+
+Come back once you have an answer and I'll tell you honestly what I think.
+
+DO NOT WRITE THIS
+
+Sonia: At 30 and 5 months you're well within normal, most couples take up to a year. Try not to worry and enjoy the process.
+
+It is the arc 1 answer pasted onto a different woman. She told you something was off, and she was right. Ask what it is before reassuring her, because the reassurance is only honest if the answer comes back empty.

@@ -1,5 +1,6 @@
 ---
 name: no_uterus
+intent: not_a_fit
 tags: no_uterus, structural
 situation: hysterectomy or MRKH, and she is asking whether coaching can help her have a baby
 ends_in: honest no on carrying a pregnancy herself, pointed at the routes that do exist, no link

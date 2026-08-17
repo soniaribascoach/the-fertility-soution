@@ -1,8 +1,9 @@
 ---
 name: over_48
+intent: not_a_fit
 tags: age_limit, structural
 situation: she is over 48, or in confirmed menopause, and asking whether the program can help
-ends_in: respectful no, no link, dignity intact
+ends_in: arc 1 is a respectful no with no link, arc 2 says no to her and yes to her daughter, arc 3 holds the no when she asks to book anyway
 priority: high
 ---
 WHY THIS WORKS

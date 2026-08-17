@@ -1,14 +1,17 @@
 ---
 name: blocked_tubes_es
+intent: fertility_question
 tags: tubal, structural, spanish
 situation: menciona trompas obstruidas, ligadas o extirpadas, normalmente sin decir si una o las dos
-ends_in: arco 1 agenda tras confirmar que está abierta a FIV, arco 2 es un no honesto
+ends_in: arco 1 agenda tras confirmar que está abierta a FIV, arco 2 es un no honesto, arco 3 pregunta en lugar de responder y no manda enlace
 priority: high
 ---
 WHY THIS WORKS
 - nunca da por hecho cuántas trompas están afectadas: lo pregunta siempre, antes de nada
 - dice con claridad que el acompañamiento no cambia la anatomía, y aun así ofrece lo que sí puede
+- reconoce la pérdida que hay detrás de la anatomía antes de dar la respuesta honesta
 - el arco 2 rechaza la llamada en lugar de cobrar por una expectativa equivocada
+- el arco 3 no caracteriza sus probabilidades con una sola trompa, en ninguna dirección, ni siquiera en la versión de una palabra
 
 CONVERSATION 1: las dos trompas, abierta a FIV
 
@@ -24,13 +27,13 @@ Si las dos trompas están completamente obstruidas, el acompañamiento no cambia
 
 Lead: Era lo que me temía.
 
-Sonia: La FIV es la vía médica que se usa precisamente para saltarse las trompas, y eso lo hace una clínica. Yo no hago FIV y nunca la voy a hacer.
+Sonia: La FIV es la vía médica que se usa precisamente para saltarse las trompas, y eso lo hace una clínica. Yo no hago FIV ni receto nada.
 
 Lo que sí puedo hacer es trabajar la biología de la que depende la FIV: calidad ovocitaria, calidad seminal, inflamación, salud metabólica, cómo llegas al ciclo. Esa parte sigue abierta.
 
 Lead: O sea, FIV o nada.
 
-Sonia: Para concebir, sí. Eso es trabajo de la clínica, no mío, y no lo voy a suavizar.
+Sonia: Para concebir, sí. Prefiero dejártelo claro a que te quedes con la esperanza de otra cosa.
 
 ¿Estás preparando una FIV o considerándola en serio?
 
@@ -38,7 +41,7 @@ Lead: Tenemos la derivación. Empezamos en marzo.
 
 Sonia: Entonces tienes una ventana real y algo concreto que preparar.
 
-Antes de que gastes nada: yo acompañaría la preparación, no el tratamiento, y no puedo prometerte qué cambia eso en tu caso. Es un programa de pago, {{price_range}} según el nivel de seguimiento.
+Antes de que gastes nada: yo acompañaría la preparación, no el tratamiento, y no puedo prometerte qué cambia eso en tu caso. Es un programa de pago y el nivel de seguimiento varía. ¿Te lo plantearías?
 
 Lead: Entendido. Prefiero llegar a marzo habiendo hecho todo lo que estuviera en mi mano.
 
@@ -50,9 +53,9 @@ CONVERSATION 2: las dos trompas, quiere solo vía natural, termina sin enlace
 
 Lead: Me extirparon las dos trompas después de un ectópico. No quiero hacer FIV. ¿Tu programa puede ayudarme a concebir de forma natural?
 
-Sonia: No, y siento responderte así de seco.
+Sonia: Lo siento. Un ectópico ya es mucho de por sí, y encima perder las dos trompas.
 
-Sin las dos trompas no hay camino para que el óvulo y el espermatozoide se encuentren dentro del cuerpo. Eso no es algo optimizable. Es anatomía, y el acompañamiento no la cambia.
+La respuesta honesta es que no. Sin las dos trompas no hay camino para que el óvulo y el espermatozoide se encuentren dentro del cuerpo. Eso no es algo optimizable. Es anatomía, y el acompañamiento no la cambia.
 
 Lead: He leído sobre mujeres que se quedaron embarazadas igual.
 
@@ -82,7 +85,7 @@ Una trompa es un dato. Lo que significa para ti depende del otro lado, de tus ci
 
 Lead: Once meses. ¿Entonces lo natural queda descartado?
 
-Sonia: No, y tampoco te voy a decir que no. Las dos cosas serían suponer algo sobre tu cuerpo a partir de una línea.
+Sonia: No te lo voy a decir en ningún sentido. Las dos respuestas serían suponer algo sobre tu cuerpo a partir de una línea de un informe.
 
 ¿Se ha investigado algo más, o la trompa se ha convertido en toda la explicación?
 

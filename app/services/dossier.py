@@ -109,7 +109,29 @@ _REASON_TAGS = {
     "recent_loss": "loss_recent",
     "not_a_priority": "not_priority",
     "refuses_paid_coaching": "affordability",
+    "currently_pregnant": "celebration",
 }
+
+
+# The reader is asked to omit what she did not say, and mostly does. When it does not, it says so
+# in words: `partner_status: "unstated"`, `time_trying: "not stated"`. Those are the absence of a
+# fact wearing the costume of one, and they cost twice. They count toward the "do I understand
+# enough of her situation" threshold that decides whether a booking is honest, and they render into
+# the writer's dossier under "what she has already told me", where "Trying for: not stated" reads
+# as something she said.
+_NOT_A_VALUE = {
+    "", "-", "n/a", "na", "none", "null", "unknown", "unstated", "not stated", "not specified",
+    "not mentioned", "not provided", "not given", "unspecified", "unclear", "tbd",
+}
+
+
+def _stated(value) -> bool:
+    """Whether a slot holds something she actually told us."""
+    if value in (None, "", []):
+        return False
+    if isinstance(value, str):
+        return value.strip().lower().strip(".") not in _NOT_A_VALUE
+    return True
 
 
 def empty_state() -> dict:
@@ -126,12 +148,13 @@ def merge(lead_state: dict | None, read: dict) -> dict:
     new_slots = read.get("slots") or {}
     for key in SCALAR_SLOTS:
         value = new_slots.get(key)
-        if value not in (None, "", []):
+        if _stated(value):
             slots[key] = value
     for key in LIST_SLOTS:
         incoming = new_slots.get(key) or []
         if isinstance(incoming, str):
             incoming = [incoming]
+        incoming = [v for v in incoming if _stated(v)]
         if incoming:
             existing = slots.get(key) or []
             # Preserve order, drop repeats, she often restates a diagnosis in different words.
@@ -148,13 +171,48 @@ def merge(lead_state: dict | None, read: dict) -> dict:
     if structural:
         flags["structural"] = structural
 
+    # A live pregnancy is a fact about her, not a property of the message that announced it. The
+    # reader reports it as an intent, which only describes the turn it arrived on, so it is pinned
+    # here alongside the other sticky boundary facts: she is still pregnant on the turn where she
+    # asks what to eat.
+    if read.get("intent") == "pregnancy_announcement":
+        flags["currently_pregnant"] = True
+
     if read.get("language"):
         slots["language"] = read["language"]
 
     counters["turns"] = int(counters.get("turns", 0)) + 1
+    counters["teaching"] = _teaching_run(state, read, counters)
     state.update(slots=slots, flags=flags, counters=counters)
     state.setdefault("phase", None)
     return state
+
+
+# Intents that mean she asked about how fertility works rather than about herself.
+TEACHING_INTENTS = ("free_info_request", "fertility_question", "ivf_question")
+
+
+def _teaching_run(previous: dict, read: dict, counters: dict) -> int:
+    """How many general questions in a row she has now asked.
+
+    `30_operations.md` and `60_contract.md` both say to stop teaching and send the masterclass by
+    the third one. Both have been in the prompt for five rounds and the spiral still runs to eight,
+    because a rule about counting is being asked of a model that is not counting: it sees a
+    reasonable question and answers it, and every answer is individually defensible.
+
+    So the count is done here and handed to the writer as a fact about this turn. A question is
+    general when the reader classified it as one and it told us nothing new about her, which is the
+    same test the manual uses: "with nothing about her in either of them".
+    """
+    if read.get("intent") not in TEACHING_INTENTS:
+        return 0
+    learned = {
+        key: value for key, value in (read.get("slots") or {}).items()
+        if key != "language" and _stated(value)
+    }
+    if learned != {k: v for k, v in (previous.get("slots") or {}).items() if k in learned}:
+        return 0
+    return int(counters.get("teaching", 0)) + 1
 
 
 def _escalation_reason(state: dict, read: dict) -> str:
@@ -186,7 +244,7 @@ def _escalation_reason(state: dict, read: dict) -> str:
     return ""
 
 
-def _booking_blocked(state: dict) -> str:
+def _booking_blocked(state: dict, read: dict) -> str:
     """Why this turn may not offer the link. Empty string means it may."""
     flags = state.get("flags") or {}
     slots = state.get("slots") or {}
@@ -205,7 +263,13 @@ def _booking_blocked(state: dict) -> str:
         return "refuses_paid_coaching"
     if flags.get("demands_guarantee"):
         return "demands_guarantee"
-    if flags.get("wants_unprovided_service"):
+    # Read from this turn rather than from the dossier, and deliberately not sticky. "I'm planning
+    # IVF in a month or two" is the sentence half of her audience opens with, and one reader misfire
+    # on it used to shut the link for the whole conversation: every later turn was told to say what
+    # she does not provide, so four messages were answered with four refusals and no question. What
+    # she asked for on the turn she asked for it is still declined; what she asks next is a new
+    # question.
+    if (read.get("flags") or {}).get("wants_unprovided_service"):
         return "out_of_scope_request"
     if flags.get("requested_lab_interpretation"):
         # Refusing to read her results and inviting her to a call in the same breath turns the
@@ -213,6 +277,11 @@ def _booking_blocked(state: dict) -> str:
         return "lab_request"
     if flags.get("recent_loss"):
         return "recent_loss"
+    if flags.get("currently_pregnant"):
+        # A live pregnancy is out of scope (2B.1 §2). Round 5 left the link open through a
+        # pregnancy announcement, and the reply that followed quoted the price range to a
+        # frightened woman who had just been told coaching through a pregnancy is not what this is.
+        return "currently_pregnant"
     if slots.get("pregnancy_priority") == "low":
         return "not_a_priority"
 
@@ -222,12 +291,41 @@ def _booking_blocked(state: dict) -> str:
     known = sum(
         1 for key in ("age", "time_trying", "conceiving_mode", "ivf_history", "iui_history",
                       "pregnancy_priority", "partner_status", "goal_stated")
-        if slots.get(key)
+        if _stated(slots.get(key))
     ) + (1 if slots.get("diagnoses") else 0) + (1 if slots.get("already_tried") else 0)
     if known < 3:
         return "not_enough_context"
 
     return ""
+
+
+# Step 4 of the conversation flow (Part 1 §8): the things the AI is supposed to check it knows
+# before deciding anything, in the order they are worth asking for. Age comes first because it
+# decides scope on its own, then how long she has been trying, then the two that 2B.1 §15 makes
+# pre-booking conditions and that nobody ever volunteers: whether a baby is one of her biggest
+# priorities, and whether someone else shares the decision.
+#
+# The labels are what the writer is told is missing, so they are phrased as the thing to find out
+# rather than as a field name.
+DISCOVERY = (
+    ("age", "how old she is"),
+    ("time_trying", "how long she has been trying"),
+    ("conceiving_mode", "whether she is trying naturally or preparing for IUI or IVF"),
+    ("pregnancy_priority", "whether having a baby is one of her biggest priorities right now"),
+    ("partner_status", "whether she is doing this with a partner or on her own"),
+)
+
+
+def missing_facts(state: dict) -> list[str]:
+    """What Step 4 would still have her ask about, most useful first.
+
+    The gate can withhold a link but it cannot ask a question, and for five rounds nothing told the
+    writer why the link was missing or what would change it. A conversation was recorded where a
+    frightened woman said yes to being helped four times, was never asked her age, and was
+    eventually told a person would be in touch, which was not true.
+    """
+    slots = state.get("slots") or {}
+    return [label for key, label in DISCOVERY if not _stated(slots.get(key))]
 
 
 def _first_exchange(state: dict) -> bool:
@@ -254,7 +352,7 @@ def gate(state: dict, read: dict) -> Gate:
         blocks.add("post_booking")
         extra_tags.append("post_booking")
 
-    blocked_for = _booking_blocked(state)
+    blocked_for = _booking_blocked(state, read)
     # Someone who opens with "how do I work with you" is ready and should not be re-qualified;
     # everyone else gets at least one real exchange before a call is mentioned.
     if not blocked_for and _first_exchange(state) and read.get("intent") != "warm_prospect":

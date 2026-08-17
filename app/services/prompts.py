@@ -74,6 +74,9 @@ def config_values(cfg: dict) -> dict:
         "kb_free_resource": cfg.get("kb_free_resource", ""),
         "booking_link": cfg.get("booking_link", ""),
         "masterclass_link": cfg.get("masterclass_link", ""),
+        # So a conversation that opens with a CTA keyword can be shown in a few-shot exactly as the
+        # lead received it, rather than as a paraphrase that drifts from what config actually sends.
+        "cta_welcome_message": cfg.get("cta_welcome_message", ""),
         "price_range": cfg.get("price_range", ""),
         "years_experience": cfg.get("years_experience", ""),
         "babies_welcomed": cfg.get("babies_welcomed", ""),

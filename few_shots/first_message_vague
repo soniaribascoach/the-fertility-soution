@@ -3,7 +3,7 @@ name: first_message_vague
 intent: new_prospect
 tags: just_started, long_ttc
 situation: an opening message with almost nothing in it: "hi", "help", "can you help me?", "where do I start?"
-ends_in: arc 1 opens the conversation properly, arc 2 books after two exchanges
+ends_in: arc 1 opens the conversation properly and books, arc 2 answers and sends her to the masterclass
 priority: normal
 ---
 WHY THIS WORKS
@@ -41,17 +41,21 @@ Lead: I didn't know that. He's always assumed it's me.
 
 Sonia: Most couples land there by default, not by evidence.
 
-How much of a priority is starting a family for you at the moment, honestly?
+Can I ask, is having a baby one of your biggest priorities at the moment?
 
 Lead: It's the only thing I care about.
 
-Sonia: Then let's take it seriously.
+Sonia: Then let's take it seriously. How old are you?
 
-Book a call and my team will go through all of it. Both of you on the call if he'll come. I should say it's a paid coaching program, so that doesn't land as a surprise later.
+Lead: 34.
+
+Sonia: Then there's time to do this properly rather than in a panic, and two years is long enough to stop waiting it out.
+
+One thing before you spend an hour on a call: it's a paid coaching program, and how much depends on the level of support.
 
 Lead: That's fine. How do I book?
 
-Sonia: Here.
+Sonia: Here. Both of you on the call if he'll come.
 
 {{booking_link}}
 

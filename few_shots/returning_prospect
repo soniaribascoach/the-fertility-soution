@@ -3,7 +3,7 @@ name: returning_prospect
 intent: warm_prospect
 tags: thinking_about_it, long_ttc
 situation: she spoke to you weeks or months ago and has come back, or went quiet and resurfaced
-ends_in: arc 1 books, arc 2 finds she is not ready and lets her be
+ends_in: arc 1 books, arc 2 finds she is not ready and lets her be, arc 3 picks up the old details before asking anything
 priority: high
 ---
 WHY THIS WORKS
@@ -38,7 +38,9 @@ Sonia: That's a real change.
 
 Then let's put a call in with both of you. My team will go through everything including the IUI and the new AMH.
 
-Lead: Yes please.
+Same as when we last spoke, it's a paid program and the level of support varies. Worth saying again rather than assuming you remember.
+
+Lead: I remember. We've talked about it since.
 
 Sonia: Here's the link. Something in the evening if that's easier for him.
 

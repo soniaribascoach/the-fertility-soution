@@ -1,5 +1,6 @@
 ---
 name: post_booking_email
+intent: post_booking
 tags: post_booking
 situation: she has booked, or says she has, and the email address is needed
 ends_in: email captured, masterclass sent, Natalia flagged, confirmation asked for
