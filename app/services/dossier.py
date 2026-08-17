@@ -285,6 +285,19 @@ def _booking_blocked(state: dict, read: dict) -> str:
     if slots.get("pregnancy_priority") == "low":
         return "not_a_priority"
 
+    # Age is the one fact that can end the conversation by itself: 2B.1 §9 makes over 48 a hard
+    # boundary and 2B.1 §10 sends 46 to 48 to a person. Both of those are checked above, and both
+    # can only fire when she has actually given a number, so without this the boundary the manual
+    # states most plainly was the one nothing ever enforced. A woman who never mentions her age
+    # cleared the gate on the strength of three other slots and was sent the link.
+    #
+    # So it is a precondition rather than one of the eight below. The others can be worked out well
+    # enough from the shape of her story for an invitation to still be honest without them. Age
+    # cannot be worked out from anything, which is why `70_read.md` forbids the reader from
+    # estimating one, and a blank left by that rule must not read here as a pass.
+    if not _stated(slots.get("age")):
+        return "age_unknown"
+
     # 2B.1 §15: enough of her situation has to be understood before an invitation is honest.
     # Two facts is a first message, not an understanding, an invitation that early is the
     # "every message is a sales opportunity" failure the manual opens by ruling out.
@@ -300,10 +313,15 @@ def _booking_blocked(state: dict, read: dict) -> str:
 
 
 # Step 4 of the conversation flow (Part 1 §8): the things the AI is supposed to check it knows
-# before deciding anything, in the order they are worth asking for. Age comes first because it
-# decides scope on its own, then how long she has been trying, then the two that 2B.1 §15 makes
-# pre-booking conditions and that nobody ever volunteers: whether a baby is one of her biggest
-# priorities, and whether someone else shares the decision.
+# before deciding anything, in the order they are worth asking for.
+#
+# The order is not a preference, it is what each answer can do to the conversation. Age can end it:
+# past 48 there is no version of this she can be sold, so it is asked first and `_booking_blocked`
+# will not let a link past without it. How long she has been trying and what she is doing about it
+# shape the whole reply. Whether a baby is one of her biggest priorities is a pre-booking condition
+# under 2B.1 §15. Partner status is last on purpose: it changes only who is invited to the call,
+# so it is worth a question late and worth nothing early, and asking it first is how a conversation
+# spends its one question on the fact that mattered least.
 #
 # The labels are what the writer is told is missing, so they are phrased as the thing to find out
 # rather than as a field name.

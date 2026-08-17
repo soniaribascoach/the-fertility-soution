@@ -186,6 +186,40 @@ def test_someone_who_opens_ready_is_not_made_to_wait():
     assert gate.allow_booking
 
 
+def test_no_link_until_she_has_said_how_old_she_is():
+    """Over 48 is a hard boundary, and it can only be applied to an age she actually gave.
+
+    Everything else about this lead is known and none of it decides anything. She could be 52 and
+    the reader is forbidden from guessing, so the boundary is enforceable only by refusing to
+    invite anyone whose age has never been asked.
+    """
+    known_but_ageless = {
+        "time_trying": "3 years", "conceiving_mode": "naturally",
+        "pregnancy_priority": "high", "partner_status": "husband",
+    }
+    gate = dossier.gate(_state(known_but_ageless), {"intent": "fertility_question"})
+    assert not gate.allow_booking
+    assert gate.block_reason == "age_unknown"
+    assert "booking" not in gate.blocks
+
+
+def test_saying_she_is_ready_does_not_stand_in_for_her_age():
+    """The warm-prospect bypass skips the first-exchange wait, not the boundary."""
+    gate = dossier.gate(_state({"pregnancy_priority": "high"}, turns=1), {"intent": "warm_prospect"})
+    assert not gate.allow_booking
+    assert gate.block_reason == "age_unknown"
+
+
+def test_age_is_the_first_thing_the_writer_is_told_to_ask_for():
+    """Order in DISCOVERY is the priority the writer is given. Partner status comes last."""
+    missing = dossier.missing_facts(dossier.empty_state())
+    assert missing[0] == "how old she is"
+    assert "partner" in missing[-1]
+
+    known = _state({"age": 36})
+    assert "how old she is" not in dossier.missing_facts(known)
+
+
 @pytest.mark.parametrize("slots,flags,why", [
     ({**QUALIFIED, "age": 51}, {}, "over 48"),
     (QUALIFIED, {"structural": "no_uterus"}, "no uterus"),

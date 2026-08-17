@@ -161,7 +161,20 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
     # so a conversation that never learns anything about her stalls with the link shut and no
     # route to opening it. Naming the gap is what turns "no consultation this turn" from a dead
     # end into the next thing to do.
-    if gate.block_reason in ("not_enough_context", "first_exchange") and missing:
+    # Age gets its own line rather than a place in the list. A comma list carries no priority, so
+    # "ask the one that matters most" was read off the emotional beat of her message and the answer
+    # was almost always partner status or priorities, which feel warmer to ask. Age is the only one
+    # that can end the conversation, so on this turn it is the only one worth a question.
+    if gate.block_reason == "age_unknown":
+        lines.append(
+            "- You do not know how old she is, and it is the one thing you cannot invite her to a "
+            "call without knowing. It is not an item on a list of useful facts: it decides whether "
+            "there is anything here for her at all, so it comes before the rest of them and before "
+            "anything about a partner, which only ever changes who else is on the call. Answer what "
+            "she asked, then ask her age, on its own and in your own words. Nothing else is worth a "
+            "question this turn."
+        )
+    elif gate.block_reason in ("not_enough_context", "first_exchange") and missing:
         lines.append(
             "- You still do not know " + _list(missing) + ". Until you know at least three things "
             "about her situation, a call cannot honestly be offered, so the way forward is to "
@@ -242,7 +255,7 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
     # as general because it tells us nothing new about her. Handing her the masterclass at that
     # moment reads as a consolation prize for the answer she has just been given.
     teaching = int((state.get("counters") or {}).get("teaching", 0))
-    if gate.block_reason not in ("", "first_exchange", "not_enough_context"):
+    if gate.block_reason not in ("", "first_exchange", "not_enough_context", "age_unknown"):
         teaching = 0
 
     already_sent = bool((state.get("flags") or {}).get("masterclass_sent"))
