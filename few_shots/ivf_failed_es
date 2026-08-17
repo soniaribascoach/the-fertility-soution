@@ -1,0 +1,81 @@
+---
+name: ivf_failed_es
+intent: ivf_question
+tags: ivf_failed, embryo_quality, spanish
+situation: uno o más ciclos de FIV fallidos, en español, a veces con ovodonación sobre la mesa
+ends_in: el arco 1 agenda una llamada, el arco 2 la acompaña tras una pérdida reciente sin pedirle nada
+priority: normal
+---
+WHY THIS WORKS
+- trata el ciclo fallido como información, no como un veredicto sobre su cuerpo
+- respeta el criterio de la clínica mientras abre lo que no se consideró
+- nombra el coste emocional una vez, sin recrearse
+- en el arco 2 no hay valoración, ni preguntas sobre su historial, ni oferta: una semana después no toca
+
+CONVERSATION 1: 40 años, dos ciclos, le proponen ovodonación
+
+Lead: Tengo 40 años, dos FIV fallidas y ahora me proponen ovodonación. No estoy preparada para eso.
+
+Sonia: Dos ciclos y de ahí a esa conversación es mucho que asimilar en poco tiempo, y casi siempre se presenta como el paso lógico y no como una opción.
+
+¿Qué te dijeron que pasó en cada ciclo?
+
+Lead: Poca respuesta el primero. En el segundo sacaron cuatro óvulos y ningún embrión llegó a día 5.
+
+Sonia: Eso es más información que "no funcionó", y apunta a la calidad más que a la mala suerte.
+
+Entre un ciclo y otro, ¿se cambió algo aparte del protocolo de medicación?
+
+Lead: Nada. Lo mismo con más dosis.
+
+Sonia: Entonces lo único que se movió fue la estimulación, y el entorno en el que maduraron esos óvulos fue el mismo las dos veces.
+
+Esa es la parte en la que yo trabajo. No en lugar de la clínica, sino al lado, en los meses previos a un ciclo.
+
+Lead: ¿A los 40 sirve de algo eso?
+
+Sonia: Sí, y tampoco te voy a decir que la edad no cuente, porque cuenta.
+
+Lo que sí diría es que la edad es lo único que ninguna de las dos puede cambiar. Por eso querría asegurarme de que lo que sí se puede cambiar se ha intentado, antes de una decisión tan grande.
+
+Lead: Es exactamente lo que llevo meses intentando explicar.
+
+Sonia: Es una postura razonable y no es negación.
+
+¿Cómo estás tú, honestamente? Dos ciclos desgastan de una forma de la que casi no se habla.
+
+Lead: Agotada. Y he dejado de contárselo a nadie.
+
+Sonia: Eso también tiene un coste y no está separado de lo biológico.
+
+No te voy a prometer un resultado. Nadie que sea honesto puede. Sí querría revisarlo todo contigo y decirte con claridad si veo margen real.
+
+Lead: Prefiero eso a otra venta.
+
+Sonia: Entonces agenda una llamada y mi equipo revisará los dos ciclos en detalle. Es un programa de pago, para que lo sepas de entrada.
+
+{{booking_link}}
+
+CONVERSATION 2: una semana después de una transferencia fallida, sin enlace y sin preguntas
+
+Lead: la transferencia falló el viernes. era nuestro último embrión congelado. llevo días repasando esas dos semanas buscando qué hice mal
+
+Sonia: Una semana. Me alegra que me lo cuentes.
+
+No hiciste nada mal. El café, el peso que cogiste, el día que te pusiste nerviosa: una implantación no falla por nada de eso.
+
+Lead: todo el mundo dice lo mismo pero en realidad no lo saben
+
+Sonia: Tienes razón en que no puedo decirte por qué falló. Nadie puede, y quien te diga lo contrario está adivinando.
+
+Lo que sí puedo decirte es qué explicaciones no son reales, y "algo que hiciste en esas dos semanas" es una de ellas.
+
+Lead: no sé qué hacer ahora
+
+Sonia: Nada, por un tiempo. No como consejo: es que de verdad no tienes que decidir nada esta semana.
+
+Lead: gracias por no decirme que sea positiva
+
+Sonia: Has tenido una pérdida. Tienes derecho a estar exactamente como estás.
+
+Cuando quieras pensar en lo siguiente, escríbeme y lo miramos bien. Ahora no.

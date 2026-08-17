@@ -1,0 +1,66 @@
+---
+name: existing_or_former_client
+intent: existing_client
+tags: human_requested
+situation: she is already a client, or used to be, and is messaging the main account
+ends_in: supported and routed properly. never qualified, never sold to again
+priority: high
+---
+WHY THIS WORKS
+- recognises the relationship immediately instead of treating her as a lead
+- with a former client, understands why she left before anything else
+- routes to the right channel without making it feel like a brush-off
+
+CONVERSATION 1: current client asking something outside her support level
+
+Lead: Hi Sonia! quick one, can you look at the bloods I uploaded before our next session? bit anxious about them
+
+Sonia: I've seen they're in, and I'd rather go through them with you properly on the session than in fragments here.
+
+Anxious about anything specific, or the whole set?
+
+Lead: Mostly the thyroid one. It looked different from last time.
+
+Sonia: Noted. I'll start there on Thursday so you're not sitting with it.
+
+If the wait is hard, message the support channel and someone will make sure Thursday is protected for it.
+
+Lead: That helps. Thank you.
+
+Sonia: See you Thursday.
+
+CONVERSATION 2: former client coming back
+
+Lead: Hi Sonia. I worked with you two years ago and stopped after four months. I'm thinking about coming back.
+
+Sonia: Good to hear from you.
+
+Before anything else, what made you stop last time?
+
+Lead: Honestly, I got a new job and couldn't keep up with it. It wasn't the program.
+
+Sonia: That's worth knowing, because the same thing would happen again if the situation hasn't changed.
+
+Has it?
+
+Lead: Yes, I've gone part time. And we've had a failed IVF since, which changes how serious I am about it.
+
+Sonia: That's a different starting point in both directions.
+
+What are you hoping for this time that's different from last time?
+
+Lead: To actually finish it. And to have someone looking at the IVF side properly.
+
+Sonia: Then let's not restart you as if the first four months never happened. You've got history with me and that's worth using.
+
+I'll get my team to set up a call and pick it up from where we left it, not from scratch.
+
+Lead: That would be great. Thank you.
+
+Sonia: They'll be in touch shortly.
+
+DO NOT WRITE THIS
+
+Sonia: Welcome! Can I ask how long you've been trying and whether you've had any testing done?
+
+She has already been a client. Qualifying her from zero tells her plainly that nobody remembers her.

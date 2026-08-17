@@ -5,7 +5,7 @@
 <div class="flex items-start justify-between mb-8">
   <div>
     <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Overview</h1>
-    <p class="mt-1 text-sm text-slate-500">Good morning — here's what's happening with your AI funnel</p>
+    <p class="mt-1 text-sm text-slate-500">Good morning. Here's what's happening with your AI funnel</p>
   </div>
   <div class="text-right">
     <div id="dash-date" class="text-sm font-semibold text-slate-700"></div>
@@ -104,7 +104,7 @@
   <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
     <div>
       <h2 class="text-sm font-bold text-slate-900">Paused Leads</h2>
-      <p class="text-xs text-slate-400 mt-0.5">AI is silent for these leads — resume once a human has resolved the conversation</p>
+      <p class="text-xs text-slate-400 mt-0.5">AI is silent for these leads. Resume once a human has resolved the conversation</p>
     </div>
     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold {{ 'bg-amber-50 text-amber-700 border border-amber-100' if paused_leads else 'bg-emerald-50 text-emerald-700 border border-emerald-100' }}">
       {{ paused_leads | length }} paused
@@ -128,14 +128,14 @@
         "human_handover": ("Matched trigger phrase", "warn"),
       } %}
       {% for lead in paused_leads %}
-      {% set label, tone = reason_labels.get(lead.pause_reason, (lead.pause_reason or "—", "warn")) %}
+      {% set label, tone = reason_labels.get(lead.pause_reason, (lead.pause_reason or "-", "warn")) %}
       <tr class="hover:bg-slate-50/50 transition-colors">
         <td class="px-6 py-3.5 text-sm font-semibold text-slate-800">{{ lead.instagram_user_id }}</td>
         <td class="px-4 py-3.5">
           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ 'bg-emerald-50 text-emerald-700' if tone == 'ok' else 'bg-amber-50 text-amber-700' }}">{{ label }}</span>
         </td>
-        <td class="px-4 py-3.5 text-xs text-slate-500">{{ lead.phase or "—" }}</td>
-        <td class="px-4 py-3.5 text-xs text-slate-400">{{ lead.paused_at.strftime("%d %b %Y, %H:%M") if lead.paused_at else "—" }}</td>
+        <td class="px-4 py-3.5 text-xs text-slate-500">{{ lead.phase or "-" }}</td>
+        <td class="px-4 py-3.5 text-xs text-slate-400">{{ lead.paused_at.strftime("%d %b %Y, %H:%M") if lead.paused_at else "-" }}</td>
         <td class="px-6 py-3.5 text-right">
           <form method="post" action="/admin/leads/{{ lead.instagram_user_id }}/resume"
                 onsubmit="return confirm('Resume the AI for {{ lead.instagram_user_id }}? It will reply to their next DM.');">
@@ -150,7 +150,7 @@
     </tbody>
   </table>
   {% else %}
-  <div class="px-6 py-8 text-center text-sm text-slate-400">No paused leads — the AI is handling every conversation.</div>
+  <div class="px-6 py-8 text-center text-sm text-slate-400">No paused leads. The AI is handling every conversation.</div>
   {% endif %}
 </div>
 
@@ -169,7 +169,7 @@
     <div class="border border-slate-200 border-l-4 border-l-rose-400 rounded-xl p-4">
       <div class="flex items-center gap-2 mb-3">
         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600">Hot</span>
-        <span class="text-xs text-slate-400">Score 80–100</span>
+        <span class="text-xs text-slate-400">Score 80-100</span>
       </div>
       <div class="text-2xl font-bold text-slate-900">47</div>
       <div class="text-xs text-slate-400 mt-0.5">leads</div>
@@ -178,7 +178,7 @@
     <div class="border border-slate-200 border-l-4 border-l-amber-400 rounded-xl p-4">
       <div class="flex items-center gap-2 mb-3">
         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-600">Warm</span>
-        <span class="text-xs text-slate-400">Score 50–79</span>
+        <span class="text-xs text-slate-400">Score 50-79</span>
       </div>
       <div class="text-2xl font-bold text-slate-900">89</div>
       <div class="text-xs text-slate-400 mt-0.5">leads</div>
@@ -187,7 +187,7 @@
     <div class="border border-slate-200 border-l-4 border-l-sky-400 rounded-xl p-4">
       <div class="flex items-center gap-2 mb-3">
         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-sky-50 text-sky-600">Nurturing</span>
-        <span class="text-xs text-slate-400">Score 0–49</span>
+        <span class="text-xs text-slate-400">Score 0-49</span>
       </div>
       <div class="text-2xl font-bold text-slate-900">66</div>
       <div class="text-xs text-slate-400 mt-0.5">leads</div>
@@ -412,7 +412,7 @@
         <span class="text-[10px] text-slate-400">peak: 420K</span>
       </div>
       <div class="flex items-end gap-2 h-28">
-        <!-- bars: Mon–Sun, heights proportional to peak 420K -->
+        <!-- bars: Mon-Sun, heights proportional to peak 420K -->
         <div class="flex-1 flex flex-col items-center gap-1.5">
           <div class="w-full rounded-t-md bg-violet-200 hover:bg-violet-400 transition-colors" style="height:67%"></div>
           <span class="text-[9px] text-slate-400">Mon</span>
@@ -532,7 +532,7 @@
 
     <!-- Platform vs VA comparison -->
     <div class="bg-slate-50 rounded-xl p-5 mb-6">
-      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">AI Platform vs. Manual VA — Monthly Cost Comparison</div>
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">AI Platform vs. Manual VA, Monthly Cost Comparison</div>
       <div class="flex flex-col gap-3">
         <div class="flex items-center gap-4">
           <span class="text-xs text-slate-500 w-40 flex-shrink-0">This AI Platform</span>

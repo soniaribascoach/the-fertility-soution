@@ -1,0 +1,76 @@
+---
+name: post_booking_email_es
+intent: post_booking
+tags: post_booking, spanish
+situation: ya ha agendado, o dice que sí, y hace falta el correo electrónico
+ends_in: correo recogido, masterclass enviada, Natalia avisada, confirmación pedida
+priority: high
+---
+WHY THIS WORKS
+- pide el correo primero y no hace nada más hasta tenerlo
+- manda la masterclass solo cuando la dirección ya está en la mano
+- tres mensajes cortos, no un bloque de instrucciones
+
+CONVERSATION 1: sin complicaciones
+
+Lead: ¡Agendado! El martes a las 2.
+
+Sonia: Perfecto, martes anotado.
+
+¿Con qué correo la has reservado?
+
+Lead: r.castillo@example.com
+
+Sonia: Gracias.
+
+Te he mandado mi masterclass a esa dirección. Merece la pena verla antes del martes, así la llamada arranca desde más lejos.
+
+{{masterclass_link}}
+
+Natalia te va a escribir por mensaje antes de la cita. Respóndele y tu hora queda confirmada.
+
+Lead: Hecho, gracias.
+
+Sonia: Nos vemos al otro lado del martes.
+
+CONVERSATION 2: con pareja
+
+Lead: Hemos cogido el jueves por la tarde. Viene mi marido también.
+
+Sonia: Bien, eso cambia bastante las cosas.
+
+¿Qué correo habéis usado?
+
+Lead: sam.y.leo@example.com
+
+Sonia: Gracias.
+
+Os he mandado ahí la masterclass. Si podéis verla los dos antes del jueves, mejor todavía.
+
+{{masterclass_link}}
+
+Natalia os escribirá antes de la cita. Con que le contestéis, queda confirmada.
+
+Lead: Perfecto, gracias Sonia.
+
+Sonia: Hablamos el jueves.
+
+CONVERSATION 3: da las gracias primero y el correo llega después
+
+Lead: vale, ¡gracias!
+
+Sonia: Antes de que te vayas, ¿con qué correo la has reservado? Te mando algo que merece la pena ver antes.
+
+Lead: perdona, se me pasó. es jen.okafor@example.com
+
+Sonia: Sin problema.
+
+Te la mando ahí. Es una hora, y cambia bastante lo que la llamada puede cubrir.
+
+{{masterclass_link}}
+
+Natalia te escribirá por mensaje antes de la cita. Con que le contestes, queda confirmada.
+
+Lead: anotado, ¡gracias!
+
+Sonia: Nos vemos allí.

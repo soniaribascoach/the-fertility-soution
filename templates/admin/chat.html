@@ -53,9 +53,52 @@
     box-shadow: 0 0 0 3px rgba(124,58,237,0.07);
   }
 
-  #messages::-webkit-scrollbar { width: 4px; }
-  #messages::-webkit-scrollbar-track { background: transparent; }
-  #messages::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.15); border-radius: 4px; }
+  #messages::-webkit-scrollbar,
+  #trace-list::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track,
+  #trace-list::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb,
+  #trace-list::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.15); border-radius: 4px; }
+
+  /* ── Trace panel ───────────────────────────────────────────────────── */
+
+  .trace-card { border: 1px solid var(--border); border-radius: 11px; background: var(--surface); overflow: hidden; }
+  .trace-card + .trace-card { margin-top: 7px; }
+
+  .trace-head {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 10px; cursor: pointer; user-select: none;
+    background: transparent; border: none; width: 100%; text-align: left;
+    transition: background 0.15s;
+  }
+  .trace-head:hover { background: var(--brand-faint); }
+  .trace-card[data-open="1"] .trace-head { background: var(--brand-faint); }
+
+  .trace-caret { transition: transform 0.18s; flex-shrink: 0; opacity: 0.4; }
+  .trace-card[data-open="1"] .trace-caret { transform: rotate(90deg); }
+
+  .trace-body { display: none; padding: 2px 11px 10px 11px; }
+  .trace-card[data-open="1"] .trace-body { display: block; }
+
+  .trace-pill {
+    font-family: 'DM Sans', sans-serif; font-size: 8.5px; font-weight: 700;
+    letter-spacing: 0.07em; text-transform: uppercase;
+    padding: 2px 5px; border-radius: 4px; flex-shrink: 0; white-space: nowrap;
+  }
+  .pill-ok    { color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .pill-warn  { color: #b45309; background: #fffbeb; border: 1px solid #fde68a; }
+  .pill-stop  { color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; }
+
+  @keyframes msgFlash {
+    0%, 100% { box-shadow: 0 2px 16px rgba(0,0,0,0.05); }
+    35%      { box-shadow: 0 0 0 3px var(--brand-glow), 0 2px 16px rgba(0,0,0,0.05); }
+  }
+  .msg-flash { animation: msgFlash 1.1s ease-in-out 2; }
+
+  @media (max-width: 1100px) {
+    #chat-shell { flex-direction: column; }
+    #trace-panel { width: 100% !important; max-height: 40vh; }
+  }
 
   .user-bubble {
     background: linear-gradient(135deg, var(--brand) 0%, var(--brand-mid) 100%);
@@ -72,8 +115,8 @@
   }
 </style>
 
-<div class="flex flex-col" style="height: calc(100vh - 32px); min-height: 520px;">
-  <div class="flex flex-col h-full rounded-2xl overflow-hidden"
+<div id="chat-shell" class="flex gap-4" style="height: calc(100vh - 32px); min-height: 520px;">
+  <div class="flex flex-col flex-1 min-w-0 h-full rounded-2xl overflow-hidden"
        style="border: 1px solid var(--border); box-shadow: 0 8px 40px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);">
 
     <!-- ── Header ───────────────────────────────────────────────────────── -->
@@ -89,7 +132,7 @@
                 style="box-shadow: 0 0 6px rgba(52,211,153,0.5);"></span>
         </div>
         <div>
-          <div class="flex items-center gap-2">
+          <div id="header-badges" class="flex items-center gap-2">
             <span style="font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600; color:var(--ink); letter-spacing:0.01em;">Sonia Ribas</span>
             <span style="font-family:'DM Sans',sans-serif; font-size:9px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--brand); background:var(--brand-faint); border:1px solid rgba(124,58,237,0.18); padding:2px 7px; border-radius:5px;">AI Coach</span>
           </div>
@@ -99,12 +142,14 @@
           </div>
         </div>
       </div>
+      <div class="flex items-center gap-2">
       <button onclick="clearChat()"
         style="font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500; color:var(--ink-muted); padding:6px 13px; border-radius:9px; border:1px solid transparent; background:transparent; cursor:pointer; transition:all 0.15s;"
         onmouseover="this.style.color='#52525b'; this.style.background='#f4f4f5'; this.style.borderColor='#e4e4e7';"
         onmouseout="this.style.color='var(--ink-muted)'; this.style.background='transparent'; this.style.borderColor='transparent';">
         Clear
       </button>
+      </div>
     </div>
 
     <!-- ── Messages ─────────────────────────────────────────────────────── -->
@@ -124,7 +169,7 @@
         <div style="width:36px; height:2px; background:linear-gradient(90deg,var(--brand),var(--brand-light)); border-radius:2px; margin-bottom:18px;"></div>
 
         <p style="font-family:'DM Sans',sans-serif; font-size:13.5px; color:var(--ink-soft); max-width:270px; line-height:1.65; margin-bottom:28px; font-weight:300;">
-          Ask Sonia anything about your fertility journey — she's here to listen and guide.
+          Ask Sonia anything about your fertility journey, she's here to listen and guide.
         </p>
 
         <div class="flex flex-col gap-2.5 w-full" style="max-width:300px;">
@@ -202,17 +247,65 @@
     </div>
 
   </div>
+
+  <!-- ── Trace panel ────────────────────────────────────────────────────── -->
+  <aside id="trace-panel" class="flex flex-col rounded-2xl overflow-hidden flex-shrink-0"
+         style="width:340px; background:var(--surface); border:1px solid var(--border); box-shadow: 0 8px 40px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);">
+
+    <div class="flex items-center justify-between px-4 py-3.5 flex-shrink-0"
+         style="border-bottom:1px solid var(--border);">
+      <div class="flex items-center gap-2">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M1.5 3.5h10M1.5 6.5h10M1.5 9.5h6" stroke="#7c3aed" stroke-width="1.3" stroke-linecap="round" opacity="0.8"/>
+        </svg>
+        <span style="font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft);">Trace</span>
+      </div>
+      <span id="trace-total"
+            style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px; color:var(--ink-muted);"></span>
+    </div>
+
+    <div id="trace-list" class="flex-1 overflow-y-auto px-3 py-3">
+      <div id="trace-empty" class="h-full flex flex-col items-center justify-center text-center px-4 select-none">
+        <div style="width:34px; height:34px; border-radius:11px; background:var(--brand-faint); border:1px solid rgba(124,58,237,0.15); display:flex; align-items:center; justify-content:center; margin-bottom:11px;">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+            <circle cx="6.8" cy="6.8" r="4.3" stroke="#7c3aed" stroke-width="1.3" opacity="0.55"/>
+            <path d="M10 10l3 3" stroke="#7c3aed" stroke-width="1.3" stroke-linecap="round" opacity="0.55"/>
+          </svg>
+        </div>
+        <p style="font-family:'DM Sans',sans-serif; font-size:11.5px; color:var(--ink-muted); line-height:1.6; max-width:200px;">
+          Traces appear here after the first reply, what was read, what the gate allowed, which conversations were shown.
+        </p>
+      </div>
+    </div>
+
+  </aside>
 </div>
 
 <script>
-  const input    = document.getElementById('chat-input');
-  const sendBtn  = document.getElementById('send-btn');
-  const messages = document.getElementById('messages');
-  const typingEl = document.getElementById('typing-indicator');
-  const emptyEl  = document.getElementById('empty-state');
+  const input      = document.getElementById('chat-input');
+  const sendBtn    = document.getElementById('send-btn');
+  const messages   = document.getElementById('messages');
+  const typingEl   = document.getElementById('typing-indicator');
+  const emptyEl    = document.getElementById('empty-state');
+  const traceList  = document.getElementById('trace-list');
+  const traceEmpty = document.getElementById('trace-empty');
+  const traceTotal = document.getElementById('trace-total');
 
   const conversationHistory = [];
   let leadState = null;
+  let turnNo    = 0;
+  let costTotal = 0;
+
+  // Intentional handoffs read as success, not failure, the banner and the trace pill agree.
+  const TAKEOVER_LABELS = {
+    keyword:            ['Human takeover triggered', 'Message matched a configured trigger phrase.', 'warn'],
+    human_handover:     ['Human takeover triggered', 'Message matched a configured trigger phrase.', 'warn'],
+    media:              ['Human takeover triggered', 'Media message detected, voice note, image, or file.', 'warn'],
+    media_message:      ['Human takeover triggered', 'Media message detected, voice note, image, or file.', 'warn'],
+    medical_deflection: ['Human takeover triggered', 'Medical blocklist phrase detected; deflection sent.', 'warn'],
+    qualified_link_sent: ['Qualified / booking link sent', 'Intentional handoff, not an error. She has the booking link and the AI has stepped back. If she gave an email, verify the appointment on the calendar.', 'ok'],
+    not_ready_nurture:   ['Nurture close / masterclass sent', 'Intentional soft close, not an error. Team follows up when she is ready.', 'ok'],
+  };
 
   function updatePhaseChip(phase, action) {
     let chip = document.getElementById('phase-chip');
@@ -221,7 +314,7 @@
       chip = document.createElement('span');
       chip.id = 'phase-chip';
       chip.style.cssText = "font-family:'DM Sans',sans-serif; font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#7c3aed; background:rgba(124,58,237,0.07); border:1px solid rgba(124,58,237,0.18); padding:2px 7px; border-radius:5px; margin-left:6px;";
-      const badge = document.querySelector('.flex.items-center.gap-2');
+      const badge = document.getElementById('header-badges');
       if (badge) badge.appendChild(chip);
     }
     chip.style.display = '';
@@ -253,11 +346,12 @@
     messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
   }
 
-  function appendMessage(role, text) {
+  function appendMessage(role, text, turn) {
     if (emptyEl) emptyEl.style.display = 'none';
 
     const wrapper = document.createElement('div');
     wrapper.className = 'flex items-end gap-2.5 msg-in';
+    if (turn) wrapper.id = 'msg-turn-' + turn;
     if (role === 'user') wrapper.style.flexDirection = 'row-reverse';
 
     if (role === 'ai') {
@@ -302,17 +396,7 @@
 
   function appendTakeoverBanner(reason) {
     if (emptyEl) emptyEl.style.display = 'none';
-    // Intentional handoffs get a green banner so they never read as errors.
-    const LABELS = {
-      keyword: ['Human takeover triggered', 'Message matched a configured trigger phrase.', 'warn'],
-      human_handover: ['Human takeover triggered', 'Message matched a configured trigger phrase.', 'warn'],
-      media: ['Human takeover triggered', 'Media message detected — voice note, image, or file.', 'warn'],
-      media_message: ['Human takeover triggered', 'Media message detected — voice note, image, or file.', 'warn'],
-      medical_deflection: ['Human takeover triggered', 'Medical blocklist phrase detected; deflection sent.', 'warn'],
-      qualified_link_sent: ['Qualified / booking link sent', 'Intentional handoff, not an error. She has the booking link and the AI has stepped back. If she gave an email, verify the appointment on the calendar.', 'ok'],
-      not_ready_nurture: ['Nurture close / masterclass sent', 'Intentional soft close, not an error. Team follows up when she is ready.', 'ok'],
-    };
-    const [title, detail, tone] = LABELS[reason] ||
+    const [title, detail, tone] = TAKEOVER_LABELS[reason] ||
       ['Human takeover triggered', 'Reason: ' + (reason || 'unknown'), 'warn'];
     const c = tone === 'ok'
       ? { bg: '#f0fdf4', border: '#86efac', title: '#166534', detail: '#15803d', icon: '✅' }
@@ -330,6 +414,89 @@
     scrollToBottom();
   }
 
+  const esc = (s) => String(s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+
+  function revealTurn(turn) {
+    const el = document.getElementById('msg-turn-' + turn);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const bubble = el.querySelector('.ai-bubble');
+    if (!bubble) return;
+    bubble.classList.remove('msg-flash');
+    void bubble.offsetWidth;   // restart the animation if the same card is clicked twice
+    bubble.classList.add('msg-flash');
+  }
+
+  // Why the reply came out the way it did: what the read pass extracted, whether the booking
+  // block was rendered into the prompt at all, and which conversations the writer was shown.
+  function pushTrace(turn, data) {
+    const t = data.trace || {};
+    const read = t.read || {};
+    const gate = t.gate || {};
+    if (!read.intent && !gate.reason) return;
+
+    const rows = [];
+    const push = (k, v) => { if (v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && !v.length)) rows.push([k, Array.isArray(v) ? v.join(', ') : v]); };
+
+    push('intent', read.intent);
+    push('tags', read.tags);
+    push('language', read.language);
+    push('asked', read.explicit_question);
+    push('emotion', read.emotional_state);
+    push('link in prompt', gate.allow_booking ? 'yes' : 'no');
+    push('gate', (gate.notes || []).join(' · '));
+    if (gate.escalate) push('escalating', gate.reason);
+    push('examples', t.playbooks);
+    const known = (data.lead_state || {}).slots || {};
+    push('known', Object.entries(known).map(([k, v]) => `${k}=${Array.isArray(v) ? v.join('/') : v}`));
+    if (data.phase) push('phase', data.phase);
+
+    const cost = (data.usage || {}).token_cost;
+    if (cost) { costTotal += Number(cost); traceTotal.textContent = '$' + costTotal.toFixed(4); }
+
+    const [gateLabel, gateTone] = gate.escalate ? ['escalate', 'stop']
+                                : gate.allow_booking ? ['link', 'ok']
+                                : ['no link', 'warn'];
+
+    const pills = [`<span class="trace-pill pill-${gateTone}">${gateLabel}</span>`];
+    if (data.human_takeover) {
+      // Same tone the banner uses, so the panel and the thread never disagree about severity.
+      const tone = (TAKEOVER_LABELS[data.takeover_reason] || [, , 'warn'])[2];
+      pills.push(`<span class="trace-pill pill-${tone === 'ok' ? 'ok' : 'warn'}">handover</span>`);
+    }
+
+    // Only the newest turn stays open; older ones collapse but keep their state on click.
+    const open = traceList.querySelector('.trace-card[data-open="1"]');
+    if (open) open.setAttribute('data-open', '0');
+    if (traceEmpty) traceEmpty.style.display = 'none';
+
+    const card = document.createElement('div');
+    card.className = 'trace-card msg-in';
+    card.dataset.turn = turn;
+    card.setAttribute('data-open', '1');
+    card.innerHTML =
+      '<button type="button" class="trace-head">' +
+        '<svg class="trace-caret" width="8" height="8" viewBox="0 0 8 8" fill="none">' +
+          '<path d="M2.5 1.5L5.5 4l-3 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        `<span style="font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); flex-shrink:0;">Turn ${turn}</span>` +
+        `<span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10px; color:var(--ink-muted); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(read.intent || '-')}</span>` +
+        pills.join('') +
+      '</button>' +
+      '<div class="trace-body" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px; line-height:1.65; color:#52525b;">' +
+        rows.map(([k, v]) => `<div><span style="color:#7c3aed; font-weight:600;">${esc(k)}</span> ${esc(v)}</div>`).join('') +
+        (cost ? `<div style="margin-top:5px; padding-top:5px; border-top:1px solid var(--border); color:var(--ink-muted);">cost $${esc(cost)}</div>` : '') +
+      '</div>';
+
+    card.querySelector('.trace-head').addEventListener('click', () => {
+      const wasOpen = card.getAttribute('data-open') === '1';
+      card.setAttribute('data-open', wasOpen ? '0' : '1');
+      revealTurn(turn);
+    });
+
+    traceList.insertBefore(card, traceList.firstChild);
+    traceList.scrollTop = 0;
+  }
+
   async function sendMessage() {
     const text = input.value.trim();
     if (!text) return;
@@ -343,16 +510,21 @@
       const res = await fetch('/admin/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: conversationHistory, lead_state: leadState }),
+        body: JSON.stringify({
+          messages: conversationHistory,
+          lead_state: leadState,
+        }),
       });
       const data = await res.json();
       hideTyping();
       if (data.lead_state) leadState = data.lead_state;
       updatePhaseChip(data.phase, data.action);
+      const turn = ++turnNo;
       if (data.reply) {
         conversationHistory.push({ role: 'assistant', content: data.reply });
-        appendMessage('ai', data.reply);
+        appendMessage('ai', data.reply, turn);
       }
+      pushTrace(turn, data);
       if (data.human_takeover) {
         appendTakeoverBanner(data.takeover_reason);
       } else if (!data.reply) {
@@ -372,8 +544,14 @@
     toRemove.forEach(el => el.remove());
     conversationHistory.length = 0;
     leadState = null;
+    turnNo = 0;
+    costTotal = 0;
     updatePhaseChip(null);
     emptyEl.style.display = '';
+
+    traceList.querySelectorAll('.trace-card').forEach(el => el.remove());
+    traceTotal.textContent = '';
+    if (traceEmpty) traceEmpty.style.display = '';
   }
 
   input.addEventListener('input', () => { autoResize(); updateSendBtn(); });

@@ -1,11 +1,17 @@
 import asyncio
+import copy
 import logging
 import random
 import re
 
 from app.db.database import AsyncSessionLocal
 from app.repositories.config import get_all_config
-from app.repositories.conversation import get_history, get_last_assistant_time, save_message
+from app.repositories.conversation import (
+    get_history,
+    get_last_assistant_time,
+    recent_opening_sentences,
+    save_message,
+)
 from app.repositories.pending_message import (
     get_locked_batch,
     get_users_ready_to_process,
@@ -20,11 +26,8 @@ from app.repositories.user_state import (
     get_lead_state,
     save_lead_state,
 )
-from app.services.ai_pipeline import generate_reply, check_phase1
-from app.services.brain import run_turn, HUMAN_REVIEW_TAG
-from app.services.few_shots import get_few_shot_scenarios
+from app.services.brain import HUMAN_REVIEW_TAG, run_turn
 from app.services.message_splitter import split_reply
-from app.services.output_parser import parse_ai_output
 from app.services.typing_delay import calculate_delay
 from config import settings
 
@@ -98,16 +101,16 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
 
             if await is_ai_paused(db, ig_user_id):
                 if not await _is_booking_email(db, ig_user_id, rows):
-                    logger.info("AI paused for user %s — skipping", ig_user_id)
+                    logger.info("AI paused for user %s. Skipping", ig_user_id)
                     await mark_batch_processed(db, ig_user_id)
                     return
-                logger.info("Paused lead %s sent a booking email — capturing it", ig_user_id)
+                logger.info("Paused lead %s sent a booking email. Capturing it", ig_user_id)
 
             # Duplicate guard: skip if an assistant reply was already sent after these messages
             last_user_msg_time = max(r.received_at for r in rows).replace(tzinfo=None)
             last_reply_time = await get_last_assistant_time(db, ig_user_id)
             if last_reply_time and last_reply_time > last_user_msg_time:
-                logger.info("Reply already sent for user %s — skipping duplicate", ig_user_id)
+                logger.info("Reply already sent for user %s. Skipping duplicate", ig_user_id)
                 await mark_batch_processed(db, ig_user_id)
                 return
 
@@ -116,94 +119,15 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             batch_texts = [r.content.lower() for r in rows]
             cfg = await get_all_config(db)
 
-            # New qualification-funnel brain (behind a config flag for safe rollout).
-            brain_version = (cfg.get("brain_version") or "legacy").strip().lower()
-            if brain_version == "funnel":
-                await _run_brain_turn(
-                    db, ig_user_id, manychat_contact_id, cfg, app_state,
-                    [r.content for r in rows],
-                )
-                await mark_batch_processed(db, ig_user_id)
-                logger.info("Processed conversation (funnel) for user %s", ig_user_id)
-                return
-
-            if any(_is_media_url(txt) for txt in batch_texts):
-                logger.info("Media message detected (batch) for user %s", ig_user_id)
-                await pause_ai(db, ig_user_id, "media_message")
-                await mark_batch_processed(db, ig_user_id)
-                await app_state.manychat_client.add_tag(manychat_contact_id, 86596410)
-                return
-
-            blocklist = [p.strip().lower() for p in cfg.get("medical_blocklist", "").split("\n") if p.strip()]
-            if blocklist and any(any(phrase in txt for phrase in blocklist) for txt in batch_texts):
-                deflection = cfg.get("medical_deflection", "").strip()
-                logger.info("Medical blocklist triggered (batch) for user %s", ig_user_id)
-                if deflection:
-                    await app_state.manychat_client.send_message(manychat_contact_id, deflection)
-                await pause_ai(db, ig_user_id, "medical_deflection")
-                await mark_batch_processed(db, ig_user_id)
-                await app_state.manychat_client.add_tag(manychat_contact_id, 86596410)
-                return
-
-            handover_triggers = [t.strip().lower() for t in cfg.get("human_takeover_triggers", "").split("\n") if t.strip()]
-            if handover_triggers and any(any(trigger in txt for trigger in handover_triggers) for txt in batch_texts):
-                logger.info("Human handover triggered (batch) for user %s", ig_user_id)
-                await pause_ai(db, ig_user_id, "human_handover")
-                await mark_batch_processed(db, ig_user_id)
-                await app_state.manychat_client.add_tag(manychat_contact_id, 86596410)
-                return
-
-            history = await get_history(db, ig_user_id, limit=20)
-            history_dicts = [{"role": r.role, "content": r.content} for r in history]
-
-            # Phase 1 — CTA keyword bypass (first ever message only)
-            opening = check_phase1(cfg, history_dicts)
-            if opening:
-                logger.info("Phase 1 CTA keyword triggered for user %s", ig_user_id)
-                chunks = split_reply(opening)
-                delay = calculate_delay(chunks[0], settings.max_typing_delay)
-                await asyncio.sleep(delay)
-                for i, chunk in enumerate(chunks):
-                    if i > 0:
-                        await asyncio.sleep(calculate_delay(chunk, settings.max_typing_delay))
-                    await app_state.manychat_client.send_message(manychat_contact_id, chunk)
-                await save_message(db, ig_user_id, "assistant", opening)
-                await mark_batch_processed(db, ig_user_id)
-                return
-
-            raw_text, usage = await generate_reply(
-                db=db,
-                openai_client=app_state.openai_client,
-                few_shot_scenarios=get_few_shot_scenarios(app_state),
-                ig_user_id=ig_user_id,
-                messages=history_dicts,
-                cfg=cfg,
+            # One brain. There is no version flag: a system that can silently
+            # be "the old one" is a system that can be handed over broken.
+            await _run_brain_turn(
+                db, ig_user_id, manychat_contact_id, cfg, app_state,
+                [r.content for r in rows],
             )
-
-            parsed = parse_ai_output(raw_text)
-
-            await save_message(
-                db,
-                ig_user_id,
-                "assistant",
-                raw_text,
-                token_cost=usage.get("token_cost"),
-                prompt_tokens=usage.get("prompt_tokens"),
-                completion_tokens=usage.get("completion_tokens"),
-                ai_model=usage.get("ai_model"),
-            )
-
-            if parsed.clean_text:
-                chunks = split_reply(parsed.clean_text)
-                delay = calculate_delay(chunks[0], settings.max_typing_delay)
-                await asyncio.sleep(delay)
-                for i, chunk in enumerate(chunks):
-                    if i > 0:
-                        await asyncio.sleep(calculate_delay(chunk, settings.max_typing_delay))
-                    await app_state.manychat_client.send_message(manychat_contact_id, chunk)
-
             await mark_batch_processed(db, ig_user_id)
             logger.info("Processed conversation for user %s", ig_user_id)
+            return
 
     except Exception:
         logger.exception("Error handling conversation for user %s", ig_user_id)
@@ -220,14 +144,23 @@ async def _send_bubbles(app_state, manychat_contact_id: str, text: str) -> None:
         await app_state.manychat_client.send_message(manychat_contact_id, chunk)
 
 
-async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state, batch_texts) -> None:
-    """Run the qualification-funnel brain for one batch and apply side effects."""
-    history = await get_history(db, ig_user_id, limit=20)
+async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
+                          batch_texts) -> None:
+    """Run the brain for one batch and apply its side effects."""
+    history = await get_history(db, ig_user_id, limit=40)
     history_dicts = [{"role": r.role, "content": r.content} for r in history]
     lead_state = await get_lead_state(db, ig_user_id)
 
+    # Sonia's complaint was cross-conversation: the same acknowledgement turning up across very
+    # different threads. Nothing inside one conversation can see that, so the openings actually
+    # sent to other leads recently ride along in cfg and land in the writer's prompt.
+    cfg = {**cfg, "_recent_openings": await recent_opening_sentences(db, ig_user_id)}
+
     result = await run_turn(
-        app_state.openai_client, history_dicts, cfg, lead_state,
+        app_state.openai_client, history_dicts, cfg,
+        # The brain writes into what it is handed, so it gets a copy: a turn
+        # that fails halfway must not leave the stored state half-updated.
+        copy.deepcopy(lead_state),
         ig_user_id=ig_user_id, new_texts=batch_texts,
     )
 
@@ -253,6 +186,7 @@ async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state, b
         await app_state.manychat_client.add_tag(manychat_contact_id, tag_id)
 
     logger.info(
-        "Brain turn for %s: action=%s phase=%s pause=%s",
-        ig_user_id, result.action, result.lead_state.get("phase"), result.pause,
+        "Brain turn for %s: action=%s pause=%s violations=%s",
+        ig_user_id, result.action, result.pause, result.violations,
     )
+

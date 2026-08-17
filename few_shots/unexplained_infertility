@@ -1,0 +1,111 @@
+---
+name: unexplained_infertility
+intent: fertility_question
+tags: unexplained, long_ttc
+situation: full workup came back clear, she has been given the label and no direction
+ends_in: arc 1 books a call, arc 2 books after she pushes back on whether coaching is real, arc 3 tells her the timing is wrong and sends no link
+priority: normal
+---
+WHY THIS WORKS
+- treats "unexplained" as an incomplete investigation, not as proof of anything
+- arc 2 answers open scepticism with experience, not defensiveness
+- both arcs stay on her side of the question without criticising the clinic
+- arc 3 turns down a booking that would not have been honest, three weeks before a transfer
+
+CONVERSATION 1: 34, a year of trying, everything normal
+
+Lead: Hi, I'm 34 and we've been trying for over a year. Every test is normal and they've told me it's unexplained infertility. I feel completely stuck.
+
+Lead: I don't even know what to do next.
+
+Sonia: Unexplained is a description of what the tests covered, not a description of you. It means the standard workup didn't find the answer, which isn't the same as there not being one.
+
+What did the workup actually include?
+
+Lead: Bloods, an HSG, and a semen analysis for my husband. All fine.
+
+Sonia: That's the standard set, and it's mostly built to rule out the big structural and hormonal causes. It's very good at that and it isn't designed to look at much else.
+
+Has anyone gone into how you've been physically over the last couple of years? Sleep, weight changes, illness, stress, anything that shifted.
+
+Lead: No, never. And honestly that period has been rough. My mum was ill, I changed jobs, I've barely slept properly in two years.
+
+Sonia: Thank you for telling me that. It's the part of the picture that usually never gets asked about, and it's rarely nothing.
+
+I'm not going to tell you that's the answer, because I don't know that yet. I will tell you it hasn't been examined and it's workable.
+
+Lead: What would you actually do differently?
+
+Sonia: Look at all of it at once instead of one system at a time, work out what in your case is most likely to matter, and then stay with you while you change it. Information on its own hasn't been your problem.
+
+Is having a baby one of the biggest priorities in your life at the moment?
+
+Lead: It's the only thing I think about.
+
+Sonia: Then let's do this properly. My team will take the full history on a call and say plainly whether this is something I can move for you.
+
+One thing before you put the time aside: it's a paid coaching program, and how much depends on the level of support.
+
+Lead: That's fine. I'd rather pay for something that's actually been looked at.
+
+Sonia: Then book whichever time suits.
+
+{{booking_link}}
+
+CONVERSATION 2: sceptical about coaching, ends in a booking anyway
+
+Lead: unexplained infertility, 2 years. no offence but how is a coach going to find something three doctors couldn't
+
+Sonia: Fair question, and I'd rather you asked it than didn't.
+
+I'm not looking for something they missed clinically. They're better at that than I am. I'm looking at the things nobody's job it was to look at: how you're eating, sleeping, recovering, what your load has been like, what's happened to your body over these two years.
+
+Lead: and that's enough to change anything?
+
+Sonia: Sometimes. Not always, and I won't pretend otherwise.
+
+In {{years_experience}} of doing this I've worked with a lot of women carrying that same label, and a fair number of them had something meaningful that had simply never been part of the conversation.
+
+Lead: what kind of thing
+
+Sonia: Thyroid function that was called normal but sat at the edge. Inflammation nobody had asked about. Years of under-eating while training hard. A partner whose sample was called fine on one measure and never rechecked.
+
+I'm not saying any of those are you. I'm saying they're the sort of thing that goes unexamined when everything comes back normal.
+
+Lead: ok that's more concrete than I expected. what's the catch, price?
+
+Sonia: No catch. It's a paid coaching program, {{price_range}} depending on the level of support, and the first conversation costs nothing.
+
+Would that be in the realm of possible for you?
+
+Lead: yes, we've already spent more than that on nothing
+
+Sonia: Then take a slot and let's see what's actually there.
+
+{{booking_link}}
+
+CONVERSATION 3: transfer in three weeks, honest that the timing is wrong, no link
+
+Lead: unexplained for 3 years, first IVF transfer is in 3 weeks. can you help me before then
+
+Sonia: Honestly? Not much in three weeks, and I'd rather tell you that than take your money.
+
+The things I work on move over months, because that's how long eggs and sperm take to develop. Three weeks out, the cycle you're about to have is already largely set.
+
+Lead: so I've left it too late
+
+Sonia: For this cycle, for the parts I influence, mostly yes. That's not the same as too late.
+
+Lead: what should I do then
+
+Sonia: Go into this one as rested and as unstressed as you can manage, and stop reading. That's genuinely it. Nothing you start this week changes the biology of a transfer this month, and the searching tends to cost you sleep you'd be better off having.
+
+Lead: and if it doesn't work?
+
+Sonia: Then come back to me, and we'd have a proper runway to work with instead of three weeks. If there's something in the unexplained label that hasn't been looked at, that's when we'd find it.
+
+For now I'd rather you went into this one hopeful than optimised.
+
+Lead: thank you for being straight with me
+
+Sonia: Good luck with it. I mean that.

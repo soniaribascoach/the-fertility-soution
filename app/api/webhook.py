@@ -18,7 +18,7 @@ router = APIRouter()
 
 def _verify_signature(body: bytes, header: str | None) -> bool:
     if not settings.manychat_webhook_secret:
-        logger.warning("MANYCHAT_WEBHOOK_SECRET not set — skipping signature verification")
+        logger.warning("MANYCHAT_WEBHOOK_SECRET not set. Skipping signature verification")
         return True
     if not header or not header.startswith("sha256="):
         return False

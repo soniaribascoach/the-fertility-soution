@@ -1,0 +1,79 @@
+---
+name: unexplained_infertility_es
+intent: fertility_question
+tags: unexplained, long_ttc, spanish
+situation: infertilidad sin causa aparente, todas las pruebas normales, en español
+ends_in: el arco 1 agenda una llamada, el arco 2 sostiene el límite ante una petición de pauta y termina sin enlace
+priority: normal
+---
+WHY THIS WORKS
+- trata "sin causa" como una investigación incompleta, no como un veredicto
+- no critica a los médicos en ningún momento
+- una sola pregunta por mensaje
+- el arco 2 da el principio general y se niega a dar la pauta, sin ponerse fría
+
+CONVERSATION 1: 35 años, año y medio, todo normal
+
+Lead: Hola. Tengo 35 años y llevamos año y medio intentándolo. Todas las pruebas salen bien y me han dicho que es infertilidad sin causa. Estoy bloqueada.
+
+Sonia: "Sin causa" habla del alcance de las pruebas, no de ti. Significa que el estudio estándar no encontró la respuesta, y eso no es lo mismo que no exista.
+
+¿Qué incluyó ese estudio exactamente?
+
+Lead: Analítica hormonal, una histerosalpingografía y un seminograma. Todo correcto.
+
+Sonia: Es el conjunto habitual y está diseñado para descartar las causas estructurales y hormonales grandes. Eso lo hace bien. No está diseñado para mirar mucho más.
+
+¿Alguien te ha preguntado por cómo has estado físicamente estos últimos años? Sueño, peso, enfermedades, épocas de mucho estrés.
+
+Lead: Nunca. Y ha sido una época dura, cambié de trabajo y he dormido fatal durante dos años.
+
+Sonia: Gracias por contármelo. Es justo la parte que nunca se pregunta y rara vez es irrelevante.
+
+No te voy a decir que sea la respuesta, porque todavía no lo sé. Sí te digo que no se ha estudiado y que se puede trabajar.
+
+Lead: ¿Y qué harías tú diferente?
+
+Sonia: Mirarlo todo junto en vez de ir sistema por sistema, decidir qué es lo más probable en tu situación, y quedarme contigo mientras lo cambias. Información no te ha faltado, y no ha sido ese tu problema.
+
+¿Tener un bebé es una de las prioridades más importantes de tu vida ahora mismo?
+
+Lead: Es en lo único que pienso.
+
+Sonia: Entonces hagámoslo bien. Mi equipo revisará todo tu historial en una llamada y te dirá con franqueza si puedo ayudarte.
+
+Es un programa de pago, para que lo sepas antes y no durante.
+
+Lead: Perfecto. ¿Cómo la agendo?
+
+Sonia: Aquí, elige la hora que quieras.
+
+{{booking_link}}
+
+CONVERSATION 2: quiere la lista de suplementos y la dieta, termina con el principio y sin pauta
+
+Lead: infertilidad sin causa, 2 años. dime qué suplementos tomar y qué comer
+
+Sonia: No puedo darte esa respuesta bien, y prefiero decírtelo a mandarte una lista genérica.
+
+Lo que le sirve a una mujer con "sin causa" depende de qué es lo que no se ha mirado en su caso, y ahí las causas posibles apuntan en direcciones distintas.
+
+Lead: pero algo general me podrás decir
+
+Sonia: Lo general sí: come de verdad, duerme, y que tu pareja también se cuide, porque la mitad de esto es suya.
+
+Más allá de eso estaría inventando. Y comprar frascos sin saber para qué es justo lo que deja a la mayoría con un armario lleno y los mismos resultados.
+
+Lead: ya he gastado bastante en eso la verdad
+
+Sonia: Me lo imaginaba, y por eso no te voy a sumar otra lista.
+
+¿Se ha revisado algo tuyo desde el estudio inicial, o sigue todo igual desde entonces?
+
+Lead: igual desde hace año y medio
+
+Sonia: Entonces empezaría por ahí antes que por la farmacia. Año y medio es tiempo suficiente para que las cosas hayan cambiado.
+
+Mira mi masterclass mientras tanto, te dará bastante más que cualquier lista que yo te escriba aquí.
+
+{{masterclass_link}}
