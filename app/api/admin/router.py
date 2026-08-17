@@ -15,12 +15,7 @@ from app.services.brain import reload_playbooks, run_turn
 from app.services.resume import resume_lead
 from app.services.few_shots import load_few_shot_scenarios
 from app.services.prompts import reload_layers
-from app.api.admin.auth import (
-    is_authenticated,
-    check_rate_limit,
-    record_failed_attempt,
-    reset_attempts,
-)
+from app.api.admin.auth import is_authenticated
 from config import settings, APP_VERSION, APP_BRAIN, APP_REVISION, APP_STARTED_AT
 
 FEW_SHOTS_DIR = "few_shots"
@@ -86,28 +81,14 @@ async def login_get(request: Request):
 
 @router.post("/admin/login", response_class=HTMLResponse)
 async def login_post(request: Request, password: str = Form(...)):
-    if not check_rate_limit(request):
-        return templates.TemplateResponse(
-            request,
-            "admin/login.html",
-            {"error": "Too many failed attempts. Try again in 15 minutes."},
-            status_code=429,
-        )
-
     if password == settings.admin_password:
-        reset_attempts(request)
         request.session["admin_authenticated"] = True
         return RedirectResponse("/admin/config", status_code=302)
 
-    remaining = record_failed_attempt(request)
-    if remaining == 0:
-        error = "Too many failed attempts. Locked out for 15 minutes."
-    else:
-        error = f"Invalid password. {remaining} attempt(s) remaining."
     return templates.TemplateResponse(
         request,
         "admin/login.html",
-        {"error": error},
+        {"error": "Invalid password."},
         status_code=401,
     )
 
