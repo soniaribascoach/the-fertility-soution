@@ -3,7 +3,7 @@ name: low_amh
 intent: fertility_question
 tags: low_amh, dor, egg_quality
 situation: a low AMH result being used to decide something for her, whether that is IVF now, worry at 33, or donor eggs at 42
-ends_in: arc 1 books while she is still deciding about IVF, arc 2 tells a 33-year-old she does not need the program, arc 3 refuses to promise the number can be raised and lets her go and think
+ends_in: arc 1 books while she is still deciding about IVF, arc 2 tells a 33-year-old she does not need the program, arc 3 refuses to promise the number can be raised and lets her go and think, arc 4 answers "have you worked with anyone like me" with experience and ends in the masterclass
 priority: normal
 ---
 WHY THIS WORKS
@@ -12,6 +12,7 @@ WHY THIS WORKS
 - makes clear she is not a doctor before offering anything
 - checks priority and partner before a call is mentioned, and tells her it is paid before the link
 - arc 3 answers "can you raise my AMH" with no, in the message where she asks it
+- arc 4 says low AMH is one of the commonest reasons a woman writes to me, then refuses in the very next line to turn that into a promise about her
 
 CONVERSATION 1: 38, AMH 0.6, four months trying, still deciding about IVF
 
@@ -70,6 +71,30 @@ Sonia: Of course, and please don't decide anything this week. My masterclass is 
 {{masterclass_link}}
 
 Sonia: When you've talked, tell me what your clinic said and where you both landed, and we can go from there.
+
+CONVERSATION 4: 36, AMH 0.4, asks whether anyone with a number like hers has ever been helped
+
+Lead: AMH 0.4 and I'm 36. Everything I read says once it's this low there's nothing anyone can do. Have you ever actually worked with someone with a number like mine?
+
+Sonia: Yes, and often. Low AMH is one of the commonest reasons a woman writes to me, and being handed the number and then left alone with it is almost always part of the story.
+
+What I won't do is turn that into a promise about you. Whether there's room in your case depends on things I can't see from a message.
+
+Lead: then what's the point of asking me anything
+
+Sonia: Because how much of your picture has actually been looked at is a real question with a real answer, and it's the one I can get somewhere with. What's been assessed apart from the AMH?
+
+Lead: FSH and one scan. That's everything anyone has done and they're already talking to me about donor eggs.
+
+Sonia: One round of testing is a very short investigation to be drawing a conclusion that big from. I wouldn't tell you they're wrong, I'd tell you it's early to be that certain.
+
+What I see over and over with a result like yours is exactly this shape: the number arrives, every decision after it gets made around the number, and the rest of the picture never gets opened at all.
+
+Lead: that is precisely what has happened.
+
+Sonia: Then that's the part worth understanding before you decide something this permanent. My masterclass explains how I look at the whole picture, and it'll leave you with better questions for your clinic than anything I could fit into a message.
+
+{{masterclass_link}}
 
 DO NOT WRITE THIS
 

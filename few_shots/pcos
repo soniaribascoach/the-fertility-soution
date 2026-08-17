@@ -3,7 +3,7 @@ name: pcos
 intent: fertility_question
 tags: pcos, irregular_cycles
 situation: PCOS with irregular or absent ovulation, from a woman on medicated cycles, a slim woman told for years to lose weight, or someone newly diagnosed long before she is trying
-ends_in: arc 1 books alongside her medication, arc 2 books after refusing to write her a plan in the DM, arc 3 tells a 24-year-old she does not need the program and sends the masterclass
+ends_in: arc 1 books alongside her medication, arc 2 books after refusing to write her a plan in the DM, arc 3 tells a 24-year-old she does not need the program and sends the masterclass, arc 4 answers open disbelief with experience and ends in the masterclass
 priority: normal
 ---
 WHY THIS WORKS
@@ -12,6 +12,7 @@ WHY THIS WORKS
 - explains what she is not, a doctor, before offering anything
 - arc 2 answers "what would you look at first with me" with what is visible in her case, not a plan
 - arc 3 declines the diet question warmly and still sends her away better off
+- arc 4 says out loud that PCOS is one of the things I see most, which is a fact about the pattern and not a forecast about her, and asks her age before anything else
 - no food and no supplement is named anywhere in the file
 
 CONVERSATION 1: 29, third medicated cycle, wonders whether coaching is pointless
@@ -83,6 +84,32 @@ Sonia: Waiting a few years at 24 isn't the risk you're imagining, so I'd let tha
 Lead: That's fair. So is there anything I can do now?
 
 Sonia: At 24 and years away from trying, you don't need a program like mine and I'd rather tell you that than take your money. Watch my masterclass when you have a spare hour. It'll show you what's worth paying attention to and make you far better prepared for your next appointment.
+
+{{masterclass_link}}
+
+CONVERSATION 4: diagnosed at 16, has stopped believing any of it works
+
+Lead: I've had PCOS since I was 16 and I've tried everything going. Honestly I've stopped believing any of it works. Have you actually helped women with PCOS or is it mostly the more straightforward cases?
+
+Sonia: PCOS is one of the things I see most, and the version you're describing, diagnosed young, managed ever since, never really explained, is one I've sat with many times.
+
+That isn't me telling you it will work for you. I don't know that yet and I'd be guessing if I said otherwise.
+
+How old are you now?
+
+Lead: 31. So that's fifteen years of it.
+
+Sonia: Fifteen years is long enough for the diagnosis to have quietly become the whole story. What I notice from what you've written is that it was made once and managed from then on, and nobody seems to have gone back and asked why yours behaves the way it does.
+
+Lead: no. it's been the same appointment every time.
+
+Sonia: That's the part that's usually still sitting there unopened in a case like yours, and I say that having watched it happen a lot rather than because I can see inside yours from here.
+
+How long have you been trying?
+
+Lead: about a year and a half.
+
+Sonia: Then you've got room to do this properly instead of in a panic. Watch my masterclass while you have that room. It's how I think about the whole picture, and you'll get considerably more out of your next appointment for having seen it.
 
 {{masterclass_link}}
 
