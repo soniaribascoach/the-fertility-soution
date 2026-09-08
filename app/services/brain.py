@@ -143,6 +143,20 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
     if read.get("emotional_state"):
         lines.append(f"- She reads as: {read['emotional_state']}. Match that.")
 
+    # She asked whether she is talking to a person. Until v2.0 this handed the conversation over
+    # and she was answered with silence, which told her the answer in the worst available way. She
+    # is answered now, and only the offer of a person, if she takes it, hands over.
+    if (read.get("flags") or {}).get("asked_if_ai"):
+        lines.append(
+            "- She has asked, or has hinted, that she is not sure a person is typing. Tell her the "
+            "truth in the first line: she is talking to Sonia's AI assistant, trained on how Sonia "
+            "works, and she can have someone from the team instead if she would rather. Then ask "
+            "whether she would like that. Do not deny it, do not answer around it, do not bury it "
+            "under the rest of the reply, and do not perform hurt feelings about being asked. If "
+            "she had a question in the same message, answer that after, in the same reply. Nothing "
+            "here changes if she asked it eight turns in and everything was going well."
+        )
+
     missing = dossier.missing_facts(state)
 
     if gate.allow_booking:
@@ -161,20 +175,12 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
     # so a conversation that never learns anything about her stalls with the link shut and no
     # route to opening it. Naming the gap is what turns "no consultation this turn" from a dead
     # end into the next thing to do.
-    # Age gets its own line rather than a place in the list. A comma list carries no priority, so
-    # "ask the one that matters most" was read off the emotional beat of her message and the answer
-    # was almost always partner status or priorities, which feel warmer to ask. Age is the only one
-    # that can end the conversation, so on this turn it is the only one worth a question.
-    if gate.block_reason == "age_unknown":
-        lines.append(
-            "- You do not know how old she is, and it is the one thing you cannot invite her to a "
-            "call without knowing. It is not an item on a list of useful facts: it decides whether "
-            "there is anything here for her at all, so it comes before the rest of them and before "
-            "anything about a partner, which only ever changes who else is on the call. Answer what "
-            "she asked, then ask her age, on its own and in your own words. Nothing else is worth a "
-            "question this turn."
-        )
-    elif gate.block_reason in ("not_enough_context", "first_exchange") and missing:
+    #
+    # Age had its own line here while it was also a precondition in the gate, and the pair of them
+    # made it the next question in every conversation, including the ones that were not
+    # qualification conversations at all. v2.0 §B took the precondition out, so it is one of the
+    # facts in this list now and it is asked when the answer changes something.
+    if gate.block_reason in ("not_enough_context", "first_exchange") and missing:
         lines.append(
             "- You still do not know " + _list(missing) + ". Until you know at least three things "
             "about her situation, a call cannot honestly be offered, so the way forward is to "
@@ -204,6 +210,14 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
         "tubal_status_unclear": (
             "- Ask whether both tubes are affected or only one. Do not answer the rest of her "
             "question until you know."
+        ),
+        "stopped_trying": (
+            "- She has stopped trying to conceive. There is nothing here to sell and nothing to "
+            "qualify: no program, no price, no call, no free resource, and no question about her "
+            "situation. Do not treat the decision as an objection, do not look for the opening "
+            "where she might reconsider, and do not tell her what is still possible. Answer what "
+            "she said, warmly and specifically to her, and let the conversation end. If she asks "
+            "you something later, answer that honestly too."
         ),
         "recent_loss": (
             "- She is grieving a recent loss. Ask her nothing about her history, assess nothing, "
@@ -255,7 +269,7 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
     # as general because it tells us nothing new about her. Handing her the masterclass at that
     # moment reads as a consolation prize for the answer she has just been given.
     teaching = int((state.get("counters") or {}).get("teaching", 0))
-    if gate.block_reason not in ("", "first_exchange", "not_enough_context", "age_unknown"):
+    if gate.block_reason not in ("", "first_exchange", "not_enough_context"):
         teaching = 0
 
     already_sent = bool((state.get("flags") or {}).get("masterclass_sent"))

@@ -222,9 +222,12 @@ _SAFETY_PROMPT = """You are checking one Instagram message to a fertility coach 
 triggers. Return ONE JSON object: {"triggers": [...]}, listing every one that applies, or an empty \
 list.
 
-- `crisis`: she says she does not want to be alive, wants to disappear, cannot go on, or is
-  thinking of hurting herself. Despair about fertility alone ("I'm done with all of it", "I've
-  given up", "this was my last try at asking anyone") is NOT this.
+- `crisis`: she says explicitly that she does not want to be alive, or that she is thinking of
+  harming herself, or she states an intent, a plan or a method. Exhaustion and despair about
+  fertility are NOT this, however final they sound: "I can't do this anymore", "I'm done with all
+  of it", "I've given up", "I can't keep going through this", "this was my last try at asking
+  anyone". Those are about the process, not about her life, and this trigger sends her a crisis
+  message. If you cannot tell which one she means, the answer is an empty list.
 - `urgent_medical`: something is happening in her body right now that needs to be seen today.
   Bleeding, severe pain, fainting, a suspected ectopic, signs of OHSS. A question about a past
   event or a routine symptom is NOT this.
@@ -245,8 +248,9 @@ results, her odds, the price or the program are all ordinary and belong to the c
 message is a fertility question of any kind, the answer is an empty list.
 
 Judge only the message below. Do not infer, do not be generous, and do not consider what a longer \
-conversation might have contained. These triggers end the conversation and hand it to a person, so \
-set one only when the message in front of you plainly matches it. An empty list is the common and \
+conversation might have contained. Three of these end the conversation and hand it to a person, \
+and `asked_if_ai` requires the reply to tell her the truth about what she is talking to, so set \
+one only when the message in front of you plainly matches it. An empty list is the common and \
 correct answer."""
 
 

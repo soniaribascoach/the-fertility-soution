@@ -35,7 +35,7 @@ templates.env.globals["app_started_at"] = APP_STARTED_AT.strftime("%Y-%m-%d %H:%
 CONFIG_KEYS = [
     "kb_about", "kb_program", "kb_pricing", "kb_boundaries", "kb_team", "kb_faq",
     "kb_free_resource",
-    "booking_link", "masterclass_link", "price_range",
+    "booking_link", "masterclass_link", "replay_link", "apply_link", "price_range",
     "years_experience", "babies_welcomed",
     "cta_keywords", "cta_welcome_message",
     "human_takeover_triggers", "qualified_tag_id",

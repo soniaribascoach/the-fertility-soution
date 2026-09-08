@@ -104,8 +104,16 @@
       <input type="url" name="booking_link" value="{{ cfg.booking_link or '' }}" placeholder="https://www.thefertilitysolution.com/free-call" class="{{ input_cls }}">
     {% endcall %}
 
-    {% call field('Masterclass Link', 'Sent after someone books, and offered to anyone who is not ready or cannot invest right now.') %}
-      <input type="url" name="masterclass_link" value="{{ cfg.masterclass_link or '' }}" placeholder="https://www.thefertilitysolution.com/watch-replay" class="{{ input_cls }}">
+    {% call field('Masterclass Link', 'The free one. Offered to anyone who is not ready, cannot invest right now, or is only gathering information. Registration page, not the replay.') %}
+      <input type="url" name="masterclass_link" value="{{ cfg.masterclass_link or '' }}" placeholder="https://www.thefertilitysolution.com/register" class="{{ input_cls }}">
+    {% endcall %}
+
+    {% call field('Replay Link', 'Sent only after someone has booked, to watch before the call. Never offered to anyone who has not booked.') %}
+      <input type="url" name="replay_link" value="{{ cfg.replay_link or '' }}" placeholder="https://www.thefertilitysolution.com/watch-replay" class="{{ input_cls }}">
+    {% endcall %}
+
+    {% call field('Application Link', 'Stored here so it is in one place. Nothing sends it yet: the manual gives the URL but not the stage it belongs to, so no prompt or conversation references it.') %}
+      <input type="url" name="apply_link" value="{{ cfg.apply_link or '' }}" placeholder="https://www.thefertilitysolution.com/apply" class="{{ input_cls }}">
     {% endcall %}
 
     {% call field('Free Resource Wording', 'How the free option is offered to someone who is not ready. Warm, no pressure.', 'mb-0') %}

@@ -38,22 +38,25 @@ LIST_SLOTS = ("diagnoses", "already_tried", "testing_done")
 #
 # The flags that carry a fixed line come before `needs_human`, because a woman who asked to speak
 # to a person and also tripped the general flag should still be told a person is coming.
+#
+# `asked_if_ai` is deliberately not here. Handing over the moment she asks made the question itself
+# unanswerable: she asked whether she was talking to a person and the conversation went silent,
+# which is the loudest possible yes and reads as a dodge. She is now told the truth and offered a
+# person, and only her answer to that offer, which arrives as `asked_for_human`, hands over.
 ESCALATION_FLAGS = (
-    "crisis", "urgent_medical", "abusive", "asked_for_human", "asked_if_ai", "needs_human",
+    "crisis", "urgent_medical", "abusive", "asked_for_human", "needs_human",
     "requested_medication", "requested_surgery_advice", "is_existing_client", "is_former_client",
 )
 ESCALATION_INTENTS = ("complaint", "collaboration", "media_request", "spam_or_aggression")
 
 # A handover turn never calls the writer, so nothing about it is generated. Most handovers send
 # nothing at all. These send one fixed line from config first, because silence is its own harm:
-# a woman in crisis must not be met with an unanswered message, someone bleeding needs to be told
-# to be seen today whether or not a human is awake, and total silence in answer to "is this a bot?"
-# is the loudest possible yes.
+# a woman in crisis must not be met with an unanswered message, and someone bleeding needs to be
+# told to be seen today whether or not a human is awake.
 HANDOVER_MESSAGES = {
     "crisis": "handover_message_crisis",
     "urgent_medical": "handover_message_urgent_medical",
     "asked_for_human": "handover_message_team",
-    "asked_if_ai": "handover_message_team",
 }
 
 # Structural findings that close off a booking entirely (2B.1 §6, §9).
@@ -110,6 +113,7 @@ _REASON_TAGS = {
     "not_a_priority": "not_priority",
     "refuses_paid_coaching": "affordability",
     "currently_pregnant": "celebration",
+    "stopped_trying": "stopped_trying",
 }
 
 
@@ -277,6 +281,19 @@ def _booking_blocked(state: dict, read: dict) -> str:
         return "lab_request"
     if flags.get("recent_loss"):
         return "recent_loss"
+
+    # v2.0 §A makes a woman who has stopped trying a terminal conversation: she is answered and the
+    # conversation is allowed to end. There is nothing to sell someone who is not trying, and the
+    # flag is sticky, so this holds for the rest of the conversation and not only for the message
+    # that said it.
+    #
+    # Below the loss on purpose. "We lost it at 11 weeks and we've decided that's it" sets both,
+    # and grief is the more urgent fact of that message: the loss conversation stays with what
+    # happened rather than with what she has decided about it. Nothing is lost by the ordering,
+    # because neither turn may ask her anything, offer her anything or send a link, and the free
+    # resource is withheld in `gate` on the flag rather than on the reason.
+    if flags.get("stopped_trying"):
+        return "stopped_trying"
     if flags.get("currently_pregnant"):
         # A live pregnancy is out of scope (2B.1 §2). Round 5 left the link open through a
         # pregnancy announcement, and the reply that followed quoted the price range to a
@@ -285,19 +302,15 @@ def _booking_blocked(state: dict, read: dict) -> str:
     if slots.get("pregnancy_priority") == "low":
         return "not_a_priority"
 
-    # Age is the one fact that can end the conversation by itself: 2B.1 §9 makes over 48 a hard
-    # boundary and 2B.1 §10 sends 46 to 48 to a person. Both of those are checked above, and both
-    # can only fire when she has actually given a number, so without this the boundary the manual
-    # states most plainly was the one nothing ever enforced. A woman who never mentions her age
-    # cleared the gate on the strength of three other slots and was sent the link.
+    # Age used to be a precondition here: no number, no link, whatever else was known. v2.0 §B
+    # ends that. It is a boundary check, not a gate, so the two age branches at the top of this
+    # function still fire on a number she has given and nothing fires on a blank.
     #
-    # So it is a precondition rather than one of the eight below. The others can be worked out well
-    # enough from the shape of her story for an invitation to still be honest without them. Age
-    # cannot be worked out from anything, which is why `70_read.md` forbids the reader from
-    # estimating one, and a blank left by that rule must not read here as a pass.
-    if not _stated(slots.get("age")):
-        return "age_unknown"
-
+    # What that buys is the whole of §A: qualification stops sitting on top of the conversation.
+    # What it costs is real and was accepted with it. Over 48 is still a hard boundary, and a
+    # boundary that can only be applied to a number she volunteered is a boundary that a woman who
+    # never mentions her age can walk past. She reaches a consultation the team then screens.
+    #
     # 2B.1 §15: enough of her situation has to be understood before an invitation is honest.
     # Two facts is a first message, not an understanding, an invitation that early is the
     # "every message is a sales opportunity" failure the manual opens by ruling out.
@@ -315,21 +328,24 @@ def _booking_blocked(state: dict, read: dict) -> str:
 # Step 4 of the conversation flow (Part 1 §8): the things the AI is supposed to check it knows
 # before deciding anything, in the order they are worth asking for.
 #
-# The order is not a preference, it is what each answer can do to the conversation. Age can end it:
-# past 48 there is no version of this she can be sold, so it is asked first and `_booking_blocked`
-# will not let a link past without it. How long she has been trying and what she is doing about it
-# shape the whole reply. Whether a baby is one of her biggest priorities is a pre-booking condition
-# under 2B.1 §15. Partner status is last on purpose: it changes only who is invited to the call,
-# so it is worth a question late and worth nothing early, and asking it first is how a conversation
-# spends its one question on the fact that mattered least.
+# The order is not a preference, it is what each answer can do to the conversation. How long she
+# has been trying and what she is doing about it shape the whole reply, so they lead. Whether a
+# baby is one of her biggest priorities is a pre-booking condition under 2B.1 §15.
+#
+# Age has moved down. It led this list while it was also a precondition in `_booking_blocked`, and
+# the two together made it the question asked of everyone, in a thank-you, in a masterclass
+# request, in a conversation with a woman who had just said she wanted to enrol. v2.0 §B: it is
+# relevant fertility information, not the default next question. It is still here because it can
+# still end a conversation, and it is still ahead of partner status, which changes only who else is
+# on the call and is worth a question late and nothing early.
 #
 # The labels are what the writer is told is missing, so they are phrased as the thing to find out
 # rather than as a field name.
 DISCOVERY = (
-    ("age", "how old she is"),
     ("time_trying", "how long she has been trying"),
     ("conceiving_mode", "whether she is trying naturally or preparing for IUI or IVF"),
     ("pregnancy_priority", "whether having a baby is one of her biggest priorities right now"),
+    ("age", "how old she is"),
     ("partner_status", "whether she is doing this with a partner or on her own"),
 )
 
@@ -369,6 +385,22 @@ def gate(state: dict, read: dict) -> Gate:
     if state.get("phase") in (LINK_SENT, POST_BOOKING):
         blocks.add("post_booking")
         extra_tags.append("post_booking")
+
+    # Read from this turn rather than from the dossier. The flag is sticky, as every flag here is,
+    # and a sticky pull would put the "are you a bot" conversation in front of the writer for the
+    # rest of her conversation, long after she has been answered and moved on.
+    if (read.get("flags") or {}).get("asked_if_ai"):
+        extra_tags.append("ai_transparency")
+
+    # The turn she tells you she has stopped is the terminal one, and v2.0 §A allows it no CTA. The
+    # booking block is already shut below; this shuts the other one, because a masterclass offered
+    # to a woman who has just said she is not trying any more is a consolation prize for a decision
+    # she did not ask you to have an opinion about.
+    #
+    # This turn only. If she comes back three messages later and asks something, that is a question
+    # and it gets an honest answer, free resource included. What stays shut for good is the link.
+    if (read.get("flags") or {}).get("stopped_trying"):
+        blocks.discard("free_resource")
 
     blocked_for = _booking_blocked(state, read)
     # Someone who opens with "how do I work with you" is ready and should not be re-qualified;

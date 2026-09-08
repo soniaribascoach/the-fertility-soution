@@ -29,7 +29,8 @@ CFG = {
     "kb_faq": "Are you a doctor? No.",
     "kb_free_resource": "The masterclass is free.",
     "booking_link": "https://example.test/free-call",
-    "masterclass_link": "https://example.test/watch-replay",
+    "masterclass_link": "https://example.test/register",
+    "replay_link": "https://example.test/watch-replay",
     "price_range": "$1,500 to $14,000",
     "years_experience": "16 years",
     "babies_welcomed": "735",
@@ -186,34 +187,37 @@ def test_someone_who_opens_ready_is_not_made_to_wait():
     assert gate.allow_booking
 
 
-def test_no_link_until_she_has_said_how_old_she_is():
-    """Over 48 is a hard boundary, and it can only be applied to an age she actually gave.
+def test_an_unstated_age_no_longer_shuts_the_link():
+    """v2.0 §B: age is a boundary check, not a precondition to offering a call.
 
-    Everything else about this lead is known and none of it decides anything. She could be 52 and
-    the reader is forbidden from guessing, so the boundary is enforceable only by refusing to
-    invite anyone whose age has never been asked.
+    It was a precondition, and paired with its place at the head of DISCOVERY that made it the next
+    question in every conversation, including the ones that were not qualification conversations at
+    all. The cost of removing it is accepted and recorded in `_booking_blocked`: a woman who never
+    volunteers a number can reach a consultation the team then screens.
     """
     known_but_ageless = {
         "time_trying": "3 years", "conceiving_mode": "naturally",
         "pregnancy_priority": "high", "partner_status": "husband",
     }
     gate = dossier.gate(_state(known_but_ageless), {"intent": "fertility_question"})
-    assert not gate.allow_booking
-    assert gate.block_reason == "age_unknown"
-    assert "booking" not in gate.blocks
+    assert gate.allow_booking
+    assert "booking" in gate.blocks
 
 
-def test_saying_she_is_ready_does_not_stand_in_for_her_age():
-    """The warm-prospect bypass skips the first-exchange wait, not the boundary."""
-    gate = dossier.gate(_state({"pregnancy_priority": "high"}, turns=1), {"intent": "warm_prospect"})
-    assert not gate.allow_booking
-    assert gate.block_reason == "age_unknown"
+def test_an_age_she_did_give_is_still_a_boundary():
+    """Demoting the question did not soften the boundary behind it."""
+    over = dossier.gate(_state({**QUALIFIED, "age": 51}), {"intent": "warm_prospect"})
+    assert not over.allow_booking and over.block_reason == "age_over_48"
+
+    review = dossier.gate(_state({**QUALIFIED, "age": 47}), {"intent": "warm_prospect"})
+    assert review.escalate and review.escalate_reason == "age_needs_review"
 
 
-def test_age_is_the_first_thing_the_writer_is_told_to_ask_for():
-    """Order in DISCOVERY is the priority the writer is given. Partner status comes last."""
+def test_age_is_no_longer_the_first_thing_the_writer_is_told_to_ask_for():
+    """Order in DISCOVERY is the priority the writer is given. Partner status still comes last."""
     missing = dossier.missing_facts(dossier.empty_state())
-    assert missing[0] == "how old she is"
+    assert missing[0] == "how long she has been trying"
+    assert "how old she is" in missing
     assert "partner" in missing[-1]
 
     known = _state({"age": 36})
@@ -330,9 +334,8 @@ def test_handovers_are_silent(flags, intent, reason):
     ({"crisis": True}, "crisis", "handover_message_crisis"),
     ({"urgent_medical": True}, "urgent_medical", "handover_message_urgent_medical"),
     ({"asked_for_human": True}, "asked_for_human", "handover_message_team"),
-    ({"asked_if_ai": True}, "asked_if_ai", "handover_message_team"),
 ])
-def test_the_four_handovers_that_send_a_fixed_line(flags, reason, key):
+def test_the_three_handovers_that_send_a_fixed_line(flags, reason, key):
     """Silence would be its own harm here, so these carry a config key instead."""
     gate = dossier.gate(_state(QUALIFIED, flags), {"intent": "fertility_question"})
     assert gate.escalate and gate.escalate_reason == reason
@@ -466,6 +469,33 @@ def test_the_link_is_absent_from_the_prompt_when_the_gate_says_no():
     assert CFG["booking_link"] in allowed
 
 
+def test_the_free_link_and_the_booked_link_never_swap_places():
+    """Client review point 10: one config key served both stages, so a woman who was never going
+    to book was sent the page written for someone who had."""
+    free = prompts.build_write_prompt(CFG, {"free_resource"})
+    assert CFG["masterclass_link"] in free
+    assert CFG["replay_link"] not in free
+
+    booked = prompts.build_write_prompt(CFG, {"post_booking"})
+    assert CFG["replay_link"] in booked
+    assert CFG["masterclass_link"] not in booked
+
+
+def test_the_booked_link_appears_in_no_conversation_that_is_not_post_booking():
+    for name, pb in FEW_SHOTS.items():
+        if name.startswith("post_booking"):
+            continue
+        for arc in pb.conversations:
+            assert "{{replay_link}}" not in arc, f"{name} offers the booked-and-preparing page"
+
+
+def test_nothing_can_send_the_application_link():
+    """v2.0 §G gives the URL and never says which stage sends it, so nothing references it."""
+    built = prompts.build_write_prompt({**CFG, "apply_link": "https://example.test/apply"},
+                                       {"pricing", "booking", "free_resource", "post_booking"})
+    assert "example.test/apply" not in built
+
+
 def test_no_placeholder_survives_into_the_prompt():
     built = prompts.build_write_prompt(CFG, {"pricing", "booking", "free_resource", "post_booking"})
     assert "{{" not in built and "[[BLOCK" not in built
@@ -477,6 +507,33 @@ def test_the_prompt_carries_the_facts_and_the_hard_boundaries():
         assert fact in built
     for rule in ("both tubes", "Never say", "first person"):
         assert rule.lower() in built.lower()
+
+
+def test_a_woman_who_has_decided_to_buy_is_not_warned_about_paying():
+    """Client review point 3: 'I want to enroll, can I pay' was answered with a readiness warning."""
+    built = prompts.build_write_prompt(CFG, {"pricing", "booking"})
+    assert "Never say it to someone who has already decided to buy" in built
+
+
+def test_the_writer_is_told_what_a_price_objection_is_actually_asking():
+    """Client review point 12: it answered the objection with information, then with the call."""
+    built = prompts.build_write_prompt(CFG, {"pricing", "booking"})
+    for phrase in ("I actually getting for this", "Personalization", "Accountability"):
+        assert phrase in built
+    assert "guarantee disclaimer she did not ask for" in built
+
+
+def test_the_crisis_trigger_no_longer_fires_on_fertility_exhaustion():
+    """Client review point 7. The same phrase was listed as a crisis signal and as ordinary
+    despair, with an instruction to err toward crisis, which guarantees the false positive."""
+    from app.services.reader import _SAFETY_PROMPT
+
+    reader_prompt = open("prompts/70_read.md", encoding="utf-8").read()
+    for text in (_SAFETY_PROMPT, reader_prompt):
+        assert "I can't do this anymore" in text, "the phrase is named, so it cannot be guessed at"
+    assert "explicit" in _SAFETY_PROMPT
+    assert "If you cannot tell which one she means, the answer is an empty list" in _SAFETY_PROMPT
+    assert "do not set this flag. Set `needs_human`" in reader_prompt
 
 
 def test_missing_config_collapses_rather_than_leaking_braces():
@@ -746,11 +803,13 @@ def test_a_boundary_turn_still_gets_something_to_do():
 @pytest.mark.parametrize("flags,reason", [
     ({"recent_loss": True}, "recent_loss"),
     ({"currently_pregnant": True}, "currently_pregnant"),
+    ({"stopped_trying": True}, "stopped_trying"),
     ({"structural": "unclear_tubal"}, "tubal_status_unclear"),
 ])
 def test_the_turns_that_must_not_ask_her_anything_are_not_given_a_question(flags, reason):
-    """Grief and a live pregnancy are turns where asking her anything is the mistake, and the
-    tubal turn carries a question of its own, which the contract's one question mark is spent on."""
+    """Grief, a live pregnancy and a woman who has stopped trying are turns where asking her
+    anything is the mistake, and the tubal turn carries a question of its own, which the
+    contract's one question mark is spent on."""
     state = _state(PARTIAL, flags)
     gate = dossier.gate(state, {"intent": "fertility_question"})
     assert gate.block_reason == reason
@@ -759,13 +818,77 @@ def test_the_turns_that_must_not_ask_her_anything_are_not_given_a_question(flags
     )
 
 
+# ── A conversation that has ended (v2.0 §A, the terminal path) ───────────────
+
+def test_stopping_shuts_the_link_for_good():
+    """Sticky, like every flag. She is not a prospect on the next message either."""
+    read = {"intent": "gratitude", "tags": [], "flags": {"stopped_trying": True}}
+    state = dossier.merge(_state(PARTIAL), read)
+    assert dossier.gate(state, read).block_reason == "stopped_trying"
+
+    later = {"intent": "fertility_question", "tags": [], "flags": {}}
+    state = dossier.merge(state, later)
+    assert dossier.gate(state, later).block_reason == "stopped_trying"
+
+
+def test_the_turn_she_says_it_is_offered_nothing_at_all():
+    """v2.0 §A: no CTA. The masterclass is a CTA when it answers a decision she has just made."""
+    read = {"intent": "gratitude", "tags": [], "flags": {"stopped_trying": True}}
+    gate = dossier.gate(dossier.merge(_state(PARTIAL), read), read)
+    assert "free_resource" not in gate.blocks and "booking" not in gate.blocks
+
+    built = prompts.build_write_prompt(CFG, gate.blocks)
+    assert CFG["masterclass_link"] not in built and CFG["booking_link"] not in built
+
+
+def test_a_question_asked_afterwards_is_still_answered_properly():
+    """Terminal describes the message, not the rest of her life. The link stays shut; the free
+    resource comes back, because withholding it from a woman who asked would be its own failure."""
+    said = {"intent": "gratitude", "tags": [], "flags": {"stopped_trying": True}}
+    state = dossier.merge(_state(PARTIAL), said)
+
+    later = {"intent": "fertility_question", "tags": [], "flags": {}}
+    gate = dossier.gate(dossier.merge(state, later), later)
+    assert "free_resource" in gate.blocks
+    assert not gate.allow_booking
+
+
+def test_the_writer_is_told_to_let_it_end():
+    read = {"intent": "gratitude", "tags": [], "flags": {"stopped_trying": True}}
+    state = dossier.merge(_state(PARTIAL), read)
+    brief = brain._brief(dossier.gate(state, read), read, state, [])
+    assert "nothing here to sell" in brief
+    assert "let the conversation end" in brief
+
+
+def test_a_fresh_loss_outranks_the_decision_she_made_about_it():
+    """"We lost it at 11 weeks and we've decided that's it" sets both. The loss is what the reply
+    has to stay with, and the terminal turn gives up nothing by losing: neither may ask, offer or
+    send a link, and the free resource is withheld on the flag rather than on the reason."""
+    read = {"intent": "grief_or_loss", "tags": [],
+            "flags": {"recent_loss": True, "stopped_trying": True}}
+    gate = dossier.gate(dossier.merge(_state(PARTIAL), read), read)
+    assert gate.block_reason == "recent_loss"
+    assert "free_resource" not in gate.blocks and not gate.allow_booking
+
+
+def test_the_conversation_written_for_it_is_the_one_shown():
+    read = {"intent": "gratitude", "tags": [], "flags": {"stopped_trying": True}}
+    state = dossier.merge(_state(PARTIAL), read)
+    gate = dossier.gate(state, read)
+    picked = select_playbooks(FEW_SHOTS, intent=read["intent"], tags=read["tags"] + gate.tags,
+                              allow_booking=gate.allow_booking)
+    assert "stopped_trying" in [pb.name for pb in picked]
+
+
 # ── The narrow safety read ───────────────────────────────────────────────────
 
 async def test_the_safety_read_adds_a_flag_the_extraction_missed():
     """Measured on the recorded run 15 transcript, `asked_if_ai` was missed 4 times in 10.
 
-    Every miss let the writer answer the question itself, and the reply it produced was "I'm the
-    person you're talking to here, handling these messages personally".
+    Every miss let the writer deny it, and the reply it produced was "I'm the person you're talking
+    to here, handling these messages personally". The flag is still caught as generously as it ever
+    was; what changed in v2.0 §F is what happens next.
     """
     client = _FakeClient(
         '{"intent": "warm_prospect", "language": "en", "flags": {}}',
@@ -777,8 +900,42 @@ async def test_the_safety_read_adds_a_flag_the_extraction_missed():
 
     assert read["flags"]["asked_if_ai"] is True
     gate = dossier.gate(dossier.merge(None, read), read)
-    assert gate.escalate and gate.escalate_reason == "asked_if_ai"
-    assert gate.handover_message == "handover_message_team", "she gets the fixed line, not silence"
+    assert not gate.escalate, "she asked a question, she did not ask for a person"
+    assert "ai_transparency" in gate.tags
+
+
+def test_the_writer_is_told_to_answer_the_bot_question_itself():
+    """It used to be answered by handing the conversation over, which left her with silence."""
+    read = {"intent": "fertility_question", "tags": [], "flags": {"asked_if_ai": True}}
+    state = dossier.merge(None, read)
+    brief = brain._brief(dossier.gate(state, read), read, state, [])
+    assert "AI assistant" in brief
+    assert "team" in brief and "would like" in brief
+
+
+def test_the_bot_question_pulls_the_conversation_written_for_it():
+    read = {"intent": "fertility_question", "tags": [], "flags": {"asked_if_ai": True}}
+    state = dossier.merge(None, read)
+    gate = dossier.gate(state, read)
+    picked = select_playbooks(FEW_SHOTS, intent=read["intent"], tags=read["tags"] + gate.tags,
+                              allow_booking=gate.allow_booking)
+    assert "ai_transparency" in [pb.name for pb in picked]
+
+
+def test_the_bot_conversation_does_not_follow_her_around():
+    """The flag is sticky in the dossier. The pull is not, or every later turn re-opens it."""
+    read = {"intent": "fertility_question", "tags": [], "flags": {"asked_if_ai": True}}
+    state = dossier.merge(None, read)
+    assert state["flags"]["asked_if_ai"] is True
+
+    later = {"intent": "fertility_question", "tags": [], "flags": {}}
+    assert "ai_transparency" not in dossier.gate(dossier.merge(state, later), later).tags
+
+
+def test_saying_yes_to_a_person_is_what_hands_over():
+    read = {"intent": "fertility_question", "tags": [], "flags": {"asked_for_human": True}}
+    gate = dossier.gate(dossier.merge(None, read), read)
+    assert gate.escalate and gate.escalate_reason == "asked_for_human"
 
 
 async def test_the_safety_read_can_only_add():

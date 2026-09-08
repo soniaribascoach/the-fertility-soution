@@ -73,7 +73,11 @@ def config_values(cfg: dict) -> dict:
         "kb_faq": cfg.get("kb_faq", ""),
         "kb_free_resource": cfg.get("kb_free_resource", ""),
         "booking_link": cfg.get("booking_link", ""),
+        # Two links, two stages. `masterclass_link` is the registration page anyone may be
+        # offered; `replay_link` is only rendered inside the post-booking block. `apply_link`
+        # is not here on purpose: v2.0 §G gives the URL and never says which stage sends it.
         "masterclass_link": cfg.get("masterclass_link", ""),
+        "replay_link": cfg.get("replay_link", ""),
         # So a conversation that opens with a CTA keyword can be shown in a few-shot exactly as the
         # lead received it, rather than as a paraphrase that drifts from what config actually sends.
         "cta_welcome_message": cfg.get("cta_welcome_message", ""),
