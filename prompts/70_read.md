@@ -62,9 +62,11 @@ collaboration · media_request · technical_support · complaint · not_a_fit ·
 and not by her tone. Delighted, stunned, or frightened after three losses, she is pregnant, so the
 intent is this one and `celebration` takes the first tag slot. Never `grief_or_loss`,
 `emotional_distress`, `free_info_request` or `advice_request`, and never the `recent_loss` or
-`loss_recent` route, whatever else is in the message. A pregnancy is out of scope for coaching, so
-reading her as a prospect sends the reply to a conversation that will try to help her with something
-Sonia does not do.
+`loss_recent` route, whatever else is in the message. Reading her as an ordinary prospect sends the
+reply to a conversation about conceiving, which is not the thing in front of her any more.
+
+Sonia does support pregnant women, through The Pregnancy Solution, so this intent is not a dead end.
+What decides whether that comes up is `wants_pregnancy_support` below, never the intent by itself.
 
 **It sticks.** Once she has said she is pregnant, she is pregnant for the rest of the conversation,
 so every later turn keeps this intent and keeps `celebration`, whatever she asks next. Her follow-up
@@ -85,9 +87,9 @@ secondary_infertility · male_factor · dna_fragmentation · egg_quality · embr
 irregular_cycles · tubal · structural · no_uterus · ivf_prep · ivf_failed · iui_failed ·
 donor_eggs · just_started · long_ttc · pricing · affordability · partner · ready_to_book ·
 post_booking · thinking_about_it · credentials · coach_vs_doctor · lab_request ·
-supplement_request · medication_request · surgery_request · free_coaching · guarantee ·
-not_priority · hopeless · fear_of_time · loss_recent · celebration · human_requested · technical ·
-closing
+supplement_request · hormone_request · medication_request · surgery_request · free_coaching ·
+guarantee · pregnancy_support · complementary_provider · not_priority · hopeless · fear_of_time ·
+loss_recent · celebration · human_requested · technical · closing
 
 `technical` is for a broken link, a missing email, a payment or the booking page: a fault with
 something of mine, not a question about fertility.
@@ -115,6 +117,21 @@ is only curious. "I'm 29, not trying yet, maybe in 3 or 4 years" is this tag and
 
 `irregular_cycles` is for cycles she has described as irregular. A woman who says hers are regular
 is the opposite of this tag, and tagging it there sends the reply to the wrong conversation.
+
+`pregnancy_support` goes with the `wants_pregnancy_support` flag and only with it: she is pregnant
+and has asked for support through the pregnancy. A plain announcement takes `celebration` and not
+this. Both can be true on the same message, and when they are, `celebration` still comes first,
+because she is congratulated before she is answered.
+
+`complementary_provider` is for a woman who already works with an acupuncturist, a functional
+medicine doctor, a naturopath, a herbalist or a nutritionist, and is asking, openly or not, what
+Sonia would add. "I already see an acupuncturist, would this be doubling up?" is the direct form.
+"My functional doctor has me on a whole protocol already" is the same question without the question
+mark. It is not `coach_vs_doctor`, which is about where Sonia stands next to a clinic or an RE.
+
+`hormone_request` is the DHEA tag, and anything else that acts as a hormone however it is sold. It
+is separate from `supplement_request` because the answer is different: a supplement question gets
+answered, a hormone question goes to her medical provider.
 
 **That list is the whole vocabulary.** These have all been returned by mistake and none of them are
 tags: `age`, `partner_status`, `menopause`, `cancer_survivor`, `pregnancy_announcement`,
@@ -293,11 +310,18 @@ you set when it is arguable; that one you set when it is on the list.
   silence. Tag it `medication_request` only if she is asking about the drug itself; otherwise let
   the facts land in `already_tried` and move on.
 
-  **A supplement is not a medication.** Inositol, CoQ10, ubiquinol, DHEA, vitamin D, folate,
-  omega 3, NAC, melatonin and everything else bought without a prescription belong to
-  `supplement_request`, which is a tag and not a flag. "How much inositol should I take" is a
-  supplement question however specific the dose she is asking for, and it is answered rather than
-  handed to a person. Only a prescribed drug reaches this flag.
+  **A supplement is not a medication.** Inositol, CoQ10, ubiquinol, vitamin D, folate, omega 3,
+  NAC, melatonin and everything else bought without a prescription belong to `supplement_request`,
+  which is a tag and not a flag. "How much inositol should I take" is a supplement question however
+  specific the dose she is asking for, and it is answered rather than handed to a person. Only a
+  prescribed drug reaches this flag.
+
+  **A hormone is neither.** DHEA is the one this matters for, because it is sold like a supplement
+  and acts like a drug. When she asks whether to take it, how much, for how long, or whether to
+  stop it before a cycle, the tag is `hormone_request` and not `supplement_request`. Do not set
+  `requested_medication`: that hands her to a person and she asked a question that has an honest
+  answer, which is that dosing it belongs with her medical provider. Naming DHEA in a list of what
+  she has already tried is neither tag, it is `already_tried`.
 - `wants_unprovided_service`: **she is asking Sonia to provide IVF, IUI, donor eggs or sperm,
   surrogacy, a prescription, a diagnosis, or tests ordered.** She has to be asking Sonia for it.
   "Can you do my IVF?", "how much do you charge for a cycle?", "can you write me a prescription?",
@@ -325,6 +349,14 @@ you set when it is arguable; that one you set when it is on the list.
   call about it?", "can I book a consultation?", "will you look at my plan?", "can you help me
   with this?" are not asking for a human. Setting it there stops the conversation dead on the turn
   where she was leaning in.
+
+  **Asking for Sonia's phone number is not this flag either.** "Can I get her number?", "what's her
+  WhatsApp?", "I'd rather call her directly and explain before I book anything" are asking for a
+  channel, not for a different person, and usually they are a strong lead trying to skip a form.
+  Handing her over answers a question she did not ask and ends the conversation she was in the
+  middle of. Tag it `human_requested` so the reply carries the boundary, and leave the flag alone.
+  What sets the flag is her asking for a person: "can I speak to someone real", "is there an actual
+  human there", "can someone from your team call me".
 - `asked_if_ai`: **set this whenever she asks or wonders whether she is talking to a person.**
   "Is this a bot?", "am I speaking to a real person?", "is this automated?", "are you AI?",
   "is this actually you Sonia?" all count. So does a doubt she only implies: "is this a real
@@ -361,6 +393,27 @@ something she never said.
   None of these are her being open to IVF: "my doctors are pushing me towards IVF", "they said IVF
   is my only option", "I'm not sure about IVF", or her simply continuing to talk to you after IVF
   was mentioned. If she has not said yes herself, leave it out.
+- `wants_pregnancy_support`: **she is pregnant and has asked for support through the pregnancy.**
+  "Can you coach me through this pregnancy?", "do you work with pregnant women?", "I'm terrified,
+  is there anything you do for this stage?", "what do you offer now that I'm pregnant?", "I want
+  to keep working with you now I'm pregnant".
+
+  Announcing a pregnancy is **not** this flag, however warm the message or however clearly she
+  would like to stay in touch. "I'm pregnant!", "we did it!", "thank you for everything, I'm 6
+  weeks" are announcements and they are celebrated, nothing else. She has to have asked for
+  something. Without this flag the reply congratulates her and stops, which is what she wants
+  almost every time.
+
+  Asking you a single pregnancy question is not it either. "Is it normal to feel this sick?" is a
+  question to answer honestly, not a request to be coached through the next 8 months.
+- `accepts_english_materials`: **she is writing in Spanish and has confirmed she is comfortable
+  with English program materials.** She has to have been told and to have answered: "sí, no hay
+  problema", "I read English fine", "that's OK, I understand English". Nothing is booked in a
+  Spanish conversation until this is set, so do not set it because she seems likely to be fine, or
+  because she used an English word, or because she has not objected. Silence is not an answer here.
+
+  If she says English materials would not work for her, leave this out. There is no flag for the
+  no: the absence of the yes is what holds the link.
 - `understands_coach_not_clinic`: it is already clear in the conversation that Sonia is a coach.
 - `understands_paid_program`: the cost has already been stated to her.
 - `stopped_trying`: **she has stopped trying to conceive.** Not pausing, not between cycles, not

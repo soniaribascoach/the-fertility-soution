@@ -114,6 +114,7 @@ _REASON_TAGS = {
     "refuses_paid_coaching": "affordability",
     "currently_pregnant": "celebration",
     "stopped_trying": "stopped_trying",
+    "english_materials_undisclosed": "english_materials",
 }
 
 
@@ -294,10 +295,15 @@ def _booking_blocked(state: dict, read: dict) -> str:
     # resource is withheld in `gate` on the flag rather than on the reason.
     if flags.get("stopped_trying"):
         return "stopped_trying"
-    if flags.get("currently_pregnant"):
-        # A live pregnancy is out of scope (2B.1 §2). Round 5 left the link open through a
-        # pregnancy announcement, and the reply that followed quoted the price range to a
-        # frightened woman who had just been told coaching through a pregnancy is not what this is.
+    if flags.get("currently_pregnant") and not flags.get("wants_pregnancy_support"):
+        # An announcement is a terminal conversation and nothing is offered into it. Round 5 left
+        # the link open through one and the reply quoted the price range to a frightened woman who
+        # had just shared her news.
+        #
+        # The exception is v2.1 §D: she is pregnant and has asked for support through it, which is
+        # The Pregnancy Solution and is a thing Sonia sells. That is a different conversation from
+        # the announcement that usually precedes it, and the reader only sets the flag when she has
+        # actually asked, so congratulating her stays the whole of the reply until she does.
         return "currently_pregnant"
     if slots.get("pregnancy_priority") == "low":
         return "not_a_priority"
@@ -314,6 +320,17 @@ def _booking_blocked(state: dict, read: dict) -> str:
     # 2B.1 §15: enough of her situation has to be understood before an invitation is honest.
     # Two facts is a first message, not an understanding, an invitation that early is the
     # "every message is a sales opportunity" failure the manual opens by ruling out.
+    # v2.1 §L: she can be coached in Spanish and the program materials are in English. That is a
+    # deal breaker for some women and it has to reach her before she commits, not after she has
+    # paid, so a Spanish conversation cannot reach the link until she has said English materials
+    # are workable for her. `20_boundaries.md` tells the writer to put the question; this is what
+    # makes the answer matter.
+    #
+    # Keyed on the language she is actually writing in. A woman writing in English is not asked to
+    # confirm she can read English.
+    if slots.get("language") == "es" and not flags.get("accepts_english_materials"):
+        return "english_materials_undisclosed"
+
     known = sum(
         1 for key in ("age", "time_trying", "conceiving_mode", "ivf_history", "iui_history",
                       "pregnancy_priority", "partner_status", "goal_stated")
@@ -401,6 +418,11 @@ def gate(state: dict, read: dict) -> Gate:
     # and it gets an honest answer, free resource included. What stays shut for good is the link.
     if (read.get("flags") or {}).get("stopped_trying"):
         blocks.discard("free_resource")
+
+    # Sticky, unlike the two above: once she has asked for support through her pregnancy that is
+    # what the conversation is about, and it stays that way while it is arranged.
+    if state.get("flags", {}).get("wants_pregnancy_support"):
+        extra_tags.append("pregnancy_support")
 
     blocked_for = _booking_blocked(state, read)
     # Someone who opens with "how do I work with you" is ready and should not be re-qualified;

@@ -204,6 +204,61 @@ def test_a_first_message_buyer_gets_the_link_not_the_price():
     assert gate.allow_booking, gate.block_reason
 
 
+def test_a_pregnancy_announcement_is_still_terminal():
+    """She shared her news and asked for nothing. Nothing is offered into that."""
+    read = {"intent": "pregnancy_announcement", "tags": ["celebration"], "slots": {}}
+    state = _state(QUALIFIED)
+    state["flags"]["currently_pregnant"] = True
+    gate = dossier.gate(state, read)
+    assert not gate.allow_booking
+    assert gate.block_reason == "currently_pregnant"
+
+
+def test_a_pregnant_woman_who_asks_for_support_can_be_booked():
+    """v2.1 section D: The Pregnancy Solution exists, so this is a conversation, not a boundary.
+
+    The brain told a newly pregnant woman that coaching through pregnancy was not something Sonia
+    does, which was false. What makes this different from the announcement above is that she asked.
+    """
+    read = {"intent": "pregnancy_announcement", "tags": ["celebration", "pregnancy_support"],
+            "slots": {}}
+    state = _state(QUALIFIED)
+    state["flags"]["currently_pregnant"] = True
+    state["flags"]["wants_pregnancy_support"] = True
+    gate = dossier.gate(state, read)
+    assert gate.allow_booking, gate.block_reason
+    assert "pregnancy_support" in gate.tags
+
+
+def test_a_spanish_lead_is_not_booked_before_the_materials_are_disclosed():
+    """v2.1 section L: coaching is in Spanish, the materials are in English, and she has to know.
+
+    A deal breaker she finds out about after paying is the failure this gate exists to stop.
+    """
+    read = {"intent": "program_question", "tags": ["ready_to_book"], "slots": {}}
+    state = _state(QUALIFIED)
+    state["slots"]["language"] = "es"
+    gate = dossier.gate(state, read)
+    assert not gate.allow_booking
+    assert gate.block_reason == "english_materials_undisclosed"
+    assert "english_materials" in gate.tags
+
+
+def test_a_spanish_lead_who_confirms_english_materials_can_be_booked():
+    read = {"intent": "program_question", "tags": ["ready_to_book"], "slots": {}}
+    state = _state(QUALIFIED)
+    state["slots"]["language"] = "es"
+    state["flags"]["accepts_english_materials"] = True
+    gate = dossier.gate(state, read)
+    assert gate.allow_booking, gate.block_reason
+
+
+def test_an_english_lead_is_never_asked_about_english():
+    """The gate keys on the language she is writing in, not on everyone."""
+    gate = dossier.gate(_state(QUALIFIED), {"intent": "warm_prospect", "tags": []})
+    assert gate.allow_booking
+
+
 def test_readiness_alone_is_not_an_understanding():
     """The bypass skips the blanket first-turn rule and nothing else.
 
