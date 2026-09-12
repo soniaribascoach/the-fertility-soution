@@ -30,7 +30,7 @@ from openai import AsyncOpenAI
 
 from app.services import cta, dossier
 from app.services.few_shots import load_few_shot_scenarios, render_examples, select_playbooks
-from app.services.message_splitter import strip_dashes
+from app.services.message_splitter import strip_dashes, use_digits
 from app.services.prompts import build_write_prompt, config_values
 from app.services.reader import read_turn
 
@@ -421,7 +421,7 @@ async def run_turn(
     # Applied here rather than in the worker so that every caller gets it: the worker, the admin
     # sandbox and the probe all read `reply_text`, and a transcript that shows a dash the lead
     # would never have received is a transcript nobody can review against the writing rules.
-    reply = strip_dashes((response.choices[0].message.content or "").strip())
+    reply = use_digits(strip_dashes((response.choices[0].message.content or "").strip()))
     usage = _usage(read_model, model, read_usage, response)
 
     booking_link = (cfg.get("booking_link") or "").strip()

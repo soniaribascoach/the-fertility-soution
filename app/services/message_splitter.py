@@ -45,6 +45,47 @@ def strip_dashes(text: str) -> str:
     return re.sub(r"(?m),[ \t]*$", "", text)
 
 
+# Spelled-out quantities, the second thing the model will not stop doing. Same reasoning as the
+# dashes above and the same narrow licence: "Four years of that would flatten anyone" reads as
+# composed, "4 years" reads as typed on a phone, and swapping one for the other cannot change a
+# decision, cross a boundary or leak a link. Client review point 18.
+#
+# Only a number word directly in front of a unit is touched, so the quantity is unambiguous. That
+# leaves "one of the things", "no one", "someone", "the first thing" and "a second opinion" alone
+# without needing to list them, because none of them is a number followed by a unit.
+_NUMBER_WORDS = {
+    "one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7",
+    "eight": "8", "nine": "9", "ten": "10", "eleven": "11", "twelve": "12", "fifteen": "15",
+    "eighteen": "18", "twenty": "20", "thirty": "30", "forty": "40", "fifty": "50",
+}
+_UNITS = (
+    "months?|years?|weeks?|days?|hours?|minutes?|cycles?|rounds?|losses|miscarriages|times|"
+    "IUIs?|IVFs?|transfers?|embryos?|eggs?|kids?|children|sessions?|calls?"
+)
+# "one day" is someday and "one time" is once. Neither is a quantity, both match the shape.
+_NOT_QUANTITIES = {"one day", "one time"}
+
+_SPELLED = re.compile(rf"\b({'|'.join(_NUMBER_WORDS)})\s+({_UNITS})\b", re.IGNORECASE)
+
+
+def use_digits(text: str) -> str:
+    """Write quantities as digits, so a reply reads the way she types rather than the way it drafts.
+
+    A hyphenated compound is left alone: "two-week wait" is the name of the thing, and the hyphen
+    rule in CLAUDE.md protects compounds generally.
+    """
+    if not text:
+        return text
+
+    def replace(match: re.Match) -> str:
+        if match.group(0).lower() in _NOT_QUANTITIES:
+            return match.group(0)
+        # The unit keeps whatever case it arrived in. A digit has no case to preserve.
+        return f"{_NUMBER_WORDS[match.group(1).lower()]} {match.group(2)}"
+
+    return _SPELLED.sub(replace, text)
+
+
 def split_reply(text: str, max_chars: int = 600, natural: bool = True) -> list[str]:
     """Split text into IG-friendly chunks at paragraph boundaries.
     Chunks over max_chars are split further at the last sentence boundary before the limit.

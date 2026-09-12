@@ -621,6 +621,35 @@ def test_the_crisis_trigger_no_longer_fires_on_fertility_exhaustion():
     assert "do not set this flag. Set `needs_human`" in reader_prompt
 
 
+def test_quantities_are_written_as_digits():
+    """Client review point 18, enforced rather than asked for.
+
+    The rule is in `60_contract.md` and the few-shots all use digits, and the writer still sent
+    "Four years trying naturally at 38". Same licence as `strip_dashes`: typography, not judgment.
+    """
+    from app.services.message_splitter import use_digits
+
+    assert use_digits("Four years trying naturally at 38.").startswith("4 years")
+    assert use_digits("Two weeks of that is a long two weeks.") == "2 weeks of that is a long 2 weeks."
+    assert "3 cycles" in use_digits("I would want three cycles of history.")
+
+
+def test_digits_leave_words_that_are_not_quantities_alone():
+    """"one" is a number perhaps a third of the time it appears. The unit is what decides."""
+    from app.services.message_splitter import use_digits
+
+    for text in (
+        "one of the things I look at",
+        "No one has asked you that.",
+        "the first thing I would change",
+        "Someone will come back to you.",
+        "One day it will make sense.",
+        "the two-week wait",
+        "a second opinion is worth having",
+    ):
+        assert use_digits(text) == text, text
+
+
 def test_the_two_asked_for_human_definitions_agree():
     """Client review point 9, and the reason the first fix did nothing.
 
