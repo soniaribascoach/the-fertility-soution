@@ -137,6 +137,14 @@ answered, a hormone question goes to her medical provider.
 directly. `human_requested` is for a woman asking for a different person. They look similar and the
 replies are opposites: one keeps her in this conversation with a boundary, the other ends it.
 
+`pricing` is for a woman asking what it costs: "how much is it?", "what are your rates?", "is it
+expensive?". **Asking how to pay is not asking what it costs.** "Can I pay?", "how do I pay?",
+"where do I sign up?", "I want to enrol, what's next?" are `ready_to_book`, and they are a decision
+rather than a question about money. The two tags pull opposite conversations: `pricing` teaches the
+reply to lead with the figure, which spends a buyer's first message on a number she did not ask for
+and on a doubt she had already settled. When she has asked both in one message, `ready_to_book`
+takes the first slot.
+
 **That list is the whole vocabulary.** These have all been returned by mistake and none of them are
 tags: `age`, `partner_status`, `menopause`, `cancer_survivor`, `pregnancy_announcement`,
 `fertility_question`, `both_tubes`, `open_to_ivf`, `wants_natural_only`, `refuses_paid_coaching`,
@@ -181,6 +189,12 @@ These keys and no others. A key you invent is read by nothing and is lost.
   `high`, and do not wait for her to say the words. The same goes for one who has decided on a
   treatment or is saving for it. "Planning IVF in a month or two", "we start stims next week", "two
   failed rounds", "I'm on my third IUI" are all `high`.
+
+  **So do years of it.** Someone who has been trying for 2 years or more, or who is paying a
+  fertility acupuncturist, naturopath or nutritionist to help her conceive, has answered this with
+  her time and her money whether or not a treatment is involved. Report `high`. Asking a woman 4
+  years in whether a baby is one of her biggest priorities is the question the reply should never
+  have to put to her, and it is the reason this slot exists.
 
   A doctor recommending IVF is not this, because she has not decided anything: that is `unclear`.
   Report `low` only where she has said it is not a priority for her right now. `unclear` is for
@@ -407,6 +421,15 @@ you set when it is arguable; that one you set when it is on the list.
   last year", "I worked with you before", "I'm on week 2", "I stopped a while back and I'm
   thinking about coming back", "my coach said". She does not have to use the word client, and a
   former client thinking about returning still sets `is_former_client`. Also set `needs_human`.
+
+  **Thanking her is not one of these.** "Thank you for everything", "your content got me through
+  a really dark year", "thank you for helping me through some dark days", "your posts are the only
+  thing that helped" are about the free side of her work, which reaches far more women than the
+  program does, and none of them says she paid for anything. Both flags hand the conversation to a
+  person, so setting one on a thank-you answers it with silence, and a woman who has just told you
+  the hardest thing about her life gets nothing back. She has to refer to the program, the
+  coaching, a payment, a coach or a week of it. If all you have is gratitude, leave both flags out
+  and let the reply thank her back.
 - `announcement`: she is sharing a pregnancy or a birth.
 
 ### Group 3: sticky positions. Be strict. If she has not said it, leave it out

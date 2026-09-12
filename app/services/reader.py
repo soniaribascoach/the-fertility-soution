@@ -356,6 +356,24 @@ async def read_turn(
             logger.info("Safety read caught %s that the extraction missed", flag)
         read["flags"][flag] = True
 
+    # `phone_request` and `asked_for_human` are defined as opposites in `70_read.md`: one is a
+    # woman asking for another channel to Sonia, the other is a woman asking for somebody who is
+    # not Sonia, and the replies are a boundary and a handover. Returning both is the read
+    # contradicting itself, and the contradiction is not rare: the carve-out is written into both
+    # the extraction prompt and `_SAFETY_PROMPT` and the flag still came back on one run in three
+    # of "can I get Sonia's phone number so I can call her directly". Prose cannot close it,
+    # because the two passes are asked separately and only one of them can see the tag.
+    #
+    # The tag wins, unless she also asked for a person, in which case `human_requested` is on the
+    # read as well and both are true. Nothing is lost by dropping the flag on the rest: she is
+    # answered with the boundary and the consultation, and if what she wanted really was a
+    # different person she says so on her next message, which is read from scratch.
+    tags = read.get("tags") or []
+    if read["flags"].get("asked_for_human") and "phone_request" in tags \
+            and "human_requested" not in tags:
+        logger.info("Dropping asked_for_human on a phone_request turn: she asked for a channel")
+        read["flags"].pop("asked_for_human", None)
+
     if read["language"] in ("es", "other"):
         second, extra = await _confirm_language(client, history, model=model)
         usage = {key: usage[key] + extra[key] for key in usage}

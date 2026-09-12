@@ -157,6 +157,52 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
             "here changes if she asked it eight turns in and everything was going well."
         )
 
+    # The opposite instruction, for the turn that keeps being mistaken for the one above. A request
+    # for Sonia's number is a request for another channel to the same person, and the reply to it
+    # opened with "you're chatting with an AI assistant" on every run of a six conversation test,
+    # with the boundary she actually asked about pushed to the end or dropped. The carve-out is
+    # written into `60_contract.md` and it loses: the paragraph it has to argue with is six
+    # paragraphs of emphasis away, and "call her directly" reads as a request for a person.
+    #
+    # So it is said per turn, where it competes with nothing. Keyed on the tag rather than on her
+    # prose, and only where she has raised no doubt of her own: if she asks both in one message
+    # both flags are true, the branch above fires, and this one stays out of the way.
+    if "phone_request" in (read.get("tags") or []) and not (read.get("flags") or {}).get("asked_if_ai"):
+        lines.append(
+            "- She has asked for a phone number, a WhatsApp or a way to call you directly. That is "
+            "a request for another way to reach the same person, not a question about who is "
+            "typing and not a request for somebody else, so do not announce that she is talking to "
+            "an AI, do not offer to bring in a human, and do not hand her over. Answer the thing "
+            "she asked: the number is not given out through DMs, said once and without apology, "
+            "and then carry on with her."
+        )
+
+    # v2.1 §D. The gate lets this conversation through and the knowledge base carries the program,
+    # but on a turn with no link in it the reply came back as "yes, I do support women through
+    # pregnancy" with no name on it, which leaves her having to ask a second time what the thing
+    # is. She asked whether it exists. It has a name, so use it.
+    if (state.get("flags") or {}).get("wants_pregnancy_support"):
+        lines.append(
+            "- She is pregnant and has asked for support through the pregnancy. The answer is yes, "
+            "and the thing is called The Pregnancy Solution, so name it. Then find out what she is "
+            "looking for before you point her anywhere."
+        )
+
+    # She already pays somebody who is helping her, and she is asking what you would add. Measured
+    # over three runs the reply twice answered with the shape of an answer: a clear sense of what
+    # to focus on first, the right things in the right order, making sure they actually happen.
+    # All true, none of it about her, and none of it something the acupuncturist is not already
+    # doing as far as she can tell. The playbook names a concrete gap and this makes it the
+    # instruction rather than an example she may or may not follow.
+    if "complementary_provider" in (read.get("tags") or []):
+        lines.append(
+            "- She already works with somebody who is helping her. Do not diminish them and do not "
+            "imply you provide what they provide. Name one concrete thing you would add that she "
+            "can picture: her partner's side, her cycles, her thyroid or metabolic side, whatever "
+            "her situation actually points at. Prioritising, sequencing and accountability are "
+            "true and they are not concrete, so they are not an answer on their own."
+        )
+
     missing = dossier.missing_facts(state)
 
     if gate.allow_booking:
@@ -231,12 +277,17 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
             "- She wants a guarantee. Say clearly that no honest coach can give one, and do not "
             "supply a softened version of one in its place."
         ),
+        # v2.1 §D: this used to end "coaching through a pregnancy is not what you do", which was
+        # true of v1.0 and is the sentence a newly pregnant woman was answered with. The Pregnancy
+        # Solution is the pregnancy side of the work, and `_booking_blocked` only reaches this
+        # reason while she has asked for nothing, so what is withheld here is the selling, not the
+        # existence of the thing.
         "currently_pregnant": (
-            "- She is pregnant now. Congratulate her before anything else. Coaching through a "
-            "pregnancy is not what you do, so there is nothing here to sell and nothing to "
-            "qualify: no program, no price, no next step, no call. If she asks you to coach her "
-            "through it, say plainly that this is not what you do and leave her with the people "
-            "caring for her."
+            "- She is pregnant now, and she has only told you her news. Congratulate her and stop: "
+            "there is nothing here to sell and nothing to qualify, so no program, no price, no "
+            "next step, no call, and no question about her situation. Do not reach for pregnancy "
+            "support she has not asked for. If she asks for it, that is a different turn and the "
+            "answer there is yes."
         ),
     }
     if gate.block_reason in reason_rules:

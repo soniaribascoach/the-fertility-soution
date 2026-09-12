@@ -40,15 +40,59 @@ MIGRATIONS = (
     "t0u1v2w3x4y5_seed_cta_keywords.py",
 )
 
+# Migrations that edit the seeded values rather than adding keys, in chain order after the seeds
+# above. Leaving these out is not a small inaccuracy: the v1.0 seed says $1,500 to $14,000 and knows
+# nothing about The Pregnancy Solution, so every local run answered a price question with a figure
+# production stopped quoting, and told a pregnant woman the support she asked for does not exist.
+# Both were read as brain failures in a round of manual testing that was really testing v1.0 config.
+#
+# `_SWAPS` is key -> (old whole value, new). `_FRAGMENTS` is either the same shape or a list of
+# (key, old fragment, new fragment): both forms replace a substring inside a longer block.
+CONFIG_UPDATES = (
+    "u1v2w3x4y5z6_split_masterclass_and_replay_links.py",
+    "v2w3x4y5z6a7_v21_pricing_and_social_proof.py",
+    "w3x4y5z6a7b8_v21_knowledge_base_reconcile.py",
+)
+
+
+def _load_migration(filename: str):
+    spec = importlib.util.spec_from_file_location("_kb_seed", os.path.join(_VERSIONS, filename))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _fragments(module) -> list[tuple[str, str, str]]:
+    raw = getattr(module, "_FRAGMENTS", None) or []
+    if isinstance(raw, dict):
+        return [(key, old, new) for key, (old, new) in raw.items()]
+    return list(raw)
+
 
 def load_config() -> dict:
-    """The knowledge base exactly as the migrations seed it into `app_config`."""
+    """The knowledge base exactly as the migrations leave it in `app_config`."""
     cfg: dict = {}
     for filename in MIGRATIONS:
-        spec = importlib.util.spec_from_file_location("_kb_seed", os.path.join(_VERSIONS, filename))
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        cfg.update(module._SEED)
+        cfg.update(_load_migration(filename)._SEED)
+
+    for filename in CONFIG_UPDATES:
+        module = _load_migration(filename)
+        # `_NEW` inserts a key only where there is none, matching ON CONFLICT DO NOTHING.
+        for key, value in (getattr(module, "_NEW", None) or {}).items():
+            cfg.setdefault(key, value)
+        for key, (old, new) in (getattr(module, "_SWAPS", None) or {}).items():
+            if cfg.get(key) == old:
+                cfg[key] = new
+        for key, old, new in _fragments(module):
+            if old in cfg.get(key, ""):
+                cfg[key] = cfg[key].replace(old, new)
+
+    # `u1v2w3x4y5z6` moves the replay URL off `masterclass_link`, which it does inline rather than
+    # through a table this can read.
+    register = "https://www.thefertilitysolution.com/register"
+    replay = "https://www.thefertilitysolution.com/watch-replay"
+    if cfg.get("masterclass_link") == replay:
+        cfg["masterclass_link"] = register
     return cfg
 
 

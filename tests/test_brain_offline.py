@@ -1375,3 +1375,182 @@ async def test_a_keyword_with_no_welcome_configured_goes_to_the_brain_as_normal(
 
     assert result.action.startswith("REPLY:")
     assert len(client.calls) == 3
+
+
+# ── The six conversations of the 12 September sandbox run ────────────────────
+#
+# Codex drove the admin sandbox through the six conversations in `codex-test-prompt.md` and three
+# of them failed. Each test below pins the mechanism behind one failure, so the next change to a
+# prompt layer or a conversation file cannot quietly restore it.
+
+
+async def test_a_phone_request_cannot_hand_over_even_when_the_read_says_so():
+    """Conversation 1. The carve-out is written into both definitions of the flag and the flag
+    still came back on one run in three, which ended the turn and sent her the team's line.
+
+    The two are defined as opposites in `70_read.md`, so a read that returns both has contradicted
+    itself and the tag is the half that saw the whole conversation. `human_requested` is how she
+    says she wants somebody else, and it is left alone.
+    """
+    client = _FakeClient(
+        '{"intent": "new_prospect", "tags": ["phone_request"], "language": "en", '
+        '"flags": {"asked_for_human": true}}',
+        NO_TRIGGERS,
+    )
+    read, _ = await reader.read_turn(
+        client, [{"role": "user", "content": "can i get Sonia's phone number to call her directly"}],
+        model="gpt-4.1-mini",
+    )
+
+    assert "asked_for_human" not in read["flags"]
+    assert not dossier.gate(dossier.merge(None, read), read).escalate
+
+
+async def test_asking_for_a_person_in_the_same_breath_still_hands_over():
+    """The other half of it. She wants a number and she wants somebody else, so both are true."""
+    client = _FakeClient(
+        '{"intent": "new_prospect", "tags": ["phone_request", "human_requested"], '
+        '"language": "en", "flags": {"asked_for_human": true}}',
+        NO_TRIGGERS,
+    )
+    read, _ = await reader.read_turn(
+        client, [{"role": "user", "content": "number for someone on your team i can ring"}],
+        model="gpt-4.1-mini",
+    )
+
+    assert read["flags"]["asked_for_human"]
+
+
+def test_a_phone_request_is_told_not_to_announce_what_it_is():
+    """Conversation 1 again, the second failure in it.
+
+    With the flag fixed, every run opened with "you're chatting with an AI assistant" and the
+    boundary she asked about arrived last or not at all. `60_contract.md` carries the carve-out and
+    loses to the six emphatic paragraphs above it, so the turn says it where nothing competes.
+    """
+    read = {"intent": "new_prospect", "tags": ["phone_request"], "flags": {}, "slots": {}}
+    state = _state()
+    brief = brain._brief(dossier.gate(state, read), read, state, [])
+
+    assert "not given out through DMs" in brief
+    assert "do not announce that she is talking to an AI" in brief
+
+
+def test_a_woman_who_asked_what_is_typing_is_still_answered_on_a_phone_turn():
+    """She asked both, so the honest answer is not suppressed by the tag."""
+    read = {"intent": "new_prospect", "tags": ["phone_request"],
+            "flags": {"asked_if_ai": True}, "slots": {}}
+    state = _state()
+    brief = brain._brief(dossier.gate(state, read), read, state, [])
+
+    assert "Tell her the truth in the first line" in brief
+    assert "do not announce that she is talking to an AI" not in brief
+
+
+def test_thanking_her_is_not_a_client_relationship():
+    """Conversation 6. "Thank you for helping me through some really dark days" was read as
+    `is_former_client`, which hands over silently, so a woman ending five years of trying was
+    answered with nothing at all.
+
+    The free side of the work reaches far more women than the program does, so gratitude on its own
+    says nothing about whether she ever paid.
+    """
+    prompt = open("prompts/70_read.md", encoding="utf-8").read()
+    section = prompt[prompt.index("- `is_existing_client`"):prompt.index("- `announcement`")]
+    assert "Thanking her is not one of these" in section
+    assert "content" in section and "paid" in section
+
+
+def test_a_woman_who_has_stopped_is_answered_rather_than_handed_over():
+    """The path the same conversation takes once the flag is not set: warm, no link, no handover."""
+    read = {"intent": "gratitude", "tags": ["closing"], "flags": {"stopped_trying": True},
+            "slots": {"time_trying": "5 years"}}
+    state = dossier.merge(None, read)
+    gate = dossier.gate(state, read)
+
+    assert not gate.escalate
+    assert not gate.allow_booking and gate.block_reason == "stopped_trying"
+    assert "free_resource" not in gate.blocks, "nothing is offered into it either"
+    assert "let the conversation end" in brain._brief(gate, read, state, [])
+
+
+def test_asking_how_to_pay_is_not_asking_what_it_costs():
+    """Conversation 4. "Can I pay?" came back tagged `pricing`, which pulls the conversation whose
+    first rule is to give the figure in the message she asks in, and she was quoted a range she
+    never asked for instead of being told how to enrol.
+    """
+    prompt = open("prompts/70_read.md", encoding="utf-8").read()
+    assert "Asking how to pay is not asking what it costs" in prompt
+    assert "takes the first slot" in prompt
+
+
+def test_the_buyer_who_told_you_her_situation_has_a_conversation_to_copy():
+    """The other half of conversation 4. Every arc in the file was a lead who had told you nothing,
+    so every arc established that the program is paid before doing anything else, and the writer
+    did that to a woman who had just said she wanted to enrol and pay.
+    """
+    pb = FEW_SHOTS["ready_to_book"]
+    arc = next((c for c in pb.conversations if "can I pay" in c), None)
+    assert arc, "no arc where she says she wants to enrol and asks how to pay"
+    assert "{{booking_link}}" in arc, "the link goes in the reply she asked it in"
+    assert "paid" not in arc.split("Lead:")[2], "she is not warned about a fee she just offered"
+
+
+def test_pregnancy_support_survives_a_turn_with_no_link():
+    """Conversation 3. The only arc that named The Pregnancy Solution ended in the link, so
+    `Playbook.render` dropped it on every turn that could not book, which is the turn she asks on.
+    """
+    pb = FEW_SHOTS["pregnancy_support"]
+    assert "The Pregnancy Solution" in pb.render(allow_booking=False)
+
+
+def test_the_pregnancy_program_is_named_when_she_asks_for_it():
+    """And the turn says so, because "yes, I do support women through pregnancy" leaves her having
+    to ask a second time what the thing is."""
+    read = {"intent": "pregnancy_announcement", "tags": ["celebration", "pregnancy_support"],
+            "flags": {"currently_pregnant": True, "wants_pregnancy_support": True},
+            "slots": {"miscarriage_history": "3 losses"}}
+    state = dossier.merge(None, read)
+    brief = brain._brief(dossier.gate(state, read), read, state, [])
+
+    assert "The Pregnancy Solution" in brief
+
+
+def test_an_announcement_on_its_own_is_still_only_congratulated():
+    """The rule the fix above must not break. She has asked for nothing, so nothing is offered."""
+    read = {"intent": "pregnancy_announcement", "tags": ["celebration"],
+            "flags": {"currently_pregnant": True}, "slots": {}}
+    state = dossier.merge(None, read)
+    gate = dossier.gate(state, read)
+    brief = brain._brief(gate, read, state, [])
+
+    assert gate.block_reason == "currently_pregnant"
+    assert "The Pregnancy Solution" not in brief
+    assert "Congratulate her and stop" in brief
+    # v1.0 said pregnancy coaching was not something she does, and that line outlived the fact.
+    assert "not what you do" not in brief
+
+
+def test_the_woman_who_already_has_a_provider_is_owed_something_concrete():
+    """Conversation 2. Twice in three runs the reply answered with the shape of an answer: a clear
+    sense of what to focus on first, the right things in the right order. All true, none of it
+    about her, and none of it visibly different from what her acupuncturist already does.
+    """
+    read = {"intent": "new_prospect", "tags": ["complementary_provider", "long_ttc"],
+            "flags": {}, "slots": {"already_tried": ["fertility acupuncture"]}}
+    state = _state(QUALIFIED)
+    brief = brain._brief(dossier.gate(state, read), read, state, [])
+
+    assert "Name one concrete thing" in brief
+    assert "are not an answer on their own" in brief
+
+
+def test_years_of_trying_answer_the_priority_question():
+    """The question the reply put to a woman 4 years in: whether having a baby is one of her
+    biggest priorities. The slot already read a treatment cycle as an answer; years of it are the
+    same answer paid in time rather than in money.
+    """
+    prompt = open("prompts/70_read.md", encoding="utf-8").read()
+    section = prompt[prompt.index("- `pregnancy_priority`"):prompt.index("- `email`")]
+    assert "So do years of it" in section
+    assert "2 years or more" in section
