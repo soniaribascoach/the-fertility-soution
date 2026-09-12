@@ -146,8 +146,16 @@ on the list above does not simply fail: it takes a slot away from one that would
 the reply gets written from the wrong conversation.
 
 You may return at most three tags, so they compete. `free_coaching`, `closing`, `ready_to_book`,
-`guarantee`, `not_priority` and `human_requested` describe what the conversation has become rather
-than what she has. See the two mandatory checks in RULES below.
+`guarantee`, `not_priority`, `human_requested`, `phone_request`, `complementary_provider`,
+`hormone_request` and `pregnancy_support` describe what the conversation has become rather than
+what she has. See the two mandatory checks in RULES below.
+
+**These beat condition tags for a slot, every time.** A woman with low AMH doing IVF who tells you
+she already sees an acupuncturist has three true condition tags and one tag that says what she is
+actually asking. If `low_amh`, `ivf_prep` and `long_ttc` take the slots, the reply gets written
+from a conversation about IVF preparation and never answers the question she asked, which was what
+you would add to what she already has. Her diagnosis is still true on her tenth message. What she
+is asking changes every turn, and it is what decides which conversation the reply comes from.
 
 ## SLOTS: include a key only if she stated it in this conversation
 
