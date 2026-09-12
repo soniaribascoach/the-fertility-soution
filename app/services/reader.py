@@ -238,6 +238,13 @@ list.
   event or a routine symptom is NOT this.
 - `asked_if_ai`: she asks or wonders whether she is talking to a real person, a bot, an AI or an
   automated system.
+
+  **Asking for a phone number is not this.** "Can I get Sonia's number so I can call her
+  directly?" is a request for a different channel to the same person. Referring to Sonia by name
+  or as "her" is how anybody writes to a business account and is not a doubt about who is typing.
+  Setting this makes the reply volunteer that it is an AI, in answer to a question about a phone
+  number, and the boundary she actually asked about never gets said. Set it only when the message
+  questions what is replying: a bot, a person, automated, AI, real.
 - `asked_for_human`: she wants to stop talking to whoever is replying and be handed to somebody
   else. "Can I speak to a real person?", "is there an actual human there?", "I'd rather talk to
   someone on your team instead".
@@ -260,8 +267,8 @@ list.
   she is the one replying, so "I want to talk to Sonia", "can I speak to her directly", "I'd rather
   deal with Sonia herself", "is Sonia there?" are requests for the person who is already in the
   conversation. Naming her, or saying "her" or "she", does not make it a request for somebody else.
-  It usually means she thinks she is talking to an assistant and wants the real thing, and the
-  answer is that she already is.
+  Most of the time she just prefers a call to typing. She is raising no question about who is
+  replying, so this does not make `asked_if_ai` true either.
 
   Set this flag only when she asks for a person **other than Sonia**: the team, an assistant, a
   human, anyone at all who is not the person writing back.

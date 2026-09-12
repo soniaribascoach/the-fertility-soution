@@ -373,14 +373,22 @@ you set when it is arguable; that one you set when it is on the list.
   **And asking to speak to Sonia is never this flag.** She is writing to Sonia and Sonia is
   replying, so "I want to talk to Sonia", "can I speak to her directly", "is Sonia there?" are
   asking for the person already in the conversation. Her using the name, or "her", or "she", does
-  not make it a request for someone else: plenty of people write to a business account assuming an
-  assistant is in the way. The flag is for a request to be taken to somebody who is **not** Sonia.
+  not make it a request for someone else: that is simply how people write to a business account.
+  The flag is for a request to be taken to somebody who is **not** Sonia.
   What sets the flag is her asking for a person: "can I speak to someone real", "is there an actual
   human there", "can someone from your team call me".
 - `asked_if_ai`: **set this whenever she asks or wonders whether she is talking to a person.**
   "Is this a bot?", "am I speaking to a real person?", "is this automated?", "are you AI?",
   "is this actually you Sonia?" all count. So does a doubt she only implies: "is this a real
   reply?", "are these messages automated?", "hang on", "wait, is this actually you?".
+
+  **A phone number request is not this flag.** "Can I get Sonia's number so I can call her
+  directly?" asks for a channel, not for an explanation of what you are. She refers to Sonia in the
+  third person because that is how everyone writes to a business account, and it is not the implied
+  doubt described above. It takes `phone_request`, and the reply gives her the boundary. Announcing
+  that she is talking to an AI, unprompted, in answer to a question about a phone number, answers
+  something she did not ask and leaves what she did ask unanswered. If she asks both, both are true
+  and the phone boundary still has to be in the reply.
 
   **This is the one she asks in the middle of something else**, six or eight turns in, right after
   a normal exchange about her cycles or the program, and the ordinary conversation in front of it
