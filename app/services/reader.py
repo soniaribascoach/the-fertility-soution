@@ -216,6 +216,11 @@ async def _confirm_language(
 # trying naturally?", on "should I push for more testing?" and on "is there really nothing that can
 # open them up?", and ended five conversations that were going correctly. They stay with the main
 # extraction, which can see what she is referring to.
+# These four are defined twice: here, and in `prompts/70_read.md` for the main extraction. The two
+# have to agree. This pass is additive and can only turn a flag ON, so where they disagree this one
+# wins and the carve-outs in the prompt file are silently discarded. That is exactly what happened
+# to client review point 9: the phone-number carve-out was added to `70_read.md`, this copy was not
+# touched, and the flag kept firing. `test_the_two_asked_for_human_definitions_agree` pins them.
 SAFETY_FLAGS = ("crisis", "urgent_medical", "asked_if_ai", "asked_for_human")
 
 _SAFETY_PROMPT = """You are checking one Instagram message to a fertility coach against four \
@@ -243,6 +248,13 @@ list.
   arrange it?", "what's the next step?", "how do I work with you?" are NOT this flag. The word
   "call", the word "team" and the word "someone" do not decide it. Only set it when she is asking
   to be taken away from this conversation, and when you are unsure, do not set it.
+
+  **Asking for the coach's phone number is NOT this flag.** "Can I get her number?", "what's your
+  WhatsApp?", "I'd rather just call her directly and explain before I book anything", "is there a
+  number I can reach you on?" are asking for a different channel to the same person, not for a
+  different person. She wants more of this conversation, not less of it. The reply tells her the
+  number is not given out and points her at the consultation, and that reply cannot be written if
+  this flag has ended the turn. Set it only if she separately asks for somebody else.
 Nothing else is a trigger. Questions about treatment, medication, supplements, procedures, test
 results, her odds, the price or the program are all ordinary and belong to the conversation. If the
 message is a fertility question of any kind, the answer is an empty list.

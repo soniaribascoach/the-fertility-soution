@@ -89,7 +89,7 @@ donor_eggs · just_started · long_ttc · pricing · affordability · partner ·
 post_booking · thinking_about_it · credentials · coach_vs_doctor · lab_request ·
 supplement_request · hormone_request · medication_request · surgery_request · free_coaching ·
 guarantee · pregnancy_support · complementary_provider · not_priority · hopeless · fear_of_time ·
-loss_recent · celebration · human_requested · technical · closing
+loss_recent · celebration · human_requested · phone_request · technical · closing
 
 `technical` is for a broken link, a missing email, a payment or the booking page: a fault with
 something of mine, not a question about fertility.
@@ -132,6 +132,10 @@ mark. It is not `coach_vs_doctor`, which is about where Sonia stands next to a c
 `hormone_request` is the DHEA tag, and anything else that acts as a hormone however it is sold. It
 is separate from `supplement_request` because the answer is different: a supplement question gets
 answered, a hormone question goes to her medical provider.
+
+`phone_request` is for a woman asking for Sonia's number, her WhatsApp, or a way to call her
+directly. `human_requested` is for a woman asking for a different person. They look similar and the
+replies are opposites: one keeps her in this conversation with a boundary, the other ends it.
 
 **That list is the whole vocabulary.** These have all been returned by mistake and none of them are
 tags: `age`, `partner_status`, `menopause`, `cancer_survivor`, `pregnancy_announcement`,
@@ -354,7 +358,9 @@ you set when it is arguable; that one you set when it is on the list.
   WhatsApp?", "I'd rather call her directly and explain before I book anything" are asking for a
   channel, not for a different person, and usually they are a strong lead trying to skip a form.
   Handing her over answers a question she did not ask and ends the conversation she was in the
-  middle of. Tag it `human_requested` so the reply carries the boundary, and leave the flag alone.
+  middle of. Tag it `phone_request` so the reply carries the boundary, and leave the flag alone.
+  Not `human_requested`, which belongs to a woman asking for a person and pulls the wrong
+  conversation for this.
   What sets the flag is her asking for a person: "can I speak to someone real", "is there an actual
   human there", "can someone from your team call me".
 - `asked_if_ai`: **set this whenever she asks or wonders whether she is talking to a person.**

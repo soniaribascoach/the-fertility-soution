@@ -621,6 +621,63 @@ def test_the_crisis_trigger_no_longer_fires_on_fertility_exhaustion():
     assert "do not set this flag. Set `needs_human`" in reader_prompt
 
 
+def test_the_two_asked_for_human_definitions_agree():
+    """Client review point 9, and the reason the first fix did nothing.
+
+    `asked_for_human` is defined in two places: `prompts/70_read.md` for the main extraction, and
+    `_SAFETY_PROMPT` for the narrow second look. The safety pass is additive, it can only turn a
+    flag on, so a carve-out that exists in one file and not the other is a carve-out that never
+    takes effect. The phone-number exception went into the prompt file alone and the flag carried
+    on firing, which ends the turn and leaves the boundary reply unwritten.
+    """
+    from app.services.reader import _SAFETY_PROMPT
+
+    reader_prompt = open("prompts/70_read.md", encoding="utf-8").read()
+    for text in (_SAFETY_PROMPT, reader_prompt):
+        assert "phone number" in text.lower(), "the carve-out has to exist in both definitions"
+        assert "WhatsApp" in text, "the channel she actually asks for is named, not implied"
+        assert "call her directly" in text, "Sonia's own test message is pinned in both"
+
+
+def test_a_phone_request_does_not_escalate_and_keeps_the_link():
+    """Client review point 9, the whole path rather than one definition.
+
+    She asked for a number, which is a channel, not a different person. Nothing hands over, and a
+    woman who is otherwise qualified does not lose the link over it.
+    """
+    read = {"intent": "program_question", "tags": ["phone_request"], "flags": {}, "slots": {}}
+    gate = dossier.gate(_state(QUALIFIED), read)
+    assert not gate.escalate
+    assert gate.allow_booking, gate.block_reason
+
+
+def test_asking_for_a_person_still_hands_over():
+    """The other half. These two look alike and the replies are opposites."""
+    read = {"intent": "program_question", "tags": ["human_requested"],
+            "flags": {"asked_for_human": True}, "slots": {}}
+    gate = dossier.gate(_state(QUALIFIED, flags={"asked_for_human": True}), read)
+    assert gate.escalate
+    assert gate.escalate_reason == "asked_for_human"
+
+
+def test_a_phone_request_gets_its_own_conversation():
+    """It used to take `human_requested`, whose only example is the existing-client file.
+
+    So even with the flag fixed the writer was handed the wrong conversation to copy.
+    """
+    from app.services.few_shots import load_few_shot_scenarios, select_playbooks
+
+    pbs = load_few_shot_scenarios()
+    chosen = select_playbooks(pbs, intent="program_question", tags={"phone_request"},
+                              language="en", allow_booking=False, limit=3)
+    assert [pb.name for pb in chosen] == ["phone_request"]
+
+    # and the existing-client conversation is still reachable for the case it was written for
+    chosen = select_playbooks(pbs, intent="existing_client", tags={"human_requested"},
+                              language="en", allow_booking=False, limit=3)
+    assert "existing_or_former_client" in [pb.name for pb in chosen]
+
+
 def test_missing_config_collapses_rather_than_leaking_braces():
     built = prompts.build_write_prompt({}, {"booking"})
     assert "{{" not in built
