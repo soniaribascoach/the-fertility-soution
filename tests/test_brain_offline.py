@@ -187,6 +187,36 @@ def test_someone_who_opens_ready_is_not_made_to_wait():
     assert gate.allow_booking
 
 
+def test_a_first_message_buyer_gets_the_link_not_the_price():
+    """Production, 12 September: "I'm 38, trying 4 years, I want to enrol, can I pay?"
+
+    She was answered with "yes, the program is paid" and a range she never asked for. Readiness is
+    a tag in `70_read.md`, not an intent, and this gate only ever tested the intent, so the woman
+    the bypass was written for could not reach it. `warm_prospect` there is the returning lead.
+    """
+    read = {
+        "intent": "price_question",
+        "tags": ["ready_to_book", "long_ttc"],
+        "slots": {"age": 38, "time_trying": "4 years", "conceiving_mode": "natural",
+                  "partner_status": "partnered", "goal_stated": "wants to enrol and pay"},
+    }
+    gate = dossier.gate(dossier.merge(None, read) | {"counters": {"turns": 0}, "phase": None}, read)
+    assert gate.allow_booking, gate.block_reason
+
+
+def test_readiness_alone_is_not_an_understanding():
+    """The bypass skips the blanket first-turn rule and nothing else.
+
+    "Take my money" with nothing else in it still fails the `known < 3` check in
+    `_booking_blocked`, because deciding to buy is not the same as being understood well enough to
+    be invited honestly.
+    """
+    read = {"intent": "price_question", "tags": ["ready_to_book"], "slots": {}}
+    gate = dossier.gate(dossier.merge(None, read) | {"counters": {"turns": 0}, "phase": None}, read)
+    assert not gate.allow_booking
+    assert gate.block_reason == "not_enough_context"
+
+
 def test_an_unstated_age_no_longer_shuts_the_link():
     """v2.0 §B: age is a boundary check, not a precondition to offering a call.
 

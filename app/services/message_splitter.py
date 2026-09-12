@@ -15,7 +15,7 @@ _EM, _EN = "\u2014", "\u2013"
 _ANY_DASH = f"(?:[{_EM}{_EN}]|--)"
 
 _DASH = re.compile(rf"[ \t]*{_ANY_DASH}[ \t]*")
-# A range, including the one that matters most here, "$1,500-$14,000".
+# A range, including the one that matters most here, "$1,500-$7,200".
 _DIGIT_DASH = re.compile(rf"(?<=\d)[ \t]*{_ANY_DASH}[ \t]*(?=[$€£]?\s?\d)")
 _LEADING_DASH = re.compile(rf"(?m)^[ \t]*{_ANY_DASH}[ \t]*")
 

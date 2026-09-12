@@ -405,7 +405,21 @@ def gate(state: dict, read: dict) -> Gate:
     blocked_for = _booking_blocked(state, read)
     # Someone who opens with "how do I work with you" is ready and should not be re-qualified;
     # everyone else gets at least one real exchange before a call is mentioned.
-    if not blocked_for and _first_exchange(state) and read.get("intent") != "warm_prospect":
+    #
+    # Readiness arrives as a tag, not as an intent. `warm_prospect` in `70_read.md` is the woman
+    # picking a conversation back up, and nothing there makes a first-message buyer one, so this
+    # test could never see the lead it was written for. "I'm 38, trying 4 years, I want to enrol,
+    # can I pay" was read correctly and tagged `ready_to_book`, and was then blocked here on turn
+    # one. With no link available the only thing left to say about paying was that the program is
+    # paid and what it costs, which is client review point 3 arriving through the gate after v2.0
+    # closed it in the prompt.
+    #
+    # `_booking_blocked` still runs first and is untouched, so this skips the blanket first-turn
+    # rule and nothing else. A woman who says "take my money" and tells you nothing about herself
+    # is still held by the `known < 3` check: readiness to buy is not the same as being understood
+    # well enough to invite honestly.
+    ready = read.get("intent") == "warm_prospect" or "ready_to_book" in (read.get("tags") or [])
+    if not blocked_for and _first_exchange(state) and not ready:
         blocked_for = "first_exchange"
 
     if blocked_for:
