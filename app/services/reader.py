@@ -249,12 +249,22 @@ list.
   "call", the word "team" and the word "someone" do not decide it. Only set it when she is asking
   to be taken away from this conversation, and when you are unsure, do not set it.
 
-  **Asking for the coach's phone number is NOT this flag.** "Can I get her number?", "what's your
-  WhatsApp?", "I'd rather just call her directly and explain before I book anything", "is there a
+  **Asking for the coach's phone number is NOT this flag.** "Can I get Sonia's number?", "what's
+  your WhatsApp?", "I'd rather call her directly and explain before I book anything", "is there a
   number I can reach you on?" are asking for a different channel to the same person, not for a
   different person. She wants more of this conversation, not less of it. The reply tells her the
   number is not given out and points her at the consultation, and that reply cannot be written if
-  this flag has ended the turn. Set it only if she separately asks for somebody else.
+  this flag has ended the turn.
+
+  **Asking to speak to Sonia is NOT this flag, ever.** You are reading messages sent to Sonia and
+  she is the one replying, so "I want to talk to Sonia", "can I speak to her directly", "I'd rather
+  deal with Sonia herself", "is Sonia there?" are requests for the person who is already in the
+  conversation. Naming her, or saying "her" or "she", does not make it a request for somebody else.
+  It usually means she thinks she is talking to an assistant and wants the real thing, and the
+  answer is that she already is.
+
+  Set this flag only when she asks for a person **other than Sonia**: the team, an assistant, a
+  human, anyone at all who is not the person writing back.
 Nothing else is a trigger. Questions about treatment, medication, supplements, procedures, test
 results, her odds, the price or the program are all ordinary and belong to the conversation. If the
 message is a fertility question of any kind, the answer is an empty list.

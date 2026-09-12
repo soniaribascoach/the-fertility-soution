@@ -362,13 +362,19 @@ you set when it is arguable; that one you set when it is on the list.
   with this?" are not asking for a human. Setting it there stops the conversation dead on the turn
   where she was leaning in.
 
-  **Asking for Sonia's phone number is not this flag either.** "Can I get her number?", "what's her
-  WhatsApp?", "I'd rather call her directly and explain before I book anything" are asking for a
+  **Asking for Sonia's phone number is not this flag either.** "Can I get Sonia's number?", "what's
+  her WhatsApp?", "I'd rather call her directly and explain before I book anything" are asking for a
   channel, not for a different person, and usually they are a strong lead trying to skip a form.
   Handing her over answers a question she did not ask and ends the conversation she was in the
   middle of. Tag it `phone_request` so the reply carries the boundary, and leave the flag alone.
   Not `human_requested`, which belongs to a woman asking for a person and pulls the wrong
   conversation for this.
+
+  **And asking to speak to Sonia is never this flag.** She is writing to Sonia and Sonia is
+  replying, so "I want to talk to Sonia", "can I speak to her directly", "is Sonia there?" are
+  asking for the person already in the conversation. Her using the name, or "her", or "she", does
+  not make it a request for someone else: plenty of people write to a business account assuming an
+  assistant is in the way. The flag is for a request to be taken to somebody who is **not** Sonia.
   What sets the flag is her asking for a person: "can I speak to someone real", "is there an actual
   human there", "can someone from your team call me".
 - `asked_if_ai`: **set this whenever she asks or wonders whether she is talking to a person.**

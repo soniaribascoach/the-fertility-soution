@@ -637,6 +637,11 @@ def test_the_two_asked_for_human_definitions_agree():
         assert "phone number" in text.lower(), "the carve-out has to exist in both definitions"
         assert "WhatsApp" in text, "the channel she actually asks for is named, not implied"
         assert "call her directly" in text, "Sonia's own test message is pinned in both"
+        # The AI is Sonia, so a request for Sonia is a request for the person already replying.
+        # "I'd like to talk to her directly" read as a request for somebody else and handed over.
+        assert "speak to Sonia" in text or "talk to Sonia" in text, (
+            "asking for Sonia herself has to be carved out in both definitions"
+        )
 
 
 def test_a_phone_request_does_not_escalate_and_keeps_the_link():
