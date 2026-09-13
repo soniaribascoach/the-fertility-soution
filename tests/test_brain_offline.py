@@ -158,9 +158,18 @@ def test_dossier_renders_what_she_said():
 
 # ── The gates ────────────────────────────────────────────────────────────────
 
-def _state(slots=None, flags=None, phase=None, turns=2):
-    """A lead mid-conversation by default, a first exchange is gated on its own account."""
-    state = dossier.merge(None, {"slots": slots or {}, "flags": flags or {}})
+def _state(slots=None, flags=None, phase=None, turns=2, paid_disclosed=True):
+    """A lead mid-conversation by default, a first exchange is gated on its own account.
+
+    `paid_disclosed` defaults to true because almost every test here is about something else, and
+    a lead who has been talking long enough to reach a tubal question or a pregnancy request has
+    been told the commercial terms somewhere behind her. The tests that are about that ordering
+    pass it false and say so.
+    """
+    flags = dict(flags or {})
+    if paid_disclosed:
+        flags.setdefault("understands_paid_program", True)
+    state = dossier.merge(None, {"slots": slots or {}, "flags": flags})
     state["counters"]["turns"] = turns
     state["phase"] = phase
     return state
@@ -1432,11 +1441,120 @@ def test_a_phone_request_is_told_not_to_announce_what_it_is():
     state = _state()
     brief = brain._brief(dossier.gate(state, read), read, state, [])
 
-    assert "not give the number out through DMs" in brief
+    assert "not give a personal number out through DMs" in brief
     assert "do not announce that she is talking to an AI" in brief
     # A bare no plus a question is what the terse first version of this produced, and it gave her
     # nothing: she is already talking to the person she wanted to ring, which is the answer.
     assert "she can tell you the whole of it right here" in brief
+    # The version before this one supplied a reason for the boundary, that a call would be Sonia
+    # between other calls rather than her full attention. Nothing in the manual says that and
+    # nothing in the knowledge base knows what her day looks like.
+    assert "Do not invent a reason for the boundary" in brief
+
+
+def test_no_link_until_she_has_been_told_it_is_paid():
+    """v2.1 §A and 2B.1 §15: the disclosure is a message of its own, ahead of the invitation.
+
+    `60_contract.md` has said so for four rounds and the reply still came back as the disclosure and
+    the invitation in one breath, with the link turned into a question she had to answer.
+    """
+    read = {"intent": "program_question"}
+    gate = dossier.gate(_state(QUALIFIED, paid_disclosed=False), read)
+
+    assert not gate.allow_booking
+    assert gate.block_reason == "paid_not_disclosed"
+
+
+def test_the_paid_turn_is_told_what_to_say_instead():
+    read = {"intent": "program_question"}
+    state = _state(QUALIFIED, paid_disclosed=False)
+    brief = brain._brief(dossier.gate(state, read), read, state, [])
+
+    assert "it is a paid coaching program" in brief
+    assert "do not ask whether she would like a link" in brief
+
+
+def test_a_woman_who_wants_to_buy_is_not_held_for_the_disclosure():
+    """v2.1 §A: she asked how to pay. Holding the link to warn her it is paid is that warning."""
+    read = {"intent": "new_prospect", "tags": ["ready_to_book"]}
+    gate = dossier.gate(_state(QUALIFIED, paid_disclosed=False), read)
+
+    assert gate.allow_booking
+
+
+def test_a_spanish_no_on_english_materials_is_not_asked_twice():
+    """v2.1 §L: if she cannot work with English materials that is the end of it."""
+    read = {"intent": "program_question"}
+    state = _state(QUALIFIED, flags={"declines_english_materials": True})
+    state["slots"]["language"] = "es"
+    gate = dossier.gate(state, read)
+
+    assert not gate.allow_booking
+    assert gate.block_reason == "declines_english_materials"
+
+    brief = brain._brief(gate, read, state, [])
+    assert "Do not ask her again in different words" in brief
+    assert "promise a translation" in brief
+
+
+def test_a_spanish_conversation_is_told_to_disclose_now():
+    read = {"intent": "program_question"}
+    state = _state(QUALIFIED)
+    state["slots"]["language"] = "es"
+    gate = dossier.gate(state, read)
+
+    assert gate.block_reason == "english_materials_undisclosed"
+    brief = brain._brief(gate, read, state, [])
+    assert "the materials are in English" in brief
+    assert "Do not save it for later" in brief
+
+
+def test_a_fresh_loss_is_offered_no_free_resource():
+    """The link was already shut. The masterclass was still being rendered into the prompt."""
+    read = {"intent": "grief_or_loss"}
+    gate = dossier.gate(_state(QUALIFIED, flags={"recent_loss": True}), read)
+
+    assert not gate.allow_booking
+    assert "free_resource" not in gate.blocks
+
+
+def test_a_lab_refusal_is_not_told_to_promise_a_closer_look():
+    """v2.1 §5: never phrase the refusal so a fuller review would produce the reading."""
+    read = {"intent": "advice_request"}
+    state = _state(QUALIFIED, flags={"requested_lab_interpretation": True})
+    brief = brain._brief(dossier.gate(state, read), read, state, [])
+
+    assert "whole picture" not in brief.split("Do not say you would need")[0]
+    assert "reading results properly is the coaching itself" in brief
+
+
+def test_a_phone_request_is_pointed_at_the_consultation_when_there_is_one():
+    """v2.1 §13: the boundary is half of it, and the route to a real conversation is the other."""
+    read = {"intent": "new_prospect", "tags": ["phone_request"], "flags": {}, "slots": {}}
+    state = _state(QUALIFIED)
+    gate = dossier.gate(state, read)
+    assert gate.allow_booking
+    brief = brain._brief(gate, read, state, [])
+
+    assert "the consultation is that conversation" in brief
+    assert "whoever she speaks to can see what she has already told you" in brief
+
+
+def test_a_phone_request_with_no_call_available_is_not_sold_one():
+    """The same turn one message in, where the gate has nothing to offer.
+
+    The manual says to direct her to the consultation process and `60_contract.md` says a call may
+    not be named before she has been told this is paid. On the turn where both apply, the second
+    one wins: an invitation she cannot price is the thing the ordering exists to prevent.
+    """
+    read = {"intent": "new_prospect", "tags": ["phone_request"], "flags": {}, "slots": {}}
+    state = _state(turns=1)
+    gate = dossier.gate(state, read)
+    assert not gate.allow_booking
+    brief = brain._brief(gate, read, state, [])
+
+    assert "do not name one, do not describe the consultation" in brief
+    assert "Ask her what is going on instead" in brief
 
 
 def test_a_woman_who_asked_what_is_typing_is_still_answered_on_a_phone_turn():

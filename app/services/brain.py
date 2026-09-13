@@ -172,14 +172,34 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
             "- She has asked for a phone number, a WhatsApp or a way to call you directly. That is "
             "a request for another way to reach the same person, not a question about who is "
             "typing and not a request for somebody else, so do not announce that she is talking to "
-            "an AI, do not offer to bring in a human, and do not hand her over. Three things, in "
-            "this order: she is already talking to you, so she can tell you the whole of it right "
-            "here; you do not give the number out through DMs, said once and without apology; and "
-            "a phone call would not get her what she wants anyway, because it would be you between "
-            "other calls rather than the proper attention she is asking for. Then ask her what is "
-            "going on. A bare refusal with a question after it answers her without giving her "
-            "anything, which is what she came to the DMs to avoid."
+            "an AI, do not offer to bring in a human, and do not hand her over. Say two things: "
+            "she is already talking to you, so she can tell you the whole of it right here, and "
+            "you do not give a personal number out through DMs, said once and without apology. Do "
+            "not invent a reason for the boundary, and in particular do not tell her what a call "
+            "with you would or would not be like: you do not know what your day looks like and "
+            "she will hear it as a brush-off. A bare refusal with a question after it answers her "
+            "without giving her anything, which is what she came to the DMs to avoid."
         )
+        # v2.1 §13 and §G: the boundary is half the answer, and the other half is the route to the
+        # real conversation she was after. That route is the consultation, and it only exists on a
+        # turn where the gate has opened it. Where it has not, the honest thing in its place is the
+        # conversation she is already in: she has told us nothing yet, and a call named before she
+        # has been told this is paid is the invitation `60_contract.md` forbids.
+        if gate.allow_booking:
+            lines.append(
+                "- What she actually wants is a proper conversation rather than a number, and the "
+                "consultation is that conversation, so point her at it and put the link in this "
+                "message. If what is behind the request is that she does not want to repeat "
+                "herself, say so and answer it: whoever she speaks to can see what she has already "
+                "told you."
+            )
+        else:
+            lines.append(
+                "- You have no call to offer her this turn, so do not name one, do not describe "
+                "the consultation and do not say what the next step would be. Ask her what is "
+                "going on instead. She came here to be heard by a person, and the whole of that "
+                "is available to her right now in this conversation."
+            )
 
     # v2.1 §D. The gate lets this conversation through and the knowledge base carries the program,
     # but on a turn with no link in it the reply came back as "yes, I do support women through
@@ -250,8 +270,12 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
         "lab_request": (
             "- She has put test results in front of you. Do not tell her what any number means, "
             "not even loosely, not even with a caveat, and do not say a value is low, high, "
-            "borderline or optimal. Explain why reading them properly needs her whole picture, "
-            "and give her something useful to do instead."
+            "borderline or optimal. Say that reading results properly is the coaching itself "
+            "rather than something done over DM, and that what a number means for her belongs "
+            "with the people running her care. Do not say you would need her full situation, her "
+            "whole picture, her complete case or more context: every one of those tells her the "
+            "reading exists behind the boundary and she would have it if she gave you enough. "
+            "Then give her something useful to do instead."
         ),
         "out_of_scope_request": (
             "- She is asking for something you do not provide. Say so plainly in one sentence and "
@@ -276,6 +300,35 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
             "again. Tell her nothing about what is normally done, say the question is worth "
             "asking and is one for the person who cared for her, and stay with the fact that it "
             "is days old."
+        ),
+        # v2.1 §L. The gate holds the link until she has answered, but for five runs nothing told
+        # the writer what the missing answer was, so the disclosure arrived whenever the model
+        # happened to think of it, which was after the price and one turn before the link.
+        "english_materials_undisclosed": (
+            "- She is writing in Spanish and has not yet been told that the program materials are "
+            "in English. Tell her now, in Spanish, in this message: you coach her in Spanish, the "
+            "materials are in English, and ask whether she would be comfortable working with them. "
+            "Do not save it for later, do not put it after a price, and do not mention a call or a "
+            "link until she has answered."
+        ),
+        "declines_english_materials": (
+            "- She has said English materials would not work for her. That is the end of it: she "
+            "is not booked and there is nothing to arrange. Say so warmly and plainly, in Spanish. "
+            "Do not ask her again in different words, do not soften it into a maybe, do not "
+            "promise a translation, and do not suggest the team might arrange something. You do "
+            "not know that, and hope built on it costs her more than the plain answer."
+        ),
+        # The one gated reason whose forward move is a sentence rather than a question. Without it
+        # the writer is told only "no consultation this turn", and what came back was the
+        # disclosure and the invitation crushed into one reply with the link offered as a question.
+        "paid_not_disclosed": (
+            "- Nothing in this conversation has told her yet that this is paid, so there is no "
+            "honest way to mention a call in this message. Tell her instead, in your own words: it "
+            "is a paid coaching program that asks for commitment, participation and a financial "
+            "investment, and the level of support varies. No figure, unless she has asked what it "
+            "costs. Do not name a call, a consultation, a first step, a next step or the team "
+            "arranging one, and do not ask whether she would like a link. Once she has been told, "
+            "the invitation is available to you on the turn after this one."
         ),
         "demands_guarantee": (
             "- She wants a guarantee. Say clearly that no honest coach can give one, and do not "
@@ -337,14 +390,20 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
             "- These are still general questions and you have already sent her the masterclass, so "
             "do not send it again and do not repeat what you said when you did. Answer this one in "
             "a single line if it has an honest one-line answer, or say you have nothing to add "
-            "from here. Then ask the one thing that would let you say something real about her "
-            "situation, or leave the door open and stop."
+            "from here. Then leave the door open and stop. Do not finish with a question about "
+            "her situation: she has now asked you several things about how fertility works and "
+            "told you nothing about herself, and a discovery question bolted onto every answer is "
+            "the exchange turned into qualification, which is the one thing this kind of "
+            "conversation must not become."
         )
     elif teaching >= 3:
         lines.append(
             f"- This is general question number {teaching} in a row, with nothing about her in any "
-            "of them. Stop teaching. Do not answer this one: say plainly that going one question "
-            "at a time is not getting her anywhere, and send the masterclass link in this message."
+            "of them. Say plainly that going one question at a time is not getting her anywhere, "
+            "and send the masterclass link in this message. Answer this one in a line if it has an "
+            "honest short answer, and do not teach beyond that: no mechanism, no evidence, no "
+            "view on whether the thing is worth doing. Do not finish with a question about her "
+            "situation."
         )
     elif teaching == 2:
         lines.append(

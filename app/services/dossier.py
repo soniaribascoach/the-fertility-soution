@@ -115,6 +115,7 @@ _REASON_TAGS = {
     "currently_pregnant": "celebration",
     "stopped_trying": "stopped_trying",
     "english_materials_undisclosed": "english_materials",
+    "declines_english_materials": "english_materials",
 }
 
 
@@ -329,6 +330,11 @@ def _booking_blocked(state: dict, read: dict) -> str:
     # Keyed on the language she is actually writing in. A woman writing in English is not asked to
     # confirm she can read English.
     if slots.get("language") == "es" and not flags.get("accepts_english_materials"):
+        # Her no comes first, because the two reasons want opposite replies out of the writer. The
+        # undisclosed branch says "tell her and ask"; asking a woman who has already answered is
+        # the failure v2.1 §L is written to prevent.
+        if flags.get("declines_english_materials"):
+            return "declines_english_materials"
         return "english_materials_undisclosed"
 
     known = sum(
@@ -338,6 +344,23 @@ def _booking_blocked(state: dict, read: dict) -> str:
     ) + (1 if slots.get("diagnoses") else 0) + (1 if slots.get("already_tried") else 0)
     if known < 3:
         return "not_enough_context"
+
+    # 2B.1 §15 and v2.1 §A: she has to know this is paid before she is invited, and it has to
+    # arrive in a message of its own rather than bolted to the link. `60_contract.md` has said so
+    # in the strongest wording available for four rounds and the reply still came back as "my
+    # program is paid, and my team can take you through a free consultation, would you like the
+    # link?", which is the disclosure and the invitation in one breath with the link turned into a
+    # question she has to answer. So the ordering is held here instead of asked for: no disclosure,
+    # no link, and the turn after it is said the gate opens on its own.
+    #
+    # The woman who has told you she wants to buy is the exception, and she is the same exception
+    # `gate` makes below. v2.1 §A: "a high-intent person who asks how to pay or enroll should
+    # receive the enrollment answer or next step immediately; do not warn her about financial
+    # readiness before answering." Holding the link from her to tell her it is paid is that warning
+    # wearing a gate.
+    ready_to_buy = read.get("intent") == "warm_prospect" or "ready_to_book" in (read.get("tags") or [])
+    if not flags.get("understands_paid_program") and not ready_to_buy:
+        return "paid_not_disclosed"
 
     return ""
 
@@ -419,6 +442,13 @@ def gate(state: dict, read: dict) -> Gate:
     if (read.get("flags") or {}).get("stopped_trying"):
         blocks.discard("free_resource")
 
+    # Same reasoning, days after a loss. `_booking_blocked` already shuts the link on `recent_loss`
+    # and the brief tells the writer to offer nothing, but the masterclass was still rendered into
+    # the prompt, which leaves a free resource sitting in front of a model told to be warm. A
+    # course offered to a woman whose pregnancy ended on Saturday is a CTA wearing sympathy.
+    if (state.get("flags") or {}).get("recent_loss"):
+        blocks.discard("free_resource")
+
     # Sticky, unlike the two above: once she has asked for support through her pregnancy that is
     # what the conversation is about, and it stays that way while it is arranged.
     if state.get("flags", {}).get("wants_pregnancy_support"):
@@ -441,7 +471,10 @@ def gate(state: dict, read: dict) -> Gate:
     # is still held by the `known < 3` check: readiness to buy is not the same as being understood
     # well enough to invite honestly.
     ready = read.get("intent") == "warm_prospect" or "ready_to_book" in (read.get("tags") or [])
-    if not blocked_for and _first_exchange(state) and not ready:
+    # `paid_not_disclosed` is true of a first message and so is this, and this is the more useful
+    # of the two to hand the writer: it pairs with the missing-facts instruction, where the other
+    # one would have the reply announce the commercial terms to a woman who has said one thing.
+    if _first_exchange(state) and not ready and blocked_for in ("", "paid_not_disclosed"):
         blocked_for = "first_exchange"
 
     if blocked_for:

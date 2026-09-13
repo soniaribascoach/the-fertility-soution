@@ -469,10 +469,26 @@ something she never said.
   Spanish conversation until this is set, so do not set it because she seems likely to be fine, or
   because she used an English word, or because she has not objected. Silence is not an answer here.
 
-  If she says English materials would not work for her, leave this out. There is no flag for the
-  no: the absence of the yes is what holds the link.
+  If she says English materials would not work for her, leave this out and set
+  `declines_english_materials` instead.
+- `declines_english_materials`: **she has been told the materials are in English and has said that
+  will not work for her.** "No, mi ingles es muy basico", "no lo entenderia", "solo hablo espanol".
+  The absence of the yes already holds the link, so this is not what stops a booking. It is what
+  tells the writer she has answered, because without it the reply asks her the same question again
+  in different words, which is what a woman who has just said no reads as not being listened to.
+
+  Only after she has been told. A Spanish conversation where the materials have never come up sets
+  neither flag.
 - `understands_coach_not_clinic`: it is already clear in the conversation that Sonia is a coach.
-- `understands_paid_program`: the cost has already been stated to her.
+- `understands_paid_program`: **she has been told this is a paid program.** One of Sonia's own
+  earlier messages in the conversation has to say it: that it is paid coaching, that it asks for a
+  financial investment, or what it costs. A figure is one way of telling her and it is not the only
+  one, so "it's a paid program and the level of support varies" sets this exactly as much as the
+  range does.
+
+  Her own words do not set it. "I don't mind paying", "I want to enrol", "can I pay" tell you she
+  assumes it is paid, which is not the same as having been told, and the one place that distinction
+  matters is handled elsewhere. Set it from Sonia's side of the conversation or not at all.
 - `stopped_trying`: **she has stopped trying to conceive.** Not pausing, not between cycles, not
   taking a break before the next round: she is telling you that trying is over. "We've stopped",
   "we've decided that's it", "we're not going to try again", "we've accepted it won't happen for

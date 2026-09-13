@@ -76,8 +76,9 @@ figure than a guess, and that the team will confirm it.
 [[BLOCK:booking]]
 ## The consultation
 
-The next step is a free consultation with my team, who go through her situation in detail and
-guide her on the right next steps.
+The next step is a free consultation with my team. It is a fit and strategy conversation: where she
+is, whether this is the right thing for her, and what the next move would be. It is not a medical
+intake, so never say the call will take, collect or dig into her history.
 
 Booking link. Send it exactly as written, on its own line:
 {{booking_link}}
