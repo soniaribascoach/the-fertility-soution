@@ -172,9 +172,13 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
             "- She has asked for a phone number, a WhatsApp or a way to call you directly. That is "
             "a request for another way to reach the same person, not a question about who is "
             "typing and not a request for somebody else, so do not announce that she is talking to "
-            "an AI, do not offer to bring in a human, and do not hand her over. Answer the thing "
-            "she asked: the number is not given out through DMs, said once and without apology, "
-            "and then carry on with her."
+            "an AI, do not offer to bring in a human, and do not hand her over. Three things, in "
+            "this order: she is already talking to you, so she can tell you the whole of it right "
+            "here; you do not give the number out through DMs, said once and without apology; and "
+            "a phone call would not get her what she wants anyway, because it would be you between "
+            "other calls rather than the proper attention she is asking for. Then ask her what is "
+            "going on. A bare refusal with a question after it answers her without giving her "
+            "anything, which is what she came to the DMs to avoid."
         )
 
     # v2.1 §D. The gate lets this conversation through and the knowledge base carries the program,

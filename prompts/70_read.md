@@ -174,6 +174,12 @@ These keys and no others. A key you invent is read by nothing and is lost.
 - `conceiving_mode`: natural | iui | ivf | undecided. Use `ivf` only when she is doing IVF or has
   decided to. A doctor recommending it is not a decision she has made. While she is weighing it up,
   the answer is `undecided`.
+
+  **The word "naturally" is the whole answer on its own.** "Trying 4 years naturally", "we're
+  still trying naturally", "no treatment, just us" are `natural`, and they are easy to walk past
+  when the same message carries her age, her partner and what she wants. Missing it costs more
+  than a blank slot: the reply asks her whether she is trying naturally or preparing for IUI or
+  IVF, one line after she said which, and she has to answer a question she just answered.
 - `ivf_history`: her words, e.g. "2 failed cycles"
 - `iui_history`: her words
 - `miscarriage_history`: her words, e.g. "2 losses"

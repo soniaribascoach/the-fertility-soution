@@ -1432,8 +1432,11 @@ def test_a_phone_request_is_told_not_to_announce_what_it_is():
     state = _state()
     brief = brain._brief(dossier.gate(state, read), read, state, [])
 
-    assert "not given out through DMs" in brief
+    assert "not give the number out through DMs" in brief
     assert "do not announce that she is talking to an AI" in brief
+    # A bare no plus a question is what the terse first version of this produced, and it gave her
+    # nothing: she is already talking to the person she wanted to ring, which is the answer.
+    assert "she can tell you the whole of it right here" in brief
 
 
 def test_a_woman_who_asked_what_is_typing_is_still_answered_on_a_phone_turn():
