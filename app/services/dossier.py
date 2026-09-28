@@ -43,8 +43,14 @@ LIST_SLOTS = ("diagnoses", "already_tried", "testing_done")
 # unanswerable: she asked whether she was talking to a person and the conversation went silent,
 # which is the loudest possible yes and reads as a dodge. She is now told the truth and offered a
 # person, and only her answer to that offer, which arrives as `asked_for_human`, hands over.
+#
+# `wants_to_join_pregnancy_program` is here because nobody has written down who The Pregnancy
+# Solution is for. The fertility gate below decides whether a call is honest from what she has told
+# us about trying to conceive, and none of that applies to a woman who is already pregnant. So the AI
+# tells her the program exists and what it is, and the moment she wants in, a person takes over.
 ESCALATION_FLAGS = (
-    "crisis", "urgent_medical", "abusive", "asked_for_human", "needs_human",
+    "crisis", "urgent_medical", "abusive", "asked_for_human", "wants_to_join_pregnancy_program",
+    "needs_human",
     "requested_medication", "requested_surgery_advice", "is_existing_client", "is_former_client",
 )
 ESCALATION_INTENTS = ("complaint", "collaboration", "media_request", "spam_or_aggression")
@@ -57,6 +63,7 @@ HANDOVER_MESSAGES = {
     "crisis": "handover_message_crisis",
     "urgent_medical": "handover_message_urgent_medical",
     "asked_for_human": "handover_message_team",
+    "wants_to_join_pregnancy_program": "handover_message_team",
 }
 
 # Structural findings that close off a booking entirely (2B.1 §6, §9).
@@ -306,6 +313,11 @@ def _booking_blocked(state: dict, read: dict) -> str:
         # the announcement that usually precedes it, and the reader only sets the flag when she has
         # actually asked, so congratulating her stays the whole of the reply until she does.
         return "currently_pregnant"
+    if flags.get("wants_pregnancy_support"):
+        # She has asked about The Pregnancy Solution. Nothing here can say whether it fits her, so
+        # there is no link to offer: the writer names the program, and her asking to join it is a
+        # handover rather than a booking.
+        return "pregnancy_program"
     if slots.get("pregnancy_priority") == "low":
         return "not_a_priority"
 

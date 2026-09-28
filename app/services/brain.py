@@ -29,7 +29,7 @@ from typing import Optional
 from openai import AsyncOpenAI
 
 from app.services import cta, dossier
-from app.services.few_shots import load_few_shot_scenarios, render_examples, select_playbooks
+from app.services.few_shots import load_few_shot_scenarios, render_examples
 from app.services.message_splitter import strip_dashes, use_digits
 from app.services.prompts import build_write_prompt, config_values
 from app.services.reader import read_turn
@@ -205,11 +205,18 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
     # but on a turn with no link in it the reply came back as "yes, I do support women through
     # pregnancy" with no name on it, which leaves her having to ask a second time what the thing
     # is. She asked whether it exists. It has a name, so use it.
+    #
+    # Nobody has told the AI who the program is for, so it does not qualify her for it: no
+    # questions about how far along she is or what she needs, and no link. Her wanting to join is
+    # read as `wants_to_join_pregnancy_program` and hands over before the writer is called.
     if (state.get("flags") or {}).get("wants_pregnancy_support"):
         lines.append(
             "- She is pregnant and has asked for support through the pregnancy. The answer is yes, "
-            "and the thing is called The Pregnancy Solution, so name it. Then find out what she is "
-            "looking for before you point her anywhere."
+            "and the thing is called The Pregnancy Solution, so name it and say what it is from "
+            "the knowledge base. Answer anything she asks about it. Do not ask about her "
+            "pregnancy or what she needs, and do not send a link or offer a call: the team "
+            "decides who it fits, not you. If she would like to join, the next step is that "
+            "someone from your team takes it from there, and you can say so."
         )
 
     # She already pays somebody who is helping her, and she is asking what you would add. Measured
@@ -256,7 +263,12 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
             "about her situation, a call cannot honestly be offered, so the way forward is to "
             "learn one of them. Answer what she asked first, then ask for the single one that "
             "would most change what you say next. One question, in her words, not a list and not "
-            "an intake form."
+            "an intake form.\n"
+            "- Unless she is asking on behalf of someone else, a sister or a friend. Then none of "
+            "the line above applies: there is nobody here to learn about. Send the masterclass "
+            "link, say her sister is welcome to message you herself, and end the reply there. No "
+            "question at all, not about the other person, her situation or her needs, and not "
+            "about the person writing."
         )
     elif missing and gate.allow_booking:
         lines.append(
@@ -498,22 +510,13 @@ async def run_turn(
             usage=_usage(read_model, model, read_usage, None), trace=trace,
         )
 
-    chosen = select_playbooks(
-        _playbooks(),
-        intent=read["intent"],
-        tags=read["tags"] + gate.tags,
-        language=read["language"],
-        allow_booking=gate.allow_booking,
-        limit=3,
-    )
+    chosen = list(_playbooks().values())
     trace["playbooks"] = [pb.name for pb in chosen]
 
     system = "\n\n---\n\n".join(
         part for part in (
             build_write_prompt(cfg, gate.blocks),
-            render_examples(
-                chosen, allow_booking=gate.allow_booking, values=config_values(cfg),
-            ),
+            render_examples(chosen, allowed_blocks=gate.blocks, values=config_values(cfg)),
             dossier.render(state),
             _brief(gate, read, state, openings),
         ) if part

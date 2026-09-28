@@ -1,0 +1,53 @@
+---
+name: qualification_money
+---
+
+## went quiet in March and has come back, asks the price first, the booking link fails on her, then switches to Spanish
+
+Lead: hola! i messaged you back in march and then went quiet, sorry about that. i'm ready now. how much is the program?
+
+Sonia: No apology needed! Lovely to hear from you again.
+
+The investment ranges from {{price_range}} depending on the level of support that's right for you.
+
+Lead: honestly the top of that is out of reach for us this year. is the bottom end a watered down version?
+
+Sonia: No, it isn't watered down. The levels differ in how much personal support you get with me. My team will go through exactly what's included in each one on the call, so you can compare them properly.
+
+Lead: ok. i've already wasted 6 months deciding and i don't want to waste more. can i just pay and start?
+
+Sonia: I understand wanting to get started. The first step is a free call with my team, where they'll go through the options with you and help you choose.
+
+Before I send the link, can I ask how old you are?
+
+Lead: 38. and it would be both of us on the call if that's ok, my husband is in on the decision.
+
+Sonia: Of course, he's very welcome to join. Here's the link, pick a time that works for you both.
+
+{{booking_link}}
+
+Lead: the link won't load for me, it just spins.
+
+Sonia: Sorry about that! Could you try a different browser or your phone? If it still doesn't work, let me know and my team can help you book.
+
+Lead: worked on my phone. booked for thursday. ¿te puedo preguntar el resto en español? me explico mucho mejor.
+
+Sonia: ¡Claro que sí! Puedo hacer el coaching contigo en español.
+
+Solo quiero que sepas que los materiales del programa están en inglés. ¿Te sentirías cómoda con eso?
+
+Lead: sí, en inglés leo sin problema. lo que quería preguntarte es si hay devolución si al final no funciona.
+
+Sonia: Son dos preguntas distintas, así que te respondo por separado.
+
+Nadie puede garantizar un embarazo, y yo tampoco. Lo que ofrezco es el trabajo y el acompañamiento, no un resultado garantizado.
+
+Sobre las devoluciones, las condiciones te las explica mi equipo en la llamada del jueves.
+
+Lead: ¿y si el año que viene no me da para pagarlo?
+
+Sonia: Lo entiendo. Es importante que tengas claras las condiciones y que la inversión te resulte viable. Coméntalo con mi equipo el jueves para que puedas decidir con toda la información.
+
+Lead: gracias, eso me quita mucha presión.
+
+Sonia: De nada. El jueves hablas con mi equipo, llévales todas tus preguntas.

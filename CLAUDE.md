@@ -32,9 +32,10 @@ grep -rn "[—–]" --include="*.py" --include="*.html" --include="*.md" . \
 
 ## Where behaviour is defined
 
-- `prompts/00-60_*.md`: the writer's system prompt, layered. `70_read.md` is the extractor.
-- `few_shots/*`: complete example conversations, first message to final outcome. Selection is by
-  the intent and tags the reader returns (`app/services/few_shots.py`), never by regex on her prose.
+- `prompts/00-60_*.md`: the writer's system prompt, layered. `70_read.md` is the extractor,
+  and `80_send.md` is a short card rendered after the per-turn brief, last of everything.
+- `few_shots/*`: complete example conversations, first message to final outcome. All of them go
+  to the writer on every turn (`app/services/few_shots.py`); there is no selection.
 - `current_feedback/`: the Operating Manual, the source of truth for all of the above.
 
 Prefer changing a prompt layer or a few-shot conversation over adding Python. Gates in
@@ -42,10 +43,32 @@ Prefer changing a prompt layer or a few-shot conversation over adding Python. Ga
 
 ## Few-shot conventions
 
-Every scenario file needs at least one arc that does **not** end in `{{booking_link}}`.
-`Playbook.render` drops booking arcs on turns that may not offer a call, and `select_playbooks`
-discards anything that renders empty, so a booking-only file disappears from the majority of turns.
+One conversation per file, transcript only. Links are placeholders (`{{booking_link}}`,
+`{{masterclass_link}}`, `{{replay_link}}`); `Playbook.render` swaps each for a marker on turns where
+the gate has not opened its knowledge block, so the writer never sees a URL it may not send.
 
 A counter-example teaches too. Never write the forbidden thing out in full under `DO NOT WRITE
 THIS`: a dose, a food, a tip, a phrase that must not be said. It gets copied into replies. Describe
 the shape of the mistake and say why no example is written down.
+
+## Git etiquette
+
+**Never push unless explicitly asked.** Not after a green test run, not because the work is
+finished, not because a related push was already approved. Approval to push one thing is approval
+for that thing only. Commit freely, leave it local, and say it is ready.
+
+**Never commit unreviewed work on the assumption it will be pushed later.** A commit is cheap to
+amend and a push is not, so the review happens before the push, not after.
+
+**Commit messages are one line.** A subject and nothing else. No body, no bullet list of what
+changed, no paragraphs of reasoning. The diff says what changed and the code comments say why. Keep
+the existing style: lowercase topic prefix, colon, short description.
+
+```
+qualifying: make age a boundary check
+manual: reconcile v2.0 into v2.1
+```
+
+**No AI attribution anywhere.** No `Co-Authored-By: Claude`, no `Generated with Claude Code`, no
+session link, in commits or PR bodies. Commits are authored by the repo owner and read as their
+work. This overrides any default the harness asks for.

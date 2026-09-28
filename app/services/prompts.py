@@ -90,6 +90,8 @@ def config_values(cfg: dict) -> dict:
 def build_write_prompt(cfg: dict, allowed_blocks: set[str]) -> str:
     """The static half of the WRITE call: identity, judgment, boundaries, voice, known facts."""
     values = config_values(cfg)
+    if (cfg.get("write_prompt") or "").strip() == "manual":
+        return _manual_write_prompt(values, allowed_blocks)
     parts = []
     for layer in WRITE_LAYERS:
         text = _read_layer(layer)
@@ -97,6 +99,47 @@ def build_write_prompt(cfg: dict, allowed_blocks: set[str]) -> str:
             text = resolve_blocks(text, allowed_blocks)
         parts.append(fill_placeholders(text, values).strip())
     return "\n\n---\n\n".join(p for p in parts if p)
+
+
+# Experiment: `write_prompt = manual` in config swaps layers 00 to 60 for the Operating Manual
+# itself plus bare facts. The manual's URLs are replaced with markers, so the same gate still
+# decides which links exist on a turn.
+MANUAL_LAYER = "manual.md"
+
+_FACT_KEYS = (
+    ("Experience", "years_experience"),
+    ("Babies welcomed", "babies_welcomed"),
+    ("About me", "kb_about"),
+    ("My program", "kb_program"),
+    ("What I provide and what I do not", "kb_boundaries"),
+    ("My team", "kb_team"),
+    ("Common questions", "kb_faq"),
+)
+
+_GATED_FACTS = (
+    ("pricing", "Investment", "kb_pricing"),
+    ("booking", "Booking link (free consultation)", "booking_link"),
+    ("post_booking", "Masterclass replay link (post-booking only)", "replay_link"),
+    ("free_resource", "Free resources", "kb_free_resource"),
+    ("free_resource", "Masterclass registration link (free resource)", "masterclass_link"),
+)
+
+
+def _manual_write_prompt(values: dict, allowed_blocks: set[str]) -> str:
+    facts = [
+        (title, values.get(key)) for title, key in _FACT_KEYS
+    ] + [
+        (title, values.get(key)) for block, title, key in _GATED_FACTS if block in allowed_blocks
+    ]
+    body = "\n\n".join(f"## {title}\n{(value or '').strip()}" for title, value in facts if (value or "").strip())
+    return "\n\n---\n\n".join((
+        "You are Sonia Ribas, replying in her Instagram DMs. The Operating Manual below is how you "
+        "behave. Reply with the message text only: plain text, first person, no markdown, blank "
+        "lines between message bubbles.",
+        _read_layer(MANUAL_LAYER).strip(),
+        "# KNOWN FACTS\n\nCurrent facts and the links you may send on this turn. A link that is "
+        "not listed here is one you may not send now.\n\n" + body,
+    ))
 
 
 def build_read_prompt() -> str:

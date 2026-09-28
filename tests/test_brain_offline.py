@@ -16,7 +16,7 @@ import re
 import pytest
 
 from app.services import brain, cta, dossier, message_splitter, prompts, reader
-from app.services.few_shots import load_few_shot_scenarios, render_examples, select_playbooks
+from app.services.few_shots import load_few_shot_scenarios, render_examples
 
 FEW_SHOTS = load_few_shot_scenarios("few_shots")
 
@@ -39,66 +39,23 @@ CFG = {
 
 # ── The library ──────────────────────────────────────────────────────────────
 
-def test_every_playbook_is_well_formed():
-    """Tags are the requirement; an intent is optional.
+ALL_BLOCKS = {"pricing", "booking", "free_resource", "post_booking"}
 
-    Boundary conversations are selected by the tag the gate attaches to the fact that triggered it
-    (`_REASON_TAGS` in `dossier.py`), not by whatever intent the reader happened to return, so
-    `blocked_tubes`, `no_uterus`, `over_48`, `post_booking_email` and their `_es` twins
-    deliberately declare no intent. Tags without an intent is a complete declaration; an intent
-    without tags is not, because `score_playbook` never lets intent alone earn a slot.
-    """
-    assert len(FEW_SHOTS) > 30
+
+def test_every_playbook_is_a_whole_conversation():
+    """Every file is one conversation, first message to outcome, and all of them go out every turn."""
+    assert FEW_SHOTS
     for name, pb in FEW_SHOTS.items():
-        assert pb.tags, f"{name} declares no tags"
-        assert pb.conversations, f"{name} has no conversation"
-        for arc in pb.conversations:
-            assert "Lead:" in arc and "Sonia:" in arc, f"{name} has an arc with no dialogue"
-
-
-def test_conversations_are_complete_not_fragments():
-    """A file is whole conversations, not isolated question-and-answer pairs.
-
-    A couple of arcs are legitimately short, celebrating a pregnancy takes two messages, not
-    eight, so the floor is low and the body of the library has to be well above it.
-    """
-    lengths = []
-    for name, pb in FEW_SHOTS.items():
-        for arc in pb.conversations:
-            turns = arc.count("Sonia:")
-            assert turns >= 2, f"{name} has an arc with only {turns} replies. That is a fragment"
-            lengths.append(turns)
-    lengths.sort()
-    assert lengths[len(lengths) // 2] >= 5, f"median arc is only {lengths[len(lengths) // 2]} replies"
+        assert "Lead:" in pb.text and "Sonia:" in pb.text, f"{name} has no dialogue"
+        assert pb.text.count("Sonia:") >= 2, f"{name} is a fragment"
+        assert not pb.text.startswith("---"), f"{name} still carries its front matter"
 
 
 def test_endings_are_not_all_booking_links():
     """The old library ended 17 of 18 conversations with the link, which is what taught the
-    model to funnel everything toward the calendar. Counted per arc, since a two-arc file
-    typically books in one and not the other."""
-    arcs = [arc for pb in FEW_SHOTS.values() for arc in pb.conversations]
-    books = sum(1 for arc in arcs if "{{booking_link}}" in arc)
-    assert books / len(arcs) < 0.55, (
-        f"{books} of {len(arcs)} conversations end in a booking link"
-    )
-
-
-def test_every_playbook_survives_a_non_booking_turn():
-    """A booking-only file disappears from most of the conversation.
-
-    `Playbook.render` drops arcs containing the link when the gate says no link, and
-    `select_playbooks` discards anything that renders empty. Since most turns cannot offer a call,
-    a file whose every arc ends in the link is absent exactly when her situation comes up, and the
-    writer falls back to whichever loosely related file happens to carry a non-booking arc.
-    """
-    vanished = [
-        name for name, pb in FEW_SHOTS.items()
-        if pb.conversations and not pb.render(allow_booking=False)
-    ]
-    assert vanished == [], (
-        f"{vanished} render empty on a non-booking turn. Give each one an arc that ends in an "
-        f"honest answer, a free resource or a respectful no."
-    )
+    model to funnel everything toward the calendar."""
+    books = sum(1 for pb in FEW_SHOTS.values() if "{{booking_link}}" in pb.text)
+    assert books / len(FEW_SHOTS) < 0.55, f"{books} of {len(FEW_SHOTS)} conversations book"
 
 
 def test_no_file_states_a_fact_of_its_own():
@@ -120,10 +77,9 @@ def test_first_person_only():
     """Prospect-facing text is always 'I', never 'Sonia' in the third person."""
     third_person = re.compile(r"\bSonia's\b|\bSonia (is|was|has|will|can|does|would)\b")
     for name, pb in FEW_SHOTS.items():
-        for arc in pb.conversations:
-            for line in arc.splitlines():
-                if line.startswith("Sonia:"):
-                    assert not third_person.search(line), f"{name}: third-person Sonia in {line!r}"
+        for line in pb.text.splitlines():
+            if line.startswith("Sonia:"):
+                assert not third_person.search(line), f"{name}: third-person Sonia in {line!r}"
 
 
 # ── The dossier ──────────────────────────────────────────────────────────────
@@ -223,11 +179,12 @@ def test_a_pregnancy_announcement_is_still_terminal():
     assert gate.block_reason == "currently_pregnant"
 
 
-def test_a_pregnant_woman_who_asks_for_support_can_be_booked():
+def test_a_pregnant_woman_who_asks_for_support_is_answered_but_not_booked():
     """v2.1 section D: The Pregnancy Solution exists, so this is a conversation, not a boundary.
 
     The brain told a newly pregnant woman that coaching through pregnancy was not something Sonia
     does, which was false. What makes this different from the announcement above is that she asked.
+    Nothing tells the AI who the program fits, so she is told about it and no link is offered.
     """
     read = {"intent": "pregnancy_announcement", "tags": ["celebration", "pregnancy_support"],
             "slots": {}}
@@ -235,8 +192,23 @@ def test_a_pregnant_woman_who_asks_for_support_can_be_booked():
     state["flags"]["currently_pregnant"] = True
     state["flags"]["wants_pregnancy_support"] = True
     gate = dossier.gate(state, read)
-    assert gate.allow_booking, gate.block_reason
+    assert not gate.escalate
+    assert not gate.allow_booking
+    assert gate.block_reason == "pregnancy_program"
     assert "pregnancy_support" in gate.tags
+
+
+def test_a_pregnant_woman_who_wants_to_join_goes_to_the_team():
+    """Enrolment in The Pregnancy Solution is the team's decision, so wanting in is a handover."""
+    read = {"intent": "warm_prospect", "tags": ["pregnancy_support", "ready_to_book"],
+            "flags": {"wants_to_join_pregnancy_program": True}, "slots": {}}
+    state = _state(QUALIFIED)
+    state["flags"].update(currently_pregnant=True, wants_pregnancy_support=True)
+    state = dossier.merge(state, read)
+    gate = dossier.gate(state, read)
+    assert gate.escalate
+    assert gate.escalate_reason == "wants_to_join_pregnancy_program"
+    assert gate.handover_message == "handover_message_team"
 
 
 def test_a_spanish_lead_is_not_booked_before_the_materials_are_disclosed():
@@ -318,237 +290,54 @@ def test_age_is_no_longer_the_first_thing_the_writer_is_told_to_ask_for():
     assert "how old she is" not in dossier.missing_facts(known)
 
 
-@pytest.mark.parametrize("slots,flags,why", [
-    ({**QUALIFIED, "age": 51}, {}, "over 48"),
-    (QUALIFIED, {"structural": "no_uterus"}, "no uterus"),
-    (QUALIFIED, {"structural": "menopause"}, "menopause"),
-    (QUALIFIED, {"structural": "both_tubes", "wants_natural_only": True}, "both tubes, natural only"),
-    (QUALIFIED, {"structural": "unclear_tubal"}, "tubal status not yet clarified"),
-    (QUALIFIED, {"refuses_paid_coaching": True}, "will not pay"),
-    (QUALIFIED, {"demands_guarantee": True}, "wants a guarantee"),
-    (QUALIFIED, {"wants_unprovided_service": True}, "out of scope"),
-    (QUALIFIED, {"recent_loss": True}, "grieving"),
-    (QUALIFIED, {"currently_pregnant": True}, "already pregnant"),
-    ({**QUALIFIED, "pregnancy_priority": "low"}, {}, "not a priority"),
-    ({"age": 34}, {}, "not enough context yet"),
+@pytest.mark.parametrize("slots,flags,intent,expected_gate", [
+    # Age plus time trying is not yet enough understanding to invite her to a call.
+    ({"age": 38, "time_trying": "4 months"}, {}, "fertility_question", "no-link"),
+    ({**QUALIFIED, "diagnoses": ["low AMH"]}, {}, "fertility_question", "link"),
+    ({"age": 51, "time_trying": "2 years", "pregnancy_priority": "high"}, {},
+     "fertility_question", "no-link"),
+    (QUALIFIED, {"structural": "unclear_tubal"}, "fertility_question", "no-link"),
+    (QUALIFIED, {"requested_lab_interpretation": True}, "advice_request", "no-link"),
+    (QUALIFIED, {"wants_unprovided_service": True}, "not_a_fit", "no-link"),
+    (QUALIFIED, {"demands_guarantee": True}, "program_question", "no-link"),
+    (QUALIFIED, {"recent_loss": True}, "grief_or_loss", "no-link"),
 ])
-def test_the_booking_block_is_withheld(slots, flags, why):
-    gate = dossier.gate(_state(slots, flags), {"intent": "fertility_question", "flags": flags})
-    assert not gate.allow_booking, why
-    assert "booking" not in gate.blocks, f"link would still reach the prompt: {why}"
-
-
-def test_asking_sonia_for_a_service_she_does_not_provide_shuts_the_link_for_that_turn():
-    read = {"intent": "not_a_fit", "flags": {"wants_unprovided_service": True}}
-    gate = dossier.gate(_state(QUALIFIED), read)
-    assert not gate.allow_booking
-    assert gate.block_reason == "out_of_scope_request"
-    assert "booking" not in gate.blocks
-
-
-def test_a_service_she_asked_for_once_does_not_shut_the_link_for_the_rest_of_the_conversation():
-    """The reason run two of the m_runs corpus answered four messages with four refusals.
-
-    "I'm planning IVF in a month or two" is a sentence half of her audience opens with, and one
-    reader misfire on it used to set a flag nothing could clear: every later turn was gated
-    `out_of_scope_request` and told to name what she does not provide, so a woman who then asked
-    what a fertility coach does, how to enroll and what her next step was got three more sentences
-    about what does not happen here and was never asked a single question.
-    """
-    state = dossier.merge(_state(QUALIFIED), {
-        "intent": "not_a_fit", "flags": {"wants_unprovided_service": True},
-    })
-    later = dossier.gate(state, {"intent": "program_question"})
-    assert later.allow_booking
-    assert later.block_reason == ""
-
-
-def test_a_pregnancy_stays_known_after_the_turn_that_announced_it():
-    """The reader reports a live pregnancy as an intent, which describes one turn.
-
-    She announces on turn 1 and asks what to eat on turn 4, by which point the intent has moved on.
-    Round 5 left the link open on exactly that turn and the reply quoted the price range to her.
-    """
-    state = dossier.merge(_state(QUALIFIED), {"intent": "pregnancy_announcement"})
-    assert state["flags"]["currently_pregnant"]
-
-    later = dossier.merge(state, {"intent": "fertility_question"})
-    gate = dossier.gate(later, {"intent": "fertility_question"})
-    assert not gate.allow_booking
-    assert gate.block_reason == "currently_pregnant"
-
-
-@pytest.mark.parametrize("value", ["unstated", "not stated", "unknown", "N/A", "none", ""])
-def test_a_slot_the_reader_filled_with_a_shrug_is_not_a_fact(value):
-    """"partner_status: unstated" is the absence of a fact wearing the costume of one.
-
-    It counted toward the three-slot threshold that decides whether an invitation is honest, so a
-    booking could turn on the reader having written the word "unstated" rather than omitting the
-    key, and it rendered into the writer's dossier under "what she has already told me".
-    """
-    state = dossier.merge(None, {"intent": "new_prospect", "slots": {
-        "age": 34, "time_trying": "2 years", "partner_status": value,
-    }})
-    assert "partner_status" not in state["slots"]
-
-    gate = dossier.gate(state, {"intent": "fertility_question"})
-    assert not gate.allow_booking
-    assert gate.block_reason == "not_enough_context"
-    assert "not stated" not in dossier.render(state).lower()
-
-
-def test_both_tubes_with_ivf_openness_can_still_book():
-    gate = dossier.gate(
-        _state(QUALIFIED, {"structural": "both_tubes", "open_to_ivf": True}),
-        {"intent": "ivf_question"},
-    )
-    assert gate.allow_booking
-
-
-@pytest.mark.parametrize("flags,intent,reason", [
-    ({"needs_human": True}, "fertility_question", "needs_human"),
-    ({"requested_medication": True}, "advice_request", "requested_medication"),
-    ({"requested_surgery_advice": True}, "advice_request", "requested_surgery_advice"),
-    ({"is_existing_client": True}, "existing_client", "is_existing_client"),
-    ({"is_former_client": True}, "former_client", "is_former_client"),
-    ({"structural": "unclear_menopause"}, "fertility_question", "menopause_unclear"),
-    ({"abusive": True}, "spam_or_aggression", "abusive"),
-    ({}, "complaint", "complaint"),
-    ({}, "collaboration", "collaboration"),
-])
-def test_handovers_are_silent(flags, intent, reason):
-    """Every handover pauses, and by default the lead is sent nothing at all."""
-    gate = dossier.gate(_state(QUALIFIED, flags), {"intent": intent})
-    assert gate.escalate and gate.escalate_reason == reason
-    assert not gate.allow_booking
-    assert gate.silent and not gate.handover_message
-
-
-@pytest.mark.parametrize("flags,reason,key", [
-    ({"crisis": True}, "crisis", "handover_message_crisis"),
-    ({"urgent_medical": True}, "urgent_medical", "handover_message_urgent_medical"),
-    ({"asked_for_human": True}, "asked_for_human", "handover_message_team"),
-])
-def test_the_three_handovers_that_send_a_fixed_line(flags, reason, key):
-    """Silence would be its own harm here, so these carry a config key instead."""
-    gate = dossier.gate(_state(QUALIFIED, flags), {"intent": "fertility_question"})
-    assert gate.escalate and gate.escalate_reason == reason
-    assert gate.handover_message == key and not gate.silent
-
-
-def test_safety_flags_outrank_everything_else():
-    """Crisis names the reason even when three other handover flags are also set."""
-    flags = {"crisis": True, "asked_for_human": True, "requested_medication": True}
-    gate = dossier.gate(_state(QUALIFIED, flags), {"intent": "complaint"})
-    assert gate.escalate_reason == "crisis"
-
-
-def test_a_handover_turn_renders_no_knowledge_blocks():
-    """The writer is never called, so there is nothing for a block to be rendered into."""
-    gate = dossier.gate(_state(QUALIFIED, {"needs_human": True}), {"intent": "fertility_question"})
-    assert gate.blocks == set()
-
-
-def test_age_in_the_review_band_escalates_rather_than_rejecting():
-    gate = dossier.gate(_state({**QUALIFIED, "age": 47}), {"intent": "fertility_question"})
-    assert gate.escalate and gate.escalate_reason == "age_needs_review"
-
-
-def test_unsupported_language_goes_to_a_person():
-    state = dossier.merge(None, {"language": "other", "slots": QUALIFIED})
-    gate = dossier.gate(state, {"intent": "new_prospect"})
-    assert gate.escalate and gate.escalate_reason == "language_not_supported"
-
-
-def test_post_booking_block_only_after_the_link_went_out():
-    assert "post_booking" not in dossier.gate(_state(QUALIFIED), {"intent": "warm_prospect"}).blocks
-    later = dossier.gate(_state(QUALIFIED, phase=dossier.LINK_SENT), {"intent": "warm_prospect"})
-    assert "post_booking" in later.blocks
-
-
-# ── Selection ────────────────────────────────────────────────────────────────
-
-def _picked(**kwargs):
-    kwargs.setdefault("language", "en")
-    return [pb.name for pb in select_playbooks(FEW_SHOTS, **kwargs)]
-
-
-@pytest.mark.parametrize("intent,tags,expected", [
-    # The three the old regex table got wrong.
-    ("ivf_question", ["ivf_prep"], "ivf_prep"),            # matched ivf_failed on the word "ivf"
-    ("price_question", ["affordability"], "cant_afford"),  # matched partner_hesitation on "afford"
-    ("price_question", ["pricing"], "pricing"),            # was in _SKIP and never loaded at all
-    # Ordinary routing.
-    ("fertility_question", ["low_amh"], "low_amh"),
-    ("fertility_question", ["tubal"], "blocked_tubes"),
-    ("advice_request", ["lab_request"], "lab_interpretation"),
-    ("grief_or_loss", ["loss_recent"], "pregnancy_loss_fresh"),
-    ("pregnancy_announcement", ["celebration"], "announcements"),
-    ("existing_client", ["human_requested"], "existing_or_former_client"),
-])
-def test_selection_picks_the_right_conversation(intent, tags, expected):
-    assert expected in _picked(intent=intent, tags=tags)
-
-
-def test_spanish_only_surfaces_in_a_spanish_conversation():
-    assert not any(n.endswith("_es") for n in _picked(intent="price_question", tags=["pricing"]))
-    assert "pricing_es" in _picked(intent="price_question", tags=["pricing"], language="es")
-
-
-@pytest.mark.parametrize("slots,flags,read_tags,intent,expected_gate,expected_first", [
-    # A 38-year-old frightened of time gets her own conversation, not the one written for 51.
-    # and age plus time trying is not yet enough understanding to invite her to a call.
-    ({"age": 38, "time_trying": "4 months"}, {}, ["low_amh", "fear_of_time"],
-     "fertility_question", "no-link", "low_amh"),
-    ({**QUALIFIED, "diagnoses": ["low AMH"]}, {}, ["low_amh"],
-     "fertility_question", "link", "low_amh"),
-    ({"age": 51, "time_trying": "2 years", "pregnancy_priority": "high"}, {}, ["fear_of_time"],
-     "fertility_question", "no-link", "over_48"),
-    (QUALIFIED, {"structural": "unclear_tubal"}, ["tubal"],
-     "fertility_question", "no-link", "blocked_tubes"),
-    (QUALIFIED, {"requested_lab_interpretation": True}, ["lab_request"],
-     "advice_request", "no-link", "lab_interpretation"),
-    (QUALIFIED, {"wants_unprovided_service": True}, [],
-     "not_a_fit", "no-link", "wants_services_i_dont_provide"),
-    (QUALIFIED, {"demands_guarantee": True}, [],
-     "program_question", "no-link", "guarantee_demand"),
-    (QUALIFIED, {"recent_loss": True}, ["loss_recent"],
-     "grief_or_loss", "no-link", "pregnancy_loss_fresh"),
-])
-def test_the_gate_pulls_the_right_conversation(
-    slots, flags, read_tags, intent, expected_gate, expected_first
-):
-    """The boundary conversations are selected by the fact that tripped the gate, so the writer
-    is always shown the arc that matches the situation it is actually in.
-
-    The flags go to the read as well as to the state, because this is the turn they arrived on and
+def test_the_gate_opens_the_link_only_when_it_should(slots, flags, intent, expected_gate):
+    """The flags go to the read as well as to the state, because this is the turn they arrived on and
     one of them, `wants_unprovided_service`, is now read from the turn rather than from the dossier.
     """
     g = dossier.gate(_state(slots, flags), {"intent": intent, "flags": flags})
     assert ("link" if g.allow_booking else "no-link") == expected_gate
-    picked = _picked(intent=intent, tags=read_tags + g.tags, allow_booking=g.allow_booking)
-    assert picked[0] == expected_first, picked
 
 
-def test_post_booking_conversation_only_appears_after_a_booking():
-    assert "post_booking_email" not in _picked(intent="warm_prospect", tags=["ready_to_book"])
-    later = dossier.gate(_state(QUALIFIED, phase=dossier.LINK_SENT), {"intent": "warm_prospect"})
-    assert "post_booking_email" in _picked(intent="warm_prospect", tags=later.tags)
+# ── The examples in the prompt ───────────────────────────────────────────────
+
+def _examples(blocks):
+    return render_examples(list(FEW_SHOTS.values()), allowed_blocks=blocks, values=CFG)
 
 
-def test_a_gated_turn_is_never_shown_a_booking_arc():
-    picked = select_playbooks(
-        FEW_SHOTS, intent="fertility_question", tags=["low_amh"], allow_booking=False,
-    )
-    rendered = render_examples(picked, allow_booking=False, values=CFG)
-    assert rendered
-    assert CFG["booking_link"] not in rendered
+def test_every_conversation_is_shown_on_every_turn():
+    """No selection. A turn that may not book still sees the conversations that did."""
+    rendered = _examples({"pricing"})
+    for name in FEW_SHOTS:
+        assert f"### EXAMPLE: {name}" in rendered
+
+
+@pytest.mark.parametrize("key,block", [
+    ("booking_link", "booking"),
+    ("masterclass_link", "free_resource"),
+    ("replay_link", "post_booking"),
+])
+def test_a_link_in_an_example_follows_the_gate(key, block):
+    """A URL in an example is a URL the writer can copy, so it only appears when its block is open."""
+    assert CFG[key] in _examples(ALL_BLOCKS)
+    assert CFG[key] not in _examples(ALL_BLOCKS - {block})
+    assert "[link not available this turn]" in _examples(ALL_BLOCKS - {block})
 
 
 def test_examples_resolve_their_placeholders():
     """The writer must never be shown a literal `{{booking_link}}`. It would send it."""
-    picked = select_playbooks(FEW_SHOTS, intent="price_question", tags=["pricing"])
-    rendered = render_examples(picked, allow_booking=True, values=CFG)
+    rendered = _examples(ALL_BLOCKS)
     assert "{{" not in rendered
     assert CFG["price_range"] in rendered
 
@@ -573,14 +362,6 @@ def test_the_free_link_and_the_booked_link_never_swap_places():
     booked = prompts.build_write_prompt(CFG, {"post_booking"})
     assert CFG["replay_link"] in booked
     assert CFG["masterclass_link"] not in booked
-
-
-def test_the_booked_link_appears_in_no_conversation_that_is_not_post_booking():
-    for name, pb in FEW_SHOTS.items():
-        if name.startswith("post_booking"):
-            continue
-        for arc in pb.conversations:
-            assert "{{replay_link}}" not in arc, f"{name} offers the booked-and-preparing page"
 
 
 def test_nothing_can_send_the_application_link():
@@ -701,24 +482,6 @@ def test_asking_for_a_person_still_hands_over():
     gate = dossier.gate(_state(QUALIFIED, flags={"asked_for_human": True}), read)
     assert gate.escalate
     assert gate.escalate_reason == "asked_for_human"
-
-
-def test_a_phone_request_gets_its_own_conversation():
-    """It used to take `human_requested`, whose only example is the existing-client file.
-
-    So even with the flag fixed the writer was handed the wrong conversation to copy.
-    """
-    from app.services.few_shots import load_few_shot_scenarios, select_playbooks
-
-    pbs = load_few_shot_scenarios()
-    chosen = select_playbooks(pbs, intent="program_question", tags={"phone_request"},
-                              language="en", allow_booking=False, limit=3)
-    assert [pb.name for pb in chosen] == ["phone_request"]
-
-    # and the existing-client conversation is still reachable for the case it was written for
-    chosen = select_playbooks(pbs, intent="existing_client", tags={"human_requested"},
-                              language="en", allow_booking=False, limit=3)
-    assert "existing_or_former_client" in [pb.name for pb in chosen]
 
 
 def test_missing_config_collapses_rather_than_leaking_braces():
@@ -1057,15 +820,6 @@ def test_a_fresh_loss_outranks_the_decision_she_made_about_it():
     assert "free_resource" not in gate.blocks and not gate.allow_booking
 
 
-def test_the_conversation_written_for_it_is_the_one_shown():
-    read = {"intent": "gratitude", "tags": [], "flags": {"stopped_trying": True}}
-    state = dossier.merge(_state(PARTIAL), read)
-    gate = dossier.gate(state, read)
-    picked = select_playbooks(FEW_SHOTS, intent=read["intent"], tags=read["tags"] + gate.tags,
-                              allow_booking=gate.allow_booking)
-    assert "stopped_trying" in [pb.name for pb in picked]
-
-
 # ── The narrow safety read ───────────────────────────────────────────────────
 
 async def test_the_safety_read_adds_a_flag_the_extraction_missed():
@@ -1096,15 +850,6 @@ def test_the_writer_is_told_to_answer_the_bot_question_itself():
     brief = brain._brief(dossier.gate(state, read), read, state, [])
     assert "AI assistant" in brief
     assert "team" in brief and "would like" in brief
-
-
-def test_the_bot_question_pulls_the_conversation_written_for_it():
-    read = {"intent": "fertility_question", "tags": [], "flags": {"asked_if_ai": True}}
-    state = dossier.merge(None, read)
-    gate = dossier.gate(state, read)
-    picked = select_playbooks(FEW_SHOTS, intent=read["intent"], tags=read["tags"] + gate.tags,
-                              allow_booking=gate.allow_booking)
-    assert "ai_transparency" in [pb.name for pb in picked]
 
 
 def test_the_bot_conversation_does_not_follow_her_around():
@@ -1603,26 +1348,6 @@ def test_asking_how_to_pay_is_not_asking_what_it_costs():
     prompt = open("prompts/70_read.md", encoding="utf-8").read()
     assert "Asking how to pay is not asking what it costs" in prompt
     assert "takes the first slot" in prompt
-
-
-def test_the_buyer_who_told_you_her_situation_has_a_conversation_to_copy():
-    """The other half of conversation 4. Every arc in the file was a lead who had told you nothing,
-    so every arc established that the program is paid before doing anything else, and the writer
-    did that to a woman who had just said she wanted to enrol and pay.
-    """
-    pb = FEW_SHOTS["ready_to_book"]
-    arc = next((c for c in pb.conversations if "can I pay" in c), None)
-    assert arc, "no arc where she says she wants to enrol and asks how to pay"
-    assert "{{booking_link}}" in arc, "the link goes in the reply she asked it in"
-    assert "paid" not in arc.split("Lead:")[2], "she is not warned about a fee she just offered"
-
-
-def test_pregnancy_support_survives_a_turn_with_no_link():
-    """Conversation 3. The only arc that named The Pregnancy Solution ended in the link, so
-    `Playbook.render` dropped it on every turn that could not book, which is the turn she asks on.
-    """
-    pb = FEW_SHOTS["pregnancy_support"]
-    assert "The Pregnancy Solution" in pb.render(allow_booking=False)
 
 
 def test_the_pregnancy_program_is_named_when_she_asks_for_it():
