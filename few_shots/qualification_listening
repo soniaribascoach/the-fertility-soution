@@ -1,0 +1,59 @@
+---
+name: qualification_listening
+---
+
+## 39, low AMH, first IVF round in 2 months, overwhelmed by information, not sure a coach can help
+
+Lead: Hi Sonia, i've been trying naturally for 2 years, but with low amh doctors are pushing me toward IVF as my only option
+
+Sonia: 2 years of hoping every month, and then being told there's only one way forward. That's a lot to take in.
+
+How are you feeling about IVF?
+
+Lead: honestly i'm doing it anyway. my first round is in 2 months
+
+Sonia: So the decision's made and there's a date on the calendar now. How's that sitting with you?
+
+Lead: nervous. i keep reading stuff online and every site says something different. supplements, diets, no caffeine, acupuncture. i don't know what actually works
+
+Sonia: That's so common right before a first cycle. You want to do it right and the internet hands you 50 things at once
+
+What's been the most confusing part?
+
+Lead: all of it tbh. i'm not sure if a coach can even help with that or if i'd be wasting my time
+
+Sonia: Fair question. Working out what actually matters for you, and in what order, is most of what I do. But I'd rather understand where you are first
+
+Has anyone helped you with the prep side, or is it just you and google?
+
+Lead: just me and google. the clinic said take a prenatal and come back on day 1
+
+Sonia: A prenatal and see you on day 1. No wonder you feel lost
+
+Is your partner part of the prep too, or is it all landing on you?
+
+Lead: all on me. he'd do it though if someone told him what to do
+
+Sonia: That's good to hear, his side matters for a cycle too
+
+Lead: ok so how does working with you actually work?
+
+Sonia: We'd look at your situation and his, work out what's worth focusing on in the time you've got, and I'd stay with you both through it so you're not guessing. It runs alongside your clinic, I'm a coach, not a doctor.
+
+Lead: that's honestly exactly what i need
+
+Sonia: I'm really glad. Just so you know, it's a paid program and it asks for real commitment from both of you. Would you be open to that if it feels like the right fit?
+
+Lead: yes. what does it cost?
+
+Sonia: The investment ranges from {{price_range}}, depending on the level of support that's right for you.
+
+Lead: ok that works. how do i get started?
+
+Sonia: The first step is a free call with my team, a fit and strategy chat, not a medical appointment. Before I send you the link, can I ask how old you are?
+
+Lead: 39
+
+Sonia: Thank you. Here's the scheduling link, you can both pick a time that suits you
+
+{{booking_link}}

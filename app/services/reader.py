@@ -124,7 +124,13 @@ def _tuning(model: str, effort: str) -> dict:
     knows nothing about reasoning and takes `temperature=0`. Neither set of arguments is valid for
     the other model, so the call cannot simply send both.
     """
-    if model.startswith("gpt-5"):
+    if model in ("gpt-5", "gpt-5-mini", "gpt-5-nano"):
+        return {"reasoning_effort": effort}
+    # GPT-5.1 onwards and GPT-6 have no `minimal`; the least thinking they allow is `none`, and
+    # with it off they accept `temperature` again.
+    if model.startswith(("gpt-5.", "gpt-6")):
+        if effort == "minimal":
+            return {"reasoning_effort": "none", "temperature": 0}
         return {"reasoning_effort": effort}
     return {"temperature": 0}
 
@@ -137,7 +143,7 @@ def _cap(model: str, visible: int) -> dict:
     sized for the visible answer is spent thinking and the content comes back empty. Hence the
     headroom, which is a ceiling rather than a spend and is not normally reached.
     """
-    if model.startswith("gpt-5"):
+    if model.startswith(("gpt-5", "gpt-6")):
         return {"max_completion_tokens": visible + 512}
     return {"max_tokens": visible}
 

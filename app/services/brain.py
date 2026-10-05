@@ -61,7 +61,27 @@ _RATES = {
     "gpt-5-nano": (0.05, 0.40),
     "gpt-5": (1.25, 10.00),
     "gpt-5.1": (1.25, 10.00),
+    "gpt-5.2": (1.75, 14.00),
+    "gpt-5.4-mini": (0.75, 4.50),
+    "gpt-5.6-luna": (0.20, 1.20),
+    "gpt-6-luna": (0.10, 0.50),
+    "gpt-6-sol": (2.00, 10.00),
 }
+
+
+def _write_tuning(model: str, temperature: float) -> dict:
+    """The writer's sampling arguments, in the form each model family accepts.
+
+    Voice wants a temperature. The original GPT-5 models reject it outright, so they get the least
+    thinking they allow instead. From 5.1 on, and in GPT-6, reasoning can be switched off entirely,
+    and with it off the temperature is accepted again.
+    """
+    if model in ("gpt-5", "gpt-5-mini", "gpt-5-nano"):
+        return {"reasoning_effort": "minimal"}
+    if model.startswith(("gpt-5.", "gpt-6")):
+        return {"reasoning_effort": "none", "temperature": temperature}
+    return {"temperature": temperature}
+
 
 _playbook_cache: dict | None = None
 
@@ -124,13 +144,6 @@ def _usage(read_model: str, write_model: str, read_usage: dict, response) -> dic
             + _cost(write_model, write_prompt, write_completion)
         ),
     }
-
-
-def _list(items: list[str]) -> str:
-    """"a, b or c", so the brief reads as a sentence rather than as a form."""
-    if len(items) == 1:
-        return items[0]
-    return ", ".join(items[:-1]) + " or " + items[-1]
 
 
 def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> str:
@@ -234,7 +247,6 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
             "true and they are not concrete, so they are not an answer on their own."
         )
 
-    missing = dossier.missing_facts(state)
 
     if gate.allow_booking:
         lines.append(
@@ -242,39 +254,35 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
             "most useful next step for her right now, most turns it is not. If you do offer it, "
             "the link goes in this message: never ask whether she would like you to send it."
         )
+        if not dossier._stated((state.get("slots") or {}).get("age")):
+            lines.append(
+                "- You do not know her age. Do not ask it as a conversation question. Only on the "
+                "turn you would send the link, send this instead, as its own short message: "
+                "\"Before I send you the link, can I ask how old you are?\" The link goes in the "
+                "reply after she answers. Ask it once."
+            )
+        lines.append(
+            "- Partner is not a question to ask. When you send the link, invite her partner to the "
+            "call only if she has mentioned one. If she has not, do not assume one."
+        )
     else:
         lines.append(
             "- No consultation this turn. Do not offer a call, do not hint at one, and do not "
             "suggest she get in touch to arrange one."
         )
 
-    # Step 4 of the conversation flow. The gate can withhold a link but it cannot ask a question,
-    # so a conversation that never learns anything about her stalls with the link shut and no
-    # route to opening it. Naming the gap is what turns "no consultation this turn" from a dead
-    # end into the next thing to do.
-    #
-    # Age had its own line here while it was also a precondition in the gate, and the pair of them
-    # made it the next question in every conversation, including the ones that were not
-    # qualification conversations at all. v2.0 §B took the precondition out, so it is one of the
-    # facts in this list now and it is asked when the answer changes something.
-    if gate.block_reason in ("not_enough_context", "first_exchange") and missing:
+    # No list of unknown facts goes to the writer. Handing it one turned every reply into the next
+    # line of an intake form. The conversation learns about her the way the examples do: from what
+    # she says, with a question only when one comes out of her message.
+    if gate.block_reason in ("not_enough_context", "first_exchange"):
         lines.append(
-            "- You still do not know " + _list(missing) + ". Until you know at least three things "
-            "about her situation, a call cannot honestly be offered, so the way forward is to "
-            "learn one of them. Answer what she asked first, then ask for the single one that "
-            "would most change what you say next. One question, in her words, not a list and not "
-            "an intake form.\n"
-            "- Unless she is asking on behalf of someone else, a sister or a friend. Then none of "
-            "the line above applies: there is nobody here to learn about. Send the masterclass "
-            "link, say her sister is welcome to message you herself, and end the reply there. No "
-            "question at all, not about the other person, her situation or her needs, and not "
-            "about the person writing."
-        )
-    elif missing and gate.allow_booking:
-        lines.append(
-            "- Before this becomes a booking you should know " + _list(missing) + ". If you are "
-            "about to send the link and cannot say what she told you about those, ask the one "
-            "that matters most instead and send the link on a later turn."
+            "- Respond to what she just said, warmly and specifically. If a question helps, let it "
+            "come from her message, the way it does in the examples. One at most, and sometimes "
+            "none. Never ask for a fact just because you do not have it yet.\n"
+            "- Unless she is asking on behalf of someone else, a sister or a friend. Then send the "
+            "masterclass link, say her sister is welcome to message you herself, and end the reply "
+            "there. No question at all, not about the other person, her situation or her needs, "
+            "and not about the person writing."
         )
 
     # The reason a turn was gated is usually also the thing the reply must not do.
@@ -334,13 +342,12 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
         # the writer is told only "no consultation this turn", and what came back was the
         # disclosure and the invitation crushed into one reply with the link offered as a question.
         "paid_not_disclosed": (
-            "- Nothing in this conversation has told her yet that this is paid, so there is no "
-            "honest way to mention a call in this message. Tell her instead, in your own words: it "
-            "is a paid coaching program that asks for commitment, participation and a financial "
-            "investment, and the level of support varies. No figure, unless she has asked what it "
-            "costs. Do not name a call, a consultation, a first step, a next step or the team "
-            "arranging one, and do not ask whether she would like a link. Once she has been told, "
-            "the invitation is available to you on the turn after this one."
+            "- She has not been told yet that this is paid, so do not mention a call in this "
+            "message. When the conversation reaches how working together works, or she shows she "
+            "wants your help, tell her once, the way the examples do: it is a paid program that "
+            "asks for her participation, and ask whether she feels ready for that. Until then, "
+            "just respond to her. No figure unless she asked what it costs. Never repeat it once "
+            "said."
         ),
         "demands_guarantee": (
             "- She wants a guarantee. Say clearly that no honest coach can give one, and do not "
@@ -372,12 +379,11 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
     # are turns where asking her anything is the mistake, the structural and age reasons have
     # already ended it, and `tubal_status_unclear` carries a question of its own above: a second one
     # would put two question marks in a reply the contract allows one in.
-    if gate.block_reason in CONTINUES and missing:
+    if gate.block_reason in CONTINUES:
         lines.append(
             "- That is why the link is shut this turn, not a reason the conversation is over. Say "
-            "it once, do not spend the whole message on it, then take her forward: you still do "
-            "not know " + _list(missing) + ", so ask the one that would most change what you say "
-            "next. One question, in her words."
+            "it once, do not spend the whole message on it, then stay with what she is going "
+            "through."
         )
 
     # The spiral, counted here rather than left to the writer to notice. Five rounds of "count the
@@ -525,8 +531,8 @@ async def run_turn(
     try:
         response = await openai_client.chat.completions.create(
             model=model,
-            temperature=float(cfg.get("brain_temperature") or 0.8),
             messages=[{"role": "system", "content": system}] + history,
+            **_write_tuning(model, float(cfg.get("brain_temperature") or 0.8)),
         )
     except Exception:
         logger.exception("Writer failed for %s. Pausing rather than sending nothing", ig_user_id)

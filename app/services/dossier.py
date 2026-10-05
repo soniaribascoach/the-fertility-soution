@@ -377,43 +377,6 @@ def _booking_blocked(state: dict, read: dict) -> str:
     return ""
 
 
-# Step 4 of the conversation flow (Part 1 §8): the things the AI is supposed to check it knows
-# before deciding anything, in the order they are worth asking for.
-#
-# The order is not a preference, it is what each answer can do to the conversation. How long she
-# has been trying and what she is doing about it shape the whole reply, so they lead. Whether a
-# baby is one of her biggest priorities is a pre-booking condition under 2B.1 §15.
-#
-# Age has moved down. It led this list while it was also a precondition in `_booking_blocked`, and
-# the two together made it the question asked of everyone, in a thank-you, in a masterclass
-# request, in a conversation with a woman who had just said she wanted to enrol. v2.0 §B: it is
-# relevant fertility information, not the default next question. It is still here because it can
-# still end a conversation, and it is still ahead of partner status, which changes only who else is
-# on the call and is worth a question late and nothing early.
-#
-# The labels are what the writer is told is missing, so they are phrased as the thing to find out
-# rather than as a field name.
-DISCOVERY = (
-    ("time_trying", "how long she has been trying"),
-    ("conceiving_mode", "whether she is trying naturally or preparing for IUI or IVF"),
-    ("pregnancy_priority", "whether having a baby is one of her biggest priorities right now"),
-    ("age", "how old she is"),
-    ("partner_status", "whether she is doing this with a partner or on her own"),
-)
-
-
-def missing_facts(state: dict) -> list[str]:
-    """What Step 4 would still have her ask about, most useful first.
-
-    The gate can withhold a link but it cannot ask a question, and for five rounds nothing told the
-    writer why the link was missing or what would change it. A conversation was recorded where a
-    frightened woman said yes to being helped four times, was never asked her age, and was
-    eventually told a person would be in touch, which was not true.
-    """
-    slots = state.get("slots") or {}
-    return [label for key, label in DISCOVERY if not _stated(slots.get(key))]
-
-
 def _first_exchange(state: dict) -> bool:
     return int((state.get("counters") or {}).get("turns", 0)) <= 1
 

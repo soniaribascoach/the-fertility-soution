@@ -10,3 +10,5 @@ dist/
 build/
 .DS_Store
 .idea/
+.playwright-mcp/
+manual_testing/
