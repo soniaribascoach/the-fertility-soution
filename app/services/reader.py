@@ -14,7 +14,7 @@ import re
 
 from openai import AsyncOpenAI
 
-from app.services.prompts import build_read_prompt
+from app.services.prompts import build_language_prompt, build_read_prompt, build_safety_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,8 @@ VALID_INTENTS = {
     "grief_or_loss", "advice_request", "free_info_request", "collaboration",
     "media_request", "technical_support", "complaint", "not_a_fit", "spam_or_aggression",
 }
+
+PATHS = ("terminal", "direct_answer", "nurturing", "qualification")
 
 
 def _coerce(raw: str) -> dict:
@@ -58,14 +60,14 @@ def normalise(data: dict) -> dict:
             logger.info("Reader returned unknown intent %r, falling back", intent)
         intent = "new_prospect"
 
-    tags = data.get("tags") or []
-    if isinstance(tags, str):
-        tags = [tags]
-    tags = [str(t).strip().lower() for t in tags if str(t).strip()][:3]
-
     language = data.get("language")
     if language not in ("en", "es", "other"):
         language = "en"
+
+    # Manual v2.0 §A: which of the 4 conversation types this message is. Unknown means no note.
+    path = data.get("path")
+    if path not in PATHS:
+        path = None
 
     slots = data.get("slots") if isinstance(data.get("slots"), dict) else {}
     flags = data.get("flags") if isinstance(data.get("flags"), dict) else {}
@@ -82,11 +84,10 @@ def normalise(data: dict) -> dict:
         flags["structural"] = structural
 
     return {
+        "path": path,
         "intent": intent,
-        "tags": tags,
         "language": language,
         "explicit_question": data.get("explicit_question") or None,
-        "emotional_state": data.get("emotional_state") or None,
         "slots": slots,
         "flags": flags,
     }
@@ -151,6 +152,7 @@ def _cap(model: str, visible: int) -> dict:
 # Asked on its own rather than as one field of the extraction, because the point is a second
 # opinion and a second sample of the same question is not one. The extractor is answering twenty
 # questions at once about a long transcript; this asks one question about her words.
+# Legacy wording, kept for reference. The live prompt is `prompts_simple/language.md`.
 _LANGUAGE_PROMPT = (
     "You identify what language somebody is writing in. Answer with one word and nothing else:\n\n"
     "en   - English, including broken, minimal or heavily misspelled English\n"
@@ -191,7 +193,7 @@ async def _confirm_language(
     response = await client.chat.completions.create(
         model=model,
         messages=[
-            {"role": "system", "content": _LANGUAGE_PROMPT},
+            {"role": "system", "content": build_language_prompt()},
             {"role": "user", "content": said},
         ],
         **_tuning(model, "minimal"),
@@ -229,7 +231,8 @@ async def _confirm_language(
 # touched, and the flag kept firing. `test_the_two_asked_for_human_definitions_agree` pins them.
 SAFETY_FLAGS = ("crisis", "urgent_medical", "asked_if_ai", "asked_for_human")
 
-_SAFETY_PROMPT = """You are checking one Instagram message to a fertility coach against four \
+# Legacy wording, kept for reference. The live prompt is `prompts_simple/safety.md`.
+_SAFETY_PROMPT ="""You are checking one Instagram message to a fertility coach against four \
 triggers. Return ONE JSON object: {"triggers": [...]}, listing every one that applies, or an empty \
 list.
 
@@ -258,9 +261,12 @@ list.
   She is already talking to the coach, so anything she asks the coach for is NOT this, and neither
   is anything about the consultation, which is a call with the team and the thing the whole
   conversation is for. "How do I book?", "can we both be on the call?", "can someone call me to
-  arrange it?", "what's the next step?", "how do I work with you?" are NOT this flag. The word
-  "call", the word "team" and the word "someone" do not decide it. Only set it when she is asking
-  to be taken away from this conversation, and when you are unsure, do not set it.
+  arrange it?", "what's the next step?", "how do I work with you?" are NOT this flag. Nor is
+  wanting to talk to someone before she decides: "a free call is fine, I'd like to talk to someone
+  at least", "can I talk to someone about it first?", "is there someone I can speak to before I
+  commit?". That someone is the consultation, and she is asking for the link. The word "call", the
+  word "team" and the word "someone" do not decide it. Only set it when she is asking to be taken
+  away from this conversation, and when you are unsure, do not set it.
 
   **Asking for the coach's phone number is NOT this flag.** "Can I get Sonia's number?", "what's
   your WhatsApp?", "I'd rather call her directly and explain before I book anything", "is there a
@@ -315,7 +321,7 @@ async def _safety_read(
         model=model,
         response_format={"type": "json_object"},
         messages=[
-            {"role": "system", "content": _SAFETY_PROMPT},
+            {"role": "system", "content": build_safety_prompt()},
             {"role": "user", "content": latest},
         ],
         **_tuning(model, "minimal"),
@@ -355,6 +361,7 @@ async def read_turn(
     }
     read = normalise(_coerce(raw))
 
+    extracted_human = bool(read["flags"].get("asked_for_human"))
     triggers, safety_usage = await _safety_read(client, history, model=model)
     usage = {key: usage[key] + safety_usage[key] for key in usage}
     for flag in triggers:
@@ -362,22 +369,13 @@ async def read_turn(
             logger.info("Safety read caught %s that the extraction missed", flag)
         read["flags"][flag] = True
 
-    # `phone_request` and `asked_for_human` are defined as opposites in `70_read.md`: one is a
-    # woman asking for another channel to Sonia, the other is a woman asking for somebody who is
-    # not Sonia, and the replies are a boundary and a handover. Returning both is the read
-    # contradicting itself, and the contradiction is not rare: the carve-out is written into both
-    # the extraction prompt and `_SAFETY_PROMPT` and the flag still came back on one run in three
-    # of "can I get Sonia's phone number so I can call her directly". Prose cannot close it,
-    # because the two passes are asked separately and only one of them can see the tag.
-    #
-    # The tag wins, unless she also asked for a person, in which case `human_requested` is on the
-    # read as well and both are true. Nothing is lost by dropping the flag on the rest: she is
-    # answered with the boundary and the consultation, and if what she wanted really was a
-    # different person she says so on her next message, which is read from scratch.
-    tags = read.get("tags") or []
-    if read["flags"].get("asked_for_human") and "phone_request" in tags \
-            and "human_requested" not in tags:
-        logger.info("Dropping asked_for_human on a phone_request turn: she asked for a channel")
+    # A request for Sonia's number is a request for another channel to the same person, and the safety
+    # pass, which sees only her last message, still reads it as a request for a human about one run
+    # in three. So on a phone request the handover stands only if the main extraction, which has the
+    # whole conversation, also saw her ask for somebody else.
+    if read["flags"].get("asked_for_phone") and read["flags"].get("asked_for_human") \
+            and not extracted_human:
+        logger.info("Dropping asked_for_human on a phone request: she asked for a channel")
         read["flags"].pop("asked_for_human", None)
 
     if read["language"] in ("es", "other"):

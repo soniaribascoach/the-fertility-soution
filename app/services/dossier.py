@@ -274,7 +274,9 @@ def _booking_blocked(state: dict, read: dict) -> str:
         return "both_tubes_without_ivf"
     if flags.get("refuses_paid_coaching"):
         return "refuses_paid_coaching"
-    if flags.get("demands_guarantee"):
+    # This turn only, like the two below. Sticky, one demand shut the link for good: she accepted
+    # the answer, asked to book twice and was told there was no link.
+    if (read.get("flags") or {}).get("demands_guarantee"):
         return "demands_guarantee"
     # Read from this turn rather than from the dossier, and deliberately not sticky. "I'm planning
     # IVF in a month or two" is the sentence half of her audience opens with, and one reader misfire
@@ -284,7 +286,7 @@ def _booking_blocked(state: dict, read: dict) -> str:
     # question.
     if (read.get("flags") or {}).get("wants_unprovided_service"):
         return "out_of_scope_request"
-    if flags.get("requested_lab_interpretation"):
+    if (read.get("flags") or {}).get("requested_lab_interpretation"):
         # Refusing to read her results and inviting her to a call in the same breath turns the
         # boundary into a sales lever, which is exactly what Appendix A warns against.
         return "lab_request"
@@ -370,7 +372,7 @@ def _booking_blocked(state: dict, read: dict) -> str:
     # receive the enrollment answer or next step immediately; do not warn her about financial
     # readiness before answering." Holding the link from her to tell her it is paid is that warning
     # wearing a gate.
-    ready_to_buy = read.get("intent") == "warm_prospect" or "ready_to_book" in (read.get("tags") or [])
+    ready_to_buy = read.get("intent") == "warm_prospect" or (read.get("flags") or {}).get("wants_to_buy")
     if not flags.get("understands_paid_program") and not ready_to_buy:
         return "paid_not_disclosed"
 
@@ -445,7 +447,7 @@ def gate(state: dict, read: dict) -> Gate:
     # rule and nothing else. A woman who says "take my money" and tells you nothing about herself
     # is still held by the `known < 3` check: readiness to buy is not the same as being understood
     # well enough to invite honestly.
-    ready = read.get("intent") == "warm_prospect" or "ready_to_book" in (read.get("tags") or [])
+    ready = read.get("intent") == "warm_prospect" or (read.get("flags") or {}).get("wants_to_buy")
     # `paid_not_disclosed` is true of a first message and so is this, and this is the more useful
     # of the two to hand the writer: it pairs with the missing-facts instruction, where the other
     # one would have the reply announce the commercial terms to a woman who has said one thing.

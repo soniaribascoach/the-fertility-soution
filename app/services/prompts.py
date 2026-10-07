@@ -1,7 +1,7 @@
-"""Assembles the system prompts from `prompts/*.md` plus the editable knowledge base.
+"""Assembles the system prompts from `prompts_simple/*.md` plus the editable knowledge base.
 
 The layers are static text distilled from the Operating Manual. The only thing that varies per
-turn is the knowledge base: `50_knowledge.md` carries `{{key}}` placeholders filled from the
+turn is the knowledge base: `knowledge.md` carries `{{key}}` placeholders filled from the
 `app_config` table, and `[[BLOCK:name]]` sections that are included only when this turn is allowed
 to use them.
 
@@ -15,27 +15,26 @@ from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
-PROMPTS_DIR = "prompts"
+PROMPTS_DIR = "prompts_simple"
+# The layered prompts these replaced. Kept on disk for reference; only the manual experiment reads
+# from here now.
+LEGACY_DIR = "prompts"
 
-# Order matters: identity before judgment before boundaries before voice.
-WRITE_LAYERS = (
-    "00_identity.md",
-    "10_judgment.md",
-    "20_boundaries.md",
-    "30_operations.md",
-    "40_voice.md",
-    "50_knowledge.md",
-    "60_contract.md",
-)
-READ_LAYER = "70_read.md"
+WRITE_LAYERS = ("write.md", "knowledge.md")
+KNOWLEDGE_LAYER = "knowledge.md"
+READ_LAYER = "read.md"
+SAFETY_LAYER = "safety.md"
+LANGUAGE_LAYER = "language.md"
+TURN_LAYER = "turn.md"
 
 _BLOCK_RE = re.compile(r"\[\[BLOCK:(?P<name>\w+)\]\](?P<body>.*?)\[\[/BLOCK\]\]", re.DOTALL)
 _PLACEHOLDER_RE = re.compile(r"\{\{(\w+)\}\}")
+_SECTION_RE = re.compile(r"^## (\w+)\s*$", re.MULTILINE)
 
 
 @lru_cache(maxsize=None)
-def _read_layer(filename: str) -> str:
-    with open(os.path.join(PROMPTS_DIR, filename), "r", encoding="utf-8") as fh:
+def _read_layer(filename: str, directory: str = PROMPTS_DIR) -> str:
+    with open(os.path.join(directory, filename), "r", encoding="utf-8") as fh:
         return fh.read()
 
 
@@ -65,13 +64,6 @@ def fill_placeholders(text: str, values: dict) -> str:
 def config_values(cfg: dict) -> dict:
     """The subset of `app_config` that prompts and examples may interpolate."""
     return {
-        "kb_about": cfg.get("kb_about", ""),
-        "kb_program": cfg.get("kb_program", ""),
-        "kb_pricing": cfg.get("kb_pricing", ""),
-        "kb_boundaries": cfg.get("kb_boundaries", ""),
-        "kb_team": cfg.get("kb_team", ""),
-        "kb_faq": cfg.get("kb_faq", ""),
-        "kb_free_resource": cfg.get("kb_free_resource", ""),
         "booking_link": cfg.get("booking_link", ""),
         # Two links, two stages. `masterclass_link` is the registration page anyone may be
         # offered; `replay_link` is only rendered inside the post-booking block. `apply_link`
@@ -95,7 +87,7 @@ def build_write_prompt(cfg: dict, allowed_blocks: set[str]) -> str:
     parts = []
     for layer in WRITE_LAYERS:
         text = _read_layer(layer)
-        if layer == "50_knowledge.md":
+        if layer == KNOWLEDGE_LAYER:
             text = resolve_blocks(text, allowed_blocks)
         parts.append(fill_placeholders(text, values).strip())
     return "\n\n---\n\n".join(p for p in parts if p)
@@ -109,18 +101,12 @@ MANUAL_LAYER = "manual.md"
 _FACT_KEYS = (
     ("Experience", "years_experience"),
     ("Babies welcomed", "babies_welcomed"),
-    ("About me", "kb_about"),
-    ("My program", "kb_program"),
-    ("What I provide and what I do not", "kb_boundaries"),
-    ("My team", "kb_team"),
-    ("Common questions", "kb_faq"),
 )
 
 _GATED_FACTS = (
-    ("pricing", "Investment", "kb_pricing"),
+    ("pricing", "Investment", "price_range"),
     ("booking", "Booking link (free consultation)", "booking_link"),
     ("post_booking", "Masterclass replay link (post-booking only)", "replay_link"),
-    ("free_resource", "Free resources", "kb_free_resource"),
     ("free_resource", "Masterclass registration link (free resource)", "masterclass_link"),
 )
 
@@ -136,7 +122,7 @@ def _manual_write_prompt(values: dict, allowed_blocks: set[str]) -> str:
         "You are Sonia Ribas, replying in her Instagram DMs. The Operating Manual below is how you "
         "behave. Reply with the message text only: plain text, first person, no markdown, blank "
         "lines between message bubbles.",
-        _read_layer(MANUAL_LAYER).strip(),
+        _read_layer(MANUAL_LAYER, LEGACY_DIR).strip(),
         "# KNOWN FACTS\n\nCurrent facts and the links you may send on this turn. A link that is "
         "not listed here is one you may not send now.\n\n" + body,
     ))
@@ -144,3 +130,24 @@ def _manual_write_prompt(values: dict, allowed_blocks: set[str]) -> str:
 
 def build_read_prompt() -> str:
     return _read_layer(READ_LAYER)
+
+
+def build_safety_prompt() -> str:
+    return _read_layer(SAFETY_LAYER)
+
+
+def build_language_prompt() -> str:
+    return _read_layer(LANGUAGE_LAYER)
+
+
+def turn_notes() -> dict[str, str]:
+    """The per-turn notes in `turn.md`, keyed by their `## name` heading.
+
+    Each note is joined onto one line so it renders as a single bullet under THIS TURN. Text above
+    the first heading is a comment for whoever edits the file and is never sent.
+    """
+    parts = _SECTION_RE.split(_read_layer(TURN_LAYER))
+    return {
+        name: " ".join(body.split())
+        for name, body in zip(parts[1::2], parts[2::2])
+    }

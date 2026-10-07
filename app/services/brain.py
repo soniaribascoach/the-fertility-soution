@@ -31,7 +31,7 @@ from openai import AsyncOpenAI
 from app.services import cta, dossier
 from app.services.few_shots import load_few_shot_scenarios, render_examples
 from app.services.message_splitter import strip_dashes, use_digits
-from app.services.prompts import build_write_prompt, config_values
+from app.services.prompts import build_write_prompt, config_values, turn_notes
 from app.services.reader import read_turn
 
 logger = logging.getLogger(__name__)
@@ -147,291 +147,74 @@ def _usage(read_model: str, write_model: str, read_usage: dict, response) -> dic
 
 
 def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> str:
-    """The per-turn instructions: what this reply has to do, and what it must not contain."""
+    """The per-turn notes: what this reply has to do, and what it must not contain.
+
+    This only decides which notes apply. Their wording lives in `prompts_simple/turn.md`, so a
+    change to what the writer is told is a prompt edit, not a deploy.
+    """
+    notes = turn_notes()
     lines = ["# THIS TURN"]
 
-    question = read.get("explicit_question")
-    if question:
-        lines.append(f"- She asked: \"{question}\". Answer it in this message, before anything else.")
-    if read.get("emotional_state"):
-        lines.append(f"- She reads as: {read['emotional_state']}. Match that.")
+    def add(name: str, **values) -> None:
+        text = notes.get(name)
+        if not text:
+            return
+        for key, value in values.items():
+            text = text.replace("{" + key + "}", str(value))
+        lines.append(f"- {text}")
 
-    # She asked whether she is talking to a person. Until v2.0 this handed the conversation over
-    # and she was answered with silence, which told her the answer in the worst available way. She
-    # is answered now, and only the offer of a person, if she takes it, hands over.
-    if (read.get("flags") or {}).get("asked_if_ai"):
-        lines.append(
-            "- She has asked, or has hinted, that she is not sure a person is typing. Tell her the "
-            "truth in the first line: she is talking to Sonia's AI assistant, trained on how Sonia "
-            "works, and she can have someone from the team instead if she would rather. Then ask "
-            "whether she would like that. Do not deny it, do not answer around it, do not bury it "
-            "under the rest of the reply, and do not perform hurt feelings about being asked. If "
-            "she had a question in the same message, answer that after, in the same reply. Nothing "
-            "here changes if she asked it eight turns in and everything was going well."
-        )
+    flags = read.get("flags") or {}
+    sticky = state.get("flags") or {}
 
-    # The opposite instruction, for the turn that keeps being mistaken for the one above. A request
-    # for Sonia's number is a request for another channel to the same person, and the reply to it
-    # opened with "you're chatting with an AI assistant" on every run of a six conversation test,
-    # with the boundary she actually asked about pushed to the end or dropped. The carve-out is
-    # written into `60_contract.md` and it loses: the paragraph it has to argue with is six
-    # paragraphs of emphasis away, and "call her directly" reads as a request for a person.
-    #
-    # So it is said per turn, where it competes with nothing. Keyed on the tag rather than on her
-    # prose, and only where she has raised no doubt of her own: if she asks both in one message
-    # both flags are true, the branch above fires, and this one stays out of the way.
-    if "phone_request" in (read.get("tags") or []) and not (read.get("flags") or {}).get("asked_if_ai"):
-        lines.append(
-            "- She has asked for a phone number, a WhatsApp or a way to call you directly. That is "
-            "a request for another way to reach the same person, not a question about who is "
-            "typing and not a request for somebody else, so do not announce that she is talking to "
-            "an AI, do not offer to bring in a human, and do not hand her over. Say two things: "
-            "she is already talking to you, so she can tell you the whole of it right here, and "
-            "you do not give a personal number out through DMs, said once and without apology. Do "
-            "not invent a reason for the boundary, and in particular do not tell her what a call "
-            "with you would or would not be like: you do not know what your day looks like and "
-            "she will hear it as a brush-off. A bare refusal with a question after it answers her "
-            "without giving her anything, which is what she came to the DMs to avoid."
-        )
-        # v2.1 §13 and §G: the boundary is half the answer, and the other half is the route to the
-        # real conversation she was after. That route is the consultation, and it only exists on a
-        # turn where the gate has opened it. Where it has not, the honest thing in its place is the
-        # conversation she is already in: she has told us nothing yet, and a call named before she
-        # has been told this is paid is the invitation `60_contract.md` forbids.
-        if gate.allow_booking:
-            lines.append(
-                "- What she actually wants is a proper conversation rather than a number, and the "
-                "consultation is that conversation, so point her at it and put the link in this "
-                "message. If what is behind the request is that she does not want to repeat "
-                "herself, say so and answer it: whoever she speaks to can see what she has already "
-                "told you."
-            )
-        else:
-            lines.append(
-                "- You have no call to offer her this turn, so do not name one, do not describe "
-                "the consultation and do not say what the next step would be. Ask her what is "
-                "going on instead. She came here to be heard by a person, and the whole of that "
-                "is available to her right now in this conversation."
-            )
+    if read.get("explicit_question"):
+        add("question", question=read["explicit_question"])
+    if read.get("path"):
+        add(f"path_{read['path']}")
 
-    # v2.1 §D. The gate lets this conversation through and the knowledge base carries the program,
-    # but on a turn with no link in it the reply came back as "yes, I do support women through
-    # pregnancy" with no name on it, which leaves her having to ask a second time what the thing
-    # is. She asked whether it exists. It has a name, so use it.
-    #
-    # Nobody has told the AI who the program is for, so it does not qualify her for it: no
-    # questions about how far along she is or what she needs, and no link. Her wanting to join is
-    # read as `wants_to_join_pregnancy_program` and hands over before the writer is called.
-    if (state.get("flags") or {}).get("wants_pregnancy_support"):
-        lines.append(
-            "- She is pregnant and has asked for support through the pregnancy. The answer is yes, "
-            "and the thing is called The Pregnancy Solution, so name it and say what it is from "
-            "the knowledge base. Answer anything she asks about it. Do not ask about her "
-            "pregnancy or what she needs, and do not send a link or offer a call: the team "
-            "decides who it fits, not you. If she would like to join, the next step is that "
-            "someone from your team takes it from there, and you can say so."
-        )
+    if flags.get("asked_if_ai"):
+        add("asked_if_ai")
+    # A request for Sonia's number is a request for another channel to the same person, not a doubt
+    # about who is typing. If she raised both, the AI note above covers it.
+    elif flags.get("asked_for_phone"):
+        add("asked_for_phone")
+        add("phone_with_link" if gate.allow_booking else "phone_no_link")
 
-    # She already pays somebody who is helping her, and she is asking what you would add. Measured
-    # over three runs the reply twice answered with the shape of an answer: a clear sense of what
-    # to focus on first, the right things in the right order, making sure they actually happen.
-    # All true, none of it about her, and none of it something the acupuncturist is not already
-    # doing as far as she can tell. The playbook names a concrete gap and this makes it the
-    # instruction rather than an example she may or may not follow.
-    if "complementary_provider" in (read.get("tags") or []):
-        lines.append(
-            "- She already works with somebody who is helping her. Do not diminish them and do not "
-            "imply you provide what they provide. Name one concrete thing you would add that she "
-            "can picture: her partner's side, her cycles, her thyroid or metabolic side, whatever "
-            "her situation actually points at. Prioritising, sequencing and accountability are "
-            "true and they are not concrete, so they are not an answer on their own."
-        )
-
+    if sticky.get("wants_pregnancy_support"):
+        add("pregnancy_support")
+    if flags.get("has_other_provider"):
+        add("has_other_provider")
 
     if gate.allow_booking:
-        lines.append(
-            "- A consultation is available to you this turn. Offer it only if it is genuinely the "
-            "most useful next step for her right now, most turns it is not. If you do offer it, "
-            "the link goes in this message: never ask whether she would like you to send it."
-        )
+        add("booking_open")
         if not dossier._stated((state.get("slots") or {}).get("age")):
-            lines.append(
-                "- You do not know her age. Do not ask it as a conversation question. Only on the "
-                "turn you would send the link, send this instead, as its own short message: "
-                "\"Before I send you the link, can I ask how old you are?\" The link goes in the "
-                "reply after she answers. Ask it once."
-            )
-        lines.append(
-            "- Partner is not a question to ask. When you send the link, invite her partner to the "
-            "call only if she has mentioned one. If she has not, do not assume one."
-        )
+            add("age_unknown")
+        add("partner")
     else:
-        lines.append(
-            "- No consultation this turn. Do not offer a call, do not hint at one, and do not "
-            "suggest she get in touch to arrange one."
-        )
+        add("booking_shut")
 
-    # No list of unknown facts goes to the writer. Handing it one turned every reply into the next
-    # line of an intake form. The conversation learns about her the way the examples do: from what
-    # she says, with a question only when one comes out of her message.
     if gate.block_reason in ("not_enough_context", "first_exchange"):
-        lines.append(
-            "- Respond to what she just said, warmly and specifically. If a question helps, let it "
-            "come from her message, the way it does in the examples. One at most, and sometimes "
-            "none. Never ask for a fact just because you do not have it yet.\n"
-            "- Unless she is asking on behalf of someone else, a sister or a friend. Then send the "
-            "masterclass link, say her sister is welcome to message you herself, and end the reply "
-            "there. No question at all, not about the other person, her situation or her needs, "
-            "and not about the person writing."
-        )
-
-    # The reason a turn was gated is usually also the thing the reply must not do.
-    reason_rules = {
-        "lab_request": (
-            "- She has put test results in front of you. Do not tell her what any number means, "
-            "not even loosely, not even with a caveat, and do not say a value is low, high, "
-            "borderline or optimal. Say that reading results properly is the coaching itself "
-            "rather than something done over DM, and that what a number means for her belongs "
-            "with the people running her care. Do not say you would need her full situation, her "
-            "whole picture, her complete case or more context: every one of those tells her the "
-            "reading exists behind the boundary and she would have it if she gave you enough. "
-            "Then give her something useful to do instead."
-        ),
-        "out_of_scope_request": (
-            "- She is asking for something you do not provide. Say so plainly in one sentence and "
-            "point her to who does provide it."
-        ),
-        "tubal_status_unclear": (
-            "- Ask whether both tubes are affected or only one. Do not answer the rest of her "
-            "question until you know."
-        ),
-        "stopped_trying": (
-            "- She has stopped trying to conceive. There is nothing here to sell and nothing to "
-            "qualify: no program, no price, no call, no free resource, and no question about her "
-            "situation. Do not treat the decision as an objection, do not look for the opening "
-            "where she might reconsider, and do not tell her what is still possible. Answer what "
-            "she said, warmly and specifically to her, and let the conversation end. If she asks "
-            "you something later, answer that honestly too."
-        ),
-        "recent_loss": (
-            "- She is grieving a recent loss. Ask her nothing about her history, assess nothing, "
-            "and offer nothing. Be with her. This holds for the practical question that comes "
-            "next as well: what testing is usual, whether to push for answers, when to try "
-            "again. Tell her nothing about what is normally done, say the question is worth "
-            "asking and is one for the person who cared for her, and stay with the fact that it "
-            "is days old."
-        ),
-        # v2.1 §L. The gate holds the link until she has answered, but for five runs nothing told
-        # the writer what the missing answer was, so the disclosure arrived whenever the model
-        # happened to think of it, which was after the price and one turn before the link.
-        "english_materials_undisclosed": (
-            "- She is writing in Spanish and has not yet been told that the program materials are "
-            "in English. Tell her now, in Spanish, in this message: you coach her in Spanish, the "
-            "materials are in English, and ask whether she would be comfortable working with them. "
-            "Do not save it for later, do not put it after a price, and do not mention a call or a "
-            "link until she has answered."
-        ),
-        "declines_english_materials": (
-            "- She has said English materials would not work for her. That is the end of it: she "
-            "is not booked and there is nothing to arrange. Say so warmly and plainly, in Spanish. "
-            "Do not ask her again in different words, do not soften it into a maybe, do not "
-            "promise a translation, and do not suggest the team might arrange something. You do "
-            "not know that, and hope built on it costs her more than the plain answer."
-        ),
-        # The one gated reason whose forward move is a sentence rather than a question. Without it
-        # the writer is told only "no consultation this turn", and what came back was the
-        # disclosure and the invitation crushed into one reply with the link offered as a question.
-        "paid_not_disclosed": (
-            "- She has not been told yet that this is paid, so do not mention a call in this "
-            "message. When the conversation reaches how working together works, or she shows she "
-            "wants your help, tell her once, the way the examples do: it is a paid program that "
-            "asks for her participation, and ask whether she feels ready for that. Until then, "
-            "just respond to her. No figure unless she asked what it costs. Never repeat it once "
-            "said."
-        ),
-        "demands_guarantee": (
-            "- She wants a guarantee. Say clearly that no honest coach can give one, and do not "
-            "supply a softened version of one in its place."
-        ),
-        # v2.1 §D: this used to end "coaching through a pregnancy is not what you do", which was
-        # true of v1.0 and is the sentence a newly pregnant woman was answered with. The Pregnancy
-        # Solution is the pregnancy side of the work, and `_booking_blocked` only reaches this
-        # reason while she has asked for nothing, so what is withheld here is the selling, not the
-        # existence of the thing.
-        "currently_pregnant": (
-            "- She is pregnant now, and she has only told you her news. Congratulate her and stop: "
-            "there is nothing here to sell and nothing to qualify, so no program, no price, no "
-            "next step, no call, and no question about her situation. Do not reach for pregnancy "
-            "support she has not asked for. If she asks for it, that is a different turn and the "
-            "answer there is yes."
-        ),
-    }
-    if gate.block_reason in reason_rules:
-        lines.append(reason_rules[gate.block_reason])
-
-    # A boundary is not the end of the conversation, and the gate can shut the link but it cannot
-    # ask a question. The forward move above was reachable only from the two context reasons, so a
-    # turn gated for any other reason arrived at the writer as a prohibition with nothing to do
-    # instead: four messages answered with four refusals, no question asked in any of them, and the
-    # last one explaining away the missing link, which `60_contract.md` forbids by name.
-    #
-    # Only the reasons that leave something to talk about. `recent_loss` and `currently_pregnant`
-    # are turns where asking her anything is the mistake, the structural and age reasons have
-    # already ended it, and `tubal_status_unclear` carries a question of its own above: a second one
-    # would put two question marks in a reply the contract allows one in.
+        add("early")
+    if gate.block_reason:
+        add(f"reason_{gate.block_reason}")
     if gate.block_reason in CONTINUES:
-        lines.append(
-            "- That is why the link is shut this turn, not a reason the conversation is over. Say "
-            "it once, do not spend the whole message on it, then stay with what she is going "
-            "through."
-        )
+        add("continues")
 
-    # The spiral, counted here rather than left to the writer to notice. Five rounds of "count the
-    # general questions" in the static prompt never closed it: by the time the conversation is
-    # eight questions deep, each one still looks like a reasonable question asked by a reasonable
-    # person, and the model answers it. A number in front of it is harder to talk past than a rule.
-    # Only where she is actually being taught. A woman working through a structural boundary asks
-    # the same shape of question, "so is there really nothing that can open them up", and it counts
-    # as general because it tells us nothing new about her. Handing her the masterclass at that
-    # moment reads as a consolation prize for the answer she has just been given.
+    # The education spiral, counted in `dossier` rather than left to the writer to notice. Only
+    # where she is being taught: a woman working through a boundary asks the same shape of
+    # question, and a masterclass handed to her then reads as a consolation prize.
     teaching = int((state.get("counters") or {}).get("teaching", 0))
     if gate.block_reason not in ("", "first_exchange", "not_enough_context"):
         teaching = 0
-
-    already_sent = bool((state.get("flags") or {}).get("masterclass_sent"))
-    if teaching >= 3 and already_sent:
-        # Without this the instruction reads as "do it again", and it was followed exactly: six
-        # consecutive replies of the same two sentences and the same link. Saying the same thing a
-        # sixth time is its own failure, and a lead reading it knows precisely what she is talking
-        # to.
-        lines.append(
-            "- These are still general questions and you have already sent her the masterclass, so "
-            "do not send it again and do not repeat what you said when you did. Answer this one in "
-            "a single line if it has an honest one-line answer, or say you have nothing to add "
-            "from here. Then leave the door open and stop. Do not finish with a question about "
-            "her situation: she has now asked you several things about how fertility works and "
-            "told you nothing about herself, and a discovery question bolted onto every answer is "
-            "the exchange turned into qualification, which is the one thing this kind of "
-            "conversation must not become."
-        )
+    if teaching >= 3 and sticky.get("masterclass_sent"):
+        add("teaching_repeat")
     elif teaching >= 3:
-        lines.append(
-            f"- This is general question number {teaching} in a row, with nothing about her in any "
-            "of them. Say plainly that going one question at a time is not getting her anywhere, "
-            "and send the masterclass link in this message. Answer this one in a line if it has an "
-            "honest short answer, and do not teach beyond that: no mechanism, no evidence, no "
-            "view on whether the thing is worth doing. Do not finish with a question about her "
-            "situation."
-        )
+        add("teaching_many", count=teaching)
     elif teaching == 2:
-        lines.append(
-            "- That is two general questions in a row. Answer this one briefly, then stop "
-            "teaching: say what you have noticed and send the masterclass link in this message."
-        )
+        add("teaching_two")
 
-    if openings:
+    if openings and notes.get("openings"):
         lines.append("")
-        lines.append("Openings already used with other people recently. Do not start like any of them:")
+        lines.append(notes["openings"])
         lines += [f"  · {o}" for o in openings[:12]]
 
     return "\n".join(lines)

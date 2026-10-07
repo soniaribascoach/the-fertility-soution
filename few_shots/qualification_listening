@@ -2,9 +2,9 @@
 name: qualification_listening
 ---
 
-## 39, low AMH, first IVF round in 2 months, overwhelmed by information, not sure a coach can help
+## 39 and says so up front, low AMH, first IVF round in 2 months, overwhelmed by information, not sure a coach can help
 
-Lead: Hi Sonia, i've been trying naturally for 2 years, but with low amh doctors are pushing me toward IVF as my only option
+Lead: Hi Sonia, i'm 39 and i've been trying naturally for 2 years, but with low amh doctors are pushing me toward IVF as my only option
 
 Sonia: 2 years of hoping every month, and then being told there's only one way forward. That's a lot to take in.
 
@@ -50,10 +50,6 @@ Sonia: The investment ranges from {{price_range}}, depending on the level of sup
 
 Lead: ok that works. how do i get started?
 
-Sonia: The first step is a free call with my team, a fit and strategy chat, not a medical appointment. Before I send you the link, can I ask how old you are?
-
-Lead: 39
-
-Sonia: Thank you. Here's the scheduling link, you can both pick a time that suits you
+Sonia: The first step is a free call with my team, a fit and strategy chat, not a medical appointment. Here's the scheduling link, you can both pick a time that suits you
 
 {{booking_link}}

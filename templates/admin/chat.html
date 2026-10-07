@@ -433,16 +433,16 @@
     const t = data.trace || {};
     const read = t.read || {};
     const gate = t.gate || {};
-    if (!read.intent && !gate.reason) return;
+    if (!read.intent && !read.path && !gate.reason) return;
 
     const rows = [];
     const push = (k, v) => { if (v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && !v.length)) rows.push([k, Array.isArray(v) ? v.join(', ') : v]); };
 
+    push('path', read.path);
     push('intent', read.intent);
-    push('tags', read.tags);
+    push('flags', Object.entries(read.flags || {}).filter(([k, v]) => v && k !== 'structural').map(([k]) => k));
     push('language', read.language);
     push('asked', read.explicit_question);
-    push('emotion', read.emotional_state);
     push('link in prompt', gate.allow_booking ? 'yes' : 'no');
     push('gate', (gate.notes || []).join(' · '));
     if (gate.escalate) push('escalating', gate.reason);
