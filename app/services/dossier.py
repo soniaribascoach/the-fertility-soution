@@ -228,30 +228,39 @@ def _teaching_run(previous: dict, read: dict, counters: dict) -> int:
     return int(counters.get("teaching", 0)) + 1
 
 
-def _escalation_reason(state: dict, read: dict) -> str:
-    """Why this turn goes to a person. Empty string means it does not."""
+def _escalation_reason(state: dict, read: dict, before: dict | None = None) -> str:
+    """Why this turn goes to a person. Empty string means it does not.
+
+    Only what is new this turn hands over: flags from this turn's read, facts only when this turn
+    changed them (`before` is the pre-merge dossier). The pause keeps the AI quiet while the team
+    has her, and after a resume an old reason must not send her straight back.
+    """
+    raised = read.get("flags") or {}
     flags = state.get("flags") or {}
     slots = state.get("slots") or {}
+
+    def new(path: str, key: str) -> bool:
+        return (state.get(path) or {}).get(key) != ((before or {}).get(path) or {}).get(key)
 
     for flag in ESCALATION_FLAGS:
         # An unsupported language names itself rather than disappearing into the general flag,
         # because the person picking the conversation up needs to know they will need Portuguese.
-        if flag == "needs_human" and slots.get("language") == "other":
+        if flag == "needs_human" and raised.get(flag) and slots.get("language") == "other":
             return "language_not_supported"
-        if flags.get(flag):
+        if raised.get(flag):
             return flag
 
     if read.get("intent") in ESCALATION_INTENTS:
         return read["intent"]
 
-    if slots.get("language") == "other":
+    if slots.get("language") == "other" and new("slots", "language"):
         return "language_not_supported"
 
-    if flags.get("structural") == "unclear_menopause":
+    if flags.get("structural") == "unclear_menopause" and new("flags", "structural"):
         return "menopause_unclear"
 
     age = slots.get("age")
-    if isinstance(age, int) and 46 <= age <= 48:
+    if isinstance(age, int) and 46 <= age <= 48 and new("slots", "age"):
         return "age_needs_review"
 
     return ""
@@ -335,10 +344,10 @@ def _booking_blocked(state: dict, read: dict) -> str:
     # 2B.1 §15: enough of her situation has to be understood before an invitation is honest.
     # Two facts is a first message, not an understanding, an invitation that early is the
     # "every message is a sales opportunity" failure the manual opens by ruling out.
-    # v2.1 §L: she can be coached in Spanish and the program materials are in English. That is a
-    # deal breaker for some women and it has to reach her before she commits, not after she has
-    # paid, so a Spanish conversation cannot reach the link until she has said English materials
-    # are workable for her. `20_boundaries.md` tells the writer to put the question; this is what
+    # v2.1 §L: her private coaching can be in Spanish, while group coaching and the program
+    # materials are in English. That is a deal breaker for some women and it has to reach her
+    # before she commits, not after she has paid, so a Spanish conversation cannot reach the link
+    # until she has said English materials are workable for her. `20_boundaries.md` tells the writer to put the question; this is what
     # makes the answer matter.
     #
     # Keyed on the language she is actually writing in. A woman writing in English is not asked to
@@ -383,9 +392,9 @@ def _first_exchange(state: dict) -> bool:
     return int((state.get("counters") or {}).get("turns", 0)) <= 1
 
 
-def gate(state: dict, read: dict) -> Gate:
-    """Decide what the WRITE prompt may contain this turn."""
-    reason = _escalation_reason(state, read)
+def gate(state: dict, read: dict, before: dict | None = None) -> Gate:
+    """Decide what the WRITE prompt may contain this turn. `before` is the pre-merge dossier."""
+    reason = _escalation_reason(state, read, before)
     if reason:
         message = HANDOVER_MESSAGES.get(reason, "")
         return Gate(

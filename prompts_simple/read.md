@@ -14,8 +14,8 @@ to her. Report what she has said as one JSON object. No prose, no code fences. T
 ```
 
 Read slots, structural and her position flags from the whole conversation. Judge path, intent,
-question and the other flags on her latest message. Report only what she said. Never guess. Never
-add a key that isn't listed.
+question and the other flags on her latest message. Report only what she said. Never guess. A slot
+she hasn't stated stays out, even when it seems likely. Never add a key that isn't listed.
 
 If her message is only a reel keyword (AMH, PCOS, BABY, IVF, READY, HOPE and so on), it is the topic
 of the reel, not a fact about her: `nurturing`, `new_prospect`, no slots, no flags.
@@ -48,13 +48,15 @@ of the reel, not a fact about her: `nurturing`, `new_prospect`, no slots, no fla
 - `conceiving_mode`: `natural` | `iui` | `ivf` | `undecided`.
   - `ivf` when she is doing it or has decided to.
   - A doctor recommending it is `undecided`.
-  - Trying for a while with no treatment mentioned is `natural`.
+  - `natural` only when she says she is trying naturally or without treatment. How long she has
+    been trying says nothing about how.
 - `ivf_history`, `iui_history`, `miscarriage_history`: her words.
 - `diagnoses`: a list, in her words.
 - `already_tried`: a list of things she has done.
 - `testing_done`: a list of tests and values she mentioned.
 - `partner_status`: `partnered` | `same_sex_partner` | `single_by_choice` | `donor_sperm`.
-  - A husband, a partner, "we", or trying naturally is `partnered`.
+  - A husband, a partner, or "we" and "our" about trying is `partnered`. Trying to conceive, or
+    trying naturally, says nothing about a partner.
   - A donor, a wife or girlfriend, or doing this alone overrides that.
 - `pregnancy_priority`: `high` | `unclear` | `low`.
   - `high` if a cycle is booked or done, a treatment is decided, she has tried 2 or more years, or
@@ -65,7 +67,9 @@ of the reel, not a fact about her: `nurturing`, `new_prospect`, no slots, no fla
 
 ## FLAGS
 
-**Hand to a person.** Set these only on a clear match.
+**Hand to a person.** Set these only on a clear match in what she has sent since the last reply.
+Anything earlier in the conversation was already acted on: a request for a person she made three
+messages ago, followed by "ok thanks" or a new question, sets nothing now.
 
 - `crisis`: explicit talk of ending her life or harming herself. "I can't do this anymore" about the
   process is not this.
@@ -115,7 +119,7 @@ of the reel, not a fact about her: `nurturing`, `new_prospect`, no slots, no fla
 - `understands_paid_program`: one of Sonia's own earlier messages said it is paid or gave the price.
 - `understands_coach_not_clinic`: it is already clear Sonia is a coach.
 - `accepts_english_materials` / `declines_english_materials`: she writes in Spanish, was told the
-  materials are in English, and said yes or no.
+  group coaching and materials are in English, and said yes or no.
 
 ## STRUCTURAL
 
@@ -142,7 +146,7 @@ Lead: hi, endo diagnosed last year. trying 2.5 years now
 Sonia: 2.5 years is a long time to keep hoping every month. What has your doctor suggested so far?
 Lead: nothing really. i just want help. is it paid? how do i sign up
 
-{"path": "qualification", "intent": "warm_prospect", "language": "en", "explicit_question": "is it paid? how do i sign up", "slots": {"time_trying": "2.5 years", "conceiving_mode": "natural", "diagnoses": ["endometriosis"], "pregnancy_priority": "high", "partner_status": "partnered"}, "flags": {"wants_to_buy": true}}
+{"path": "qualification", "intent": "warm_prospect", "language": "en", "explicit_question": "is it paid? how do i sign up", "slots": {"time_trying": "2.5 years", "diagnoses": ["endometriosis"], "pregnancy_priority": "high"}, "flags": {"wants_to_buy": true}}
 
 Conversation:
 Lead: third failed transfer. i cant do this anymore

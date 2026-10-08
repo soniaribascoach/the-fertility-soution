@@ -143,6 +143,11 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
+      <!-- Stands in for the ManyChat resume, so a paused conversation can be picked back up. -->
+      <button id="resume-btn" onclick="resumeAI()"
+        style="display:none; font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; color:#92400e; padding:6px 13px; border-radius:9px; border:1px solid #fcd34d; background:#fffbeb; cursor:pointer;">
+        Resume AI
+      </button>
       <button onclick="clearChat()"
         style="font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500; color:var(--ink-muted); padding:6px 13px; border-radius:9px; border:1px solid transparent; background:transparent; cursor:pointer; transition:all 0.15s;"
         onmouseover="this.style.color='#52525b'; this.style.background='#f4f4f5'; this.style.borderColor='#e4e4e7';"
@@ -293,6 +298,7 @@
 
   const conversationHistory = [];
   let leadState = null;
+  let paused    = null;   // the pause reason, as the worker would store it on UserState
   let turnNo    = 0;
   let costTotal = 0;
 
@@ -392,6 +398,26 @@
   function hideTyping() {
     typingEl.classList.add('hidden');
     typingEl.classList.remove('flex');
+  }
+
+  function setPaused(reason) {
+    paused = reason || null;
+    document.getElementById('resume-btn').style.display = paused ? '' : 'none';
+  }
+
+  function appendNote(text) {
+    if (emptyEl) emptyEl.style.display = 'none';
+    const note = document.createElement('div');
+    note.className = 'msg-in';
+    note.style.cssText = "align-self:center; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--ink-muted); background:#f4f4f5; border-radius:9px; padding:5px 12px;";
+    note.textContent = text;
+    messages.insertBefore(note, typingEl);
+    scrollToBottom();
+  }
+
+  function resumeAI() {
+    setPaused(null);
+    appendNote('AI resumed. Her next message goes to the AI again.');
   }
 
   function appendTakeoverBanner(reason) {
@@ -505,6 +531,12 @@
     input.value = '';
     autoResize();
     updateSendBtn();
+    // Same as the worker: a paused lead's message is kept but not answered, except her email
+    // after the booking link.
+    if (paused && !(paused === 'qualified_link_sent' && /[^\s@]+@[^\s@]+\.[^\s@]+/.test(text))) {
+      appendNote('AI paused (' + paused + '). No reply sent, the team has this conversation.');
+      return;
+    }
     showTyping();
     try {
       const res = await fetch('/admin/chat', {
@@ -526,6 +558,7 @@
       }
       pushTrace(turn, data);
       if (data.human_takeover) {
+        setPaused(data.takeover_reason);
         appendTakeoverBanner(data.takeover_reason);
       } else if (!data.reply) {
         appendMessage('ai', 'Something went wrong. Please try again.');
@@ -544,6 +577,7 @@
     toRemove.forEach(el => el.remove());
     conversationHistory.length = 0;
     leadState = null;
+    setPaused(null);
     turnNo = 0;
     costTotal = 0;
     updatePhaseChip(null);

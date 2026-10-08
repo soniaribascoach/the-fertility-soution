@@ -268,8 +268,9 @@ async def run_turn(
             action="READER_ERROR",
         )
 
+    before = state
     state = dossier.merge(state, read)
-    gate = dossier.gate(state, read)
+    gate = dossier.gate(state, read, before)
 
     trace = {
         "read": read,
