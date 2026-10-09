@@ -33,8 +33,8 @@ LIST_SLOTS = ("diagnoses", "already_tried", "testing_done")
 #
 # `needs_human` is the general one and the only one that needs to grow. The rest of the 2B.1 §10
 # list (crisis, minors, a third party asking, medically complex history, contradictions, a
-# conversation that has stopped moving) lives in `prompts/70_read.md` as prose rather than here as
-# flag names, so adding a route is an edit to a prompt and not a deploy.
+# conversation that has stopped moving) lives in `prompts_simple/read.md` as prose rather than
+# here as flag names, so adding a route is an edit to a prompt and not a deploy.
 #
 # The flags that carry a fixed line come before `needs_human`, because a woman who asked to speak
 # to a person and also tripped the general flag should still be told a person is coming.
@@ -208,10 +208,10 @@ TEACHING_INTENTS = ("free_info_request", "fertility_question", "ivf_question")
 def _teaching_run(previous: dict, read: dict, counters: dict) -> int:
     """How many general questions in a row she has now asked.
 
-    `30_operations.md` and `60_contract.md` both say to stop teaching and send the masterclass by
-    the third one. Both have been in the prompt for five rounds and the spiral still runs to eight,
-    because a rule about counting is being asked of a model that is not counting: it sees a
-    reasonable question and answers it, and every answer is individually defensible.
+    The prompt said to stop teaching and send the masterclass by the third one. That was in the
+    prompt for five rounds and the spiral still ran to eight, because a rule about counting is
+    being asked of a model that is not counting: it sees a reasonable question and answers it, and
+    every answer is individually defensible.
 
     So the count is done here and handed to the writer as a fact about this turn. A question is
     general when the reader classified it as one and it told us nothing new about her, which is the
@@ -302,7 +302,7 @@ def _booking_blocked(state: dict, read: dict) -> str:
     if flags.get("recent_loss"):
         return "recent_loss"
 
-    # v2.0 §A makes a woman who has stopped trying a terminal conversation: she is answered and the
+    # §A makes a woman who has stopped trying a terminal conversation: she is answered and the
     # conversation is allowed to end. There is nothing to sell someone who is not trying, and the
     # flag is sticky, so this holds for the rest of the conversation and not only for the message
     # that said it.
@@ -319,7 +319,7 @@ def _booking_blocked(state: dict, read: dict) -> str:
         # the link open through one and the reply quoted the price range to a frightened woman who
         # had just shared her news.
         #
-        # The exception is v2.1 §D: she is pregnant and has asked for support through it, which is
+        # The exception is §D: she is pregnant and has asked for support through it, which is
         # The Pregnancy Solution and is a thing Sonia sells. That is a different conversation from
         # the announcement that usually precedes it, and the reader only sets the flag when she has
         # actually asked, so congratulating her stays the whole of the reply until she does.
@@ -332,7 +332,7 @@ def _booking_blocked(state: dict, read: dict) -> str:
     if slots.get("pregnancy_priority") == "low":
         return "not_a_priority"
 
-    # Age used to be a precondition here: no number, no link, whatever else was known. v2.0 §B
+    # Age used to be a precondition here: no number, no link, whatever else was known. §B
     # ends that. It is a boundary check, not a gate, so the two age branches at the top of this
     # function still fire on a number she has given and nothing fires on a blank.
     #
@@ -344,18 +344,18 @@ def _booking_blocked(state: dict, read: dict) -> str:
     # 2B.1 §15: enough of her situation has to be understood before an invitation is honest.
     # Two facts is a first message, not an understanding, an invitation that early is the
     # "every message is a sales opportunity" failure the manual opens by ruling out.
-    # v2.1 §L: her private coaching can be in Spanish, while group coaching and the program
-    # materials are in English. That is a deal breaker for some women and it has to reach her
-    # before she commits, not after she has paid, so a Spanish conversation cannot reach the link
-    # until she has said English materials are workable for her. `20_boundaries.md` tells the writer to put the question; this is what
-    # makes the answer matter.
+    # §L: her private coaching can be in Spanish, while group coaching and the program materials
+    # are in English. That is a deal breaker for some women and it has to reach her before she
+    # commits, not after she has paid, so a Spanish conversation cannot reach the link until she
+    # has said English materials are workable for her. `turn.md` tells the writer to put the
+    # question; this is what makes the answer matter.
     #
     # Keyed on the language she is actually writing in. A woman writing in English is not asked to
     # confirm she can read English.
     if slots.get("language") == "es" and not flags.get("accepts_english_materials"):
         # Her no comes first, because the two reasons want opposite replies out of the writer. The
         # undisclosed branch says "tell her and ask"; asking a woman who has already answered is
-        # the failure v2.1 §L is written to prevent.
+        # the failure §L is written to prevent.
         if flags.get("declines_english_materials"):
             return "declines_english_materials"
         return "english_materials_undisclosed"
@@ -368,8 +368,8 @@ def _booking_blocked(state: dict, read: dict) -> str:
     if known < 3:
         return "not_enough_context"
 
-    # 2B.1 §15 and v2.1 §A: she has to know this is paid before she is invited, and it has to
-    # arrive in a message of its own rather than bolted to the link. `60_contract.md` has said so
+    # 2B.1 §15 and §A: she has to know this is paid before she is invited, and it has to
+    # arrive in a message of its own rather than bolted to the link. The writer prompt has said so
     # in the strongest wording available for four rounds and the reply still came back as "my
     # program is paid, and my team can take you through a free consultation, would you like the
     # link?", which is the disclosure and the invitation in one breath with the link turned into a
@@ -377,7 +377,7 @@ def _booking_blocked(state: dict, read: dict) -> str:
     # no link, and the turn after it is said the gate opens on its own.
     #
     # The woman who has told you she wants to buy is the exception, and she is the same exception
-    # `gate` makes below. v2.1 §A: "a high-intent person who asks how to pay or enroll should
+    # `gate` makes below. §A: "a high-intent person who asks how to pay or enroll should
     # receive the enrollment answer or next step immediately; do not warn her about financial
     # readiness before answering." Holding the link from her to tell her it is paid is that warning
     # wearing a gate.
@@ -418,7 +418,7 @@ def gate(state: dict, read: dict, before: dict | None = None) -> Gate:
     if (read.get("flags") or {}).get("asked_if_ai"):
         extra_tags.append("ai_transparency")
 
-    # The turn she tells you she has stopped is the terminal one, and v2.0 §A allows it no CTA. The
+    # The turn she tells you she has stopped is the terminal one, and §A allows it no CTA. The
     # booking block is already shut below; this shuts the other one, because a masterclass offered
     # to a woman who has just said she is not trying any more is a consolation prize for a decision
     # she did not ask you to have an opinion about.
@@ -444,13 +444,13 @@ def gate(state: dict, read: dict, before: dict | None = None) -> Gate:
     # Someone who opens with "how do I work with you" is ready and should not be re-qualified;
     # everyone else gets at least one real exchange before a call is mentioned.
     #
-    # Readiness arrives as a tag, not as an intent. `warm_prospect` in `70_read.md` is the woman
-    # picking a conversation back up, and nothing there makes a first-message buyer one, so this
-    # test could never see the lead it was written for. "I'm 38, trying 4 years, I want to enrol,
-    # can I pay" was read correctly and tagged `ready_to_book`, and was then blocked here on turn
-    # one. With no link available the only thing left to say about paying was that the program is
-    # paid and what it costs, which is client review point 3 arriving through the gate after v2.0
-    # closed it in the prompt.
+    # Readiness arrives as a tag, not as an intent. `warm_prospect` in the old reader prompt was
+    # the woman picking a conversation back up, and nothing there made a first-message buyer one,
+    # so this test could never see the lead it was written for. "I'm 38, trying 4 years, I want to
+    # enrol, can I pay" was read correctly and tagged `ready_to_book`, and was then blocked here on
+    # turn one. With no link available the only thing left to say about paying was that the program
+    # is paid and what it costs, which is client review point 3 arriving through the gate after
+    # v2.0 closed it in the prompt.
     #
     # `_booking_blocked` still runs first and is untouched, so this skips the blanket first-turn
     # rule and nothing else. A woman who says "take my money" and tells you nothing about herself

@@ -12,9 +12,9 @@ A handover turn is the limit case of that: the writer is not called at all. She 
 or one fixed line from config, so the AI cannot answer the question it has just decided it should
 not be answering.
 
-A CTA keyword opener is the other turn no model sees, for the opposite reason. A conversation that
-begins with the word she commented on a reel and nothing else contains no information to read and
-nothing to answer, so it gets Sonia's own welcome and waits. See `cta.py`.
+A one-word opener is the other turn no model sees, for the opposite reason. A conversation that
+begins with the word she commented on a post contains nothing to read and nothing to answer, so it
+gets Sonia's welcome from config and waits.
 
 Two things the app needs from any implementation, both unchanged:
 
@@ -23,12 +23,13 @@ Two things the app needs from any implementation, both unchanged:
   * `lead_state`, an arbitrary JSON dict owned entirely by the brain.
 """
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Optional
 
 from openai import AsyncOpenAI
 
-from app.services import cta, dossier
+from app.services import dossier
 from app.services.few_shots import load_few_shot_scenarios, render_examples
 from app.services.message_splitter import strip_dashes, use_digits
 from app.services.prompts import build_write_prompt, config_values, turn_notes
@@ -220,6 +221,20 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
     return "\n".join(lines)
 
 
+# Manual §O. Any single word counts, so a new reel keyword works the day the reel goes out, with no
+# list for the team to keep up to date.
+_WORD = re.compile(r"\w+")
+
+
+def is_opener(history: list[dict]) -> bool:
+    """Her first message, and it is one word. Case, punctuation and emoji don't count as words."""
+    return (
+        len(history) == 1
+        and history[0].get("role") == "user"
+        and len(_WORD.findall(history[0].get("content") or "")) == 1
+    )
+
+
 async def run_turn(
     openai_client: AsyncOpenAI,
     history: list[dict],
@@ -243,17 +258,16 @@ async def run_turn(
     if not history:
         return TurnResult(lead_state=state, action="NO_HISTORY")
 
-    # A conversation that opens with a CTA keyword and nothing else is answered by Sonia's own line,
-    # with no model called at all. See `cta.py`: the word is how the DM opened rather than anything
-    # she has told us, so there is nothing to read and nothing to write. The counters are left alone
-    # on purpose, which makes her *answer* the first real exchange rather than the second.
+    # No model called: she gets `cta_welcome_message` from config as written. Leaving it empty in
+    # admin switches this off and the brain answers the word. The counters are left alone on
+    # purpose, which makes her *answer* the first real exchange rather than the second.
     welcome = (cfg.get("cta_welcome_message") or "").strip()
-    if welcome and cta.is_opener(history, cfg):
-        logger.info("CTA keyword opener for %s, sending the fixed welcome", ig_user_id)
+    if welcome and is_opener(history):
+        logger.info("One-word opener for %s, sending the welcome", ig_user_id)
         state["phase"] = state.get("phase") or dossier.OPENING
         return TurnResult(
-            reply_text=welcome, lead_state=state, action="CTA_WELCOME",
-            trace={"cta": {"keyword": cta.normalise(history[-1].get("content", ""))}},
+            reply_text=welcome, lead_state=state, action="OPENER_WELCOME",
+            trace={"opener": history[0].get("content", "")},
         )
 
     try:

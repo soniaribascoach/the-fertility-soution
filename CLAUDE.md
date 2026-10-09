@@ -2,7 +2,8 @@
 
 Instagram DM AI representing Sonia Ribas. FastAPI + a three-stage brain in `app/services/`:
 `reader.py` extracts facts, `dossier.py` merges them and gates what the writer may see,
-`brain.py` writes the reply. Behaviour lives in `prompts/*.md` and `few_shots/*`, not in Python.
+`brain.py` writes the reply. Behaviour lives in `prompts_simple/*.md` and `few_shots/*`, not in
+Python.
 
 ## Writing rules
 
@@ -10,9 +11,9 @@ Instagram DM AI representing Sonia Ribas. FastAPI + a three-stage brain in `app/
 comments, docstrings, UI copy, commit messages, PR bodies. Use a comma, a full stop, a colon, or
 brackets instead. Rewrite the sentence if none of those fit.
 
-This is not only style. Every `prompts/*.md` and `few_shots/*` file is model input, so a dash in
-those files teaches the AI to produce them, and an em dash in an Instagram DM is one of the clearest
-tells that a message was not typed by a person.
+This is not only style. Every `prompts_simple/*.md` and `few_shots/*` file is model input, so a
+dash in those files teaches the AI to produce them, and an em dash in an Instagram DM is one of the
+clearest tells that a message was not typed by a person.
 
 Hyphens in compound words (`whole-body`, `low-AMH`) are fine. ASCII `--` in shell flags is fine.
 
@@ -32,11 +33,13 @@ grep -rn "[—–]" --include="*.py" --include="*.html" --include="*.md" . \
 
 ## Where behaviour is defined
 
-- `prompts/00-60_*.md`: the writer's system prompt, layered. `70_read.md` is the extractor,
-  and `80_send.md` is a short card rendered after the per-turn brief, last of everything.
+- `prompts_simple/`: `write.md` plus `knowledge.md` are the writer's system prompt. `knowledge.md`
+  carries `{{key}}` config placeholders and `[[BLOCK:name]]` sections the gate opens per turn.
+  `turn.md` holds the per-turn notes `brain.py` picks from. `read.md` is the extractor, with
+  `safety.md` and `language.md` as its narrow second looks.
 - `few_shots/*`: complete example conversations, first message to final outcome. All of them go
   to the writer on every turn (`app/services/few_shots.py`); there is no selection.
-- `current_feedback/`: the Operating Manual, the source of truth for all of the above.
+- `manual/`: the Operating Manual (v4.0), the source of truth for all of the above.
 
 Prefer changing a prompt layer or a few-shot conversation over adding Python. Gates in
 `dossier.py` decide what the writer is *given*; nothing inspects generated text after the fact.

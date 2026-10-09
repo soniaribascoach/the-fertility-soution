@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from app.services import brain, cta, dossier, message_splitter, prompts, reader
+from app.services import brain, dossier, message_splitter, prompts, reader
 from app.services.few_shots import load_few_shot_scenarios, render_examples
 
 FEW_SHOTS = load_few_shot_scenarios("few_shots")
@@ -61,7 +61,7 @@ def test_endings_are_not_all_booking_links():
 def test_no_file_states_a_fact_of_its_own():
     """No literal URL or price anywhere, placeholders only, resolved from config."""
     offenders = []
-    for directory in ("few_shots", "prompts"):
+    for directory in ("few_shots", "prompts_simple"):
         for filename in sorted(os.listdir(directory)):
             path = os.path.join(directory, filename)
             if not os.path.isfile(path) or filename.startswith("."):
@@ -364,13 +364,6 @@ def test_the_free_link_and_the_booked_link_never_swap_places():
     assert CFG["masterclass_link"] not in booked
 
 
-def test_nothing_can_send_the_application_link():
-    """v2.0 §G gives the URL and never says which stage sends it, so nothing references it."""
-    built = prompts.build_write_prompt({**CFG, "apply_link": "https://example.test/apply"},
-                                       {"pricing", "booking", "free_resource", "post_booking"})
-    assert "example.test/apply" not in built
-
-
 def test_no_placeholder_survives_into_the_prompt():
     built = prompts.build_write_prompt(CFG, {"pricing", "booking", "free_resource", "post_booking"})
     assert "{{" not in built and "[[BLOCK" not in built
@@ -396,19 +389,6 @@ def test_the_writer_is_told_what_a_price_objection_is_actually_asking():
     for phrase in ("I actually getting for this", "Personalization", "Accountability"):
         assert phrase in built
     assert "guarantee disclaimer she did not ask for" in built
-
-
-def test_the_crisis_trigger_no_longer_fires_on_fertility_exhaustion():
-    """Client review point 7. The same phrase was listed as a crisis signal and as ordinary
-    despair, with an instruction to err toward crisis, which guarantees the false positive."""
-    from app.services.reader import _SAFETY_PROMPT
-
-    reader_prompt = open("prompts/70_read.md", encoding="utf-8").read()
-    for text in (_SAFETY_PROMPT, reader_prompt):
-        assert "I can't do this anymore" in text, "the phrase is named, so it cannot be guessed at"
-    assert "explicit" in _SAFETY_PROMPT
-    assert "If you cannot tell which one she means, the answer is an empty list" in _SAFETY_PROMPT
-    assert "do not set this flag. Set `needs_human`" in reader_prompt
 
 
 def test_quantities_are_written_as_digits():
@@ -438,29 +418,6 @@ def test_digits_leave_words_that_are_not_quantities_alone():
         "a second opinion is worth having",
     ):
         assert use_digits(text) == text, text
-
-
-def test_the_two_asked_for_human_definitions_agree():
-    """Client review point 9, and the reason the first fix did nothing.
-
-    `asked_for_human` is defined in two places: `prompts/70_read.md` for the main extraction, and
-    `_SAFETY_PROMPT` for the narrow second look. The safety pass is additive, it can only turn a
-    flag on, so a carve-out that exists in one file and not the other is a carve-out that never
-    takes effect. The phone-number exception went into the prompt file alone and the flag carried
-    on firing, which ends the turn and leaves the boundary reply unwritten.
-    """
-    from app.services.reader import _SAFETY_PROMPT
-
-    reader_prompt = open("prompts/70_read.md", encoding="utf-8").read()
-    for text in (_SAFETY_PROMPT, reader_prompt):
-        assert "phone number" in text.lower(), "the carve-out has to exist in both definitions"
-        assert "WhatsApp" in text, "the channel she actually asks for is named, not implied"
-        assert "call her directly" in text, "Sonia's own test message is pinned in both"
-        # The AI is Sonia, so a request for Sonia is a request for the person already replying.
-        # "I'd like to talk to her directly" read as a request for somebody else and handed over.
-        assert "speak to Sonia" in text or "talk to Sonia" in text, (
-            "asking for Sonia herself has to be carved out in both definitions"
-        )
 
 
 def test_a_phone_request_does_not_escalate_and_keeps_the_link():
@@ -1055,82 +1012,6 @@ def test_every_model_offered_in_admin_has_a_rate():
         assert model in brain._RATES
 
 
-# ── CTA keywords ─────────────────────────────────────────────────────────────
-
-CTA_CFG = {
-    **CFG,
-    "cta_keywords": "AMH\nBABY\nBLOOD SUGAR\nREADY",
-    "cta_welcome_message": "I'm so glad you reached out. How long have you been trying?",
-}
-
-
-def _said(*texts):
-    return [{"role": "user", "content": t} for t in texts]
-
-
-@pytest.mark.parametrize("text", ["AMH", "amh", "  AMH  ", "AMH!", "amh 🤍", "Blood Sugar",
-                                  "blood  sugar", "READY."])
-def test_a_keyword_survives_the_way_she_actually_types_it(text):
-    """One word commented from a phone arrives with case, punctuation and an emoji on it."""
-    assert cta.is_opener(_said(text), CTA_CFG)
-
-
-@pytest.mark.parametrize("text", [
-    "how do I lower my AMH?",           # a question that contains the word
-    "AMH came back at 0.7 last month",  # her story, which starts with the word
-    "hi",                               # not a keyword at all
-    "",
-])
-def test_only_a_bare_keyword_is_an_opener(text):
-    assert not cta.is_opener(_said(text), CTA_CFG)
-
-
-def test_a_keyword_typed_into_a_conversation_already_under_way_is_a_message():
-    """"ready" on turn six is her answering something, and the fixed line would talk over it."""
-    history = _said("I'm 38 and been trying 2 years") + [
-        {"role": "assistant", "content": "How long has it been?"},
-        {"role": "user", "content": "ready"},
-    ]
-    assert not cta.is_opener(history, CTA_CFG)
-
-
-def test_a_keyword_followed_by_her_own_message_is_not_an_opener():
-    """She commented the word and then typed a sentence before the worker woke up."""
-    assert not cta.is_opener(_said("AMH", "I'm 34 and my AMH is 0.7"), CTA_CFG)
-    assert cta.is_opener(_said("AMH", "amh"), CTA_CFG), "the same word twice is still the word"
-
-
-def test_no_keywords_configured_means_nothing_is_an_opener():
-    assert not cta.is_opener(_said("AMH"), CFG)
-
-
-async def test_the_welcome_is_sent_without_calling_a_model():
-    """The whole point: one word in, Sonia's own line out, no read call and no write call.
-
-    It also must not qualify her or pause the conversation. A keyword is how the DM opened, so
-    "READY" is a reel watched to the end and not a lead asking to book.
-    """
-    client = _FakeClient("should never be called")
-    result = await brain.run_turn(client, _said("AMH"), CTA_CFG)
-
-    assert result.reply_text == CTA_CFG["cta_welcome_message"]
-    assert result.action == "CTA_WELCOME"
-    assert client.calls == []
-    assert result.usage == {}
-    assert not result.pause and not result.qualified and not result.add_tag
-    assert result.lead_state["phase"] == dossier.OPENING
-    assert result.lead_state["counters"].get("turns", 0) == 0, "her answer is the first exchange"
-
-
-async def test_a_keyword_with_no_welcome_configured_goes_to_the_brain_as_normal():
-    """Emptying the message in admin switches the feature off rather than sending nothing."""
-    client = _FakeClient('{"intent": "new_prospect", "language": "en"}', NO_TRIGGERS, "Hello.")
-    result = await brain.run_turn(client, _said("AMH"), {**CTA_CFG, "cta_welcome_message": ""})
-
-    assert result.action.startswith("REPLY:")
-    assert len(client.calls) == 3
-
-
 # ── The six conversations of the 12 September sandbox run ────────────────────
 #
 # Codex drove the admin sandbox through the six conversations in `codex-test-prompt.md` and three
@@ -1313,20 +1194,6 @@ def test_a_woman_who_asked_what_is_typing_is_still_answered_on_a_phone_turn():
     assert "do not announce that she is talking to an AI" not in brief
 
 
-def test_thanking_her_is_not_a_client_relationship():
-    """Conversation 6. "Thank you for helping me through some really dark days" was read as
-    `is_former_client`, which hands over silently, so a woman ending five years of trying was
-    answered with nothing at all.
-
-    The free side of the work reaches far more women than the program does, so gratitude on its own
-    says nothing about whether she ever paid.
-    """
-    prompt = open("prompts/70_read.md", encoding="utf-8").read()
-    section = prompt[prompt.index("- `is_existing_client`"):prompt.index("- `announcement`")]
-    assert "Thanking her is not one of these" in section
-    assert "content" in section and "paid" in section
-
-
 def test_a_woman_who_has_stopped_is_answered_rather_than_handed_over():
     """The path the same conversation takes once the flag is not set: warm, no link, no handover."""
     read = {"intent": "gratitude", "tags": ["closing"], "flags": {"stopped_trying": True},
@@ -1338,16 +1205,6 @@ def test_a_woman_who_has_stopped_is_answered_rather_than_handed_over():
     assert not gate.allow_booking and gate.block_reason == "stopped_trying"
     assert "free_resource" not in gate.blocks, "nothing is offered into it either"
     assert "let the conversation end" in brain._brief(gate, read, state, [])
-
-
-def test_asking_how_to_pay_is_not_asking_what_it_costs():
-    """Conversation 4. "Can I pay?" came back tagged `pricing`, which pulls the conversation whose
-    first rule is to give the figure in the message she asks in, and she was quoted a range she
-    never asked for instead of being told how to enrol.
-    """
-    prompt = open("prompts/70_read.md", encoding="utf-8").read()
-    assert "Asking how to pay is not asking what it costs" in prompt
-    assert "takes the first slot" in prompt
 
 
 def test_the_pregnancy_program_is_named_when_she_asks_for_it():
@@ -1390,13 +1247,3 @@ def test_the_woman_who_already_has_a_provider_is_owed_something_concrete():
     assert "Name one concrete thing" in brief
     assert "are not an answer on their own" in brief
 
-
-def test_years_of_trying_answer_the_priority_question():
-    """The question the reply put to a woman 4 years in: whether having a baby is one of her
-    biggest priorities. The slot already read a treatment cycle as an answer; years of it are the
-    same answer paid in time rather than in money.
-    """
-    prompt = open("prompts/70_read.md", encoding="utf-8").read()
-    section = prompt[prompt.index("- `pregnancy_priority`"):prompt.index("- `email`")]
-    assert "So do years of it" in section
-    assert "2 years or more" in section

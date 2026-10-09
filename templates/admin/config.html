@@ -39,7 +39,7 @@
 <div class="mb-6">
   <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Settings</h1>
   <p class="mt-1 text-sm text-slate-500">
-    Everything the AI is allowed to state as fact lives here. The prompts in <code class="text-violet-600">prompts/</code>
+    Everything the AI is allowed to state as fact lives here. The prompts in <code class="text-violet-600">prompts_simple/</code>
     carry behaviour only, if a price, a link or a credential is wrong, this is the page that fixes it.
   </p>
 </div>
@@ -47,7 +47,7 @@
 <!-- ── Tab Navigation ──────────────────────────────────────────────────── -->
 <div class="border-b border-slate-200 mb-6">
   <nav class="-mb-px flex gap-0" aria-label="Settings sections">
-    {% for tab in [('about','About & Program'), ('money','Pricing & Links'), ('team','Team & FAQ'), ('openers','Reel Keywords'), ('safety','Safety & Handover'), ('engine','Engine')] %}
+    {% for tab in [('about','About & Program'), ('money','Pricing & Links'), ('team','Team & FAQ'), ('welcome','Welcome'), ('safety','Safety & Handover'), ('engine','Engine')] %}
     <button type="button" data-tab="{{ tab[0] }}"
       class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap">
       {{ tab[1] }}
@@ -112,10 +112,6 @@
       <input type="url" name="replay_link" value="{{ cfg.replay_link or '' }}" placeholder="https://www.thefertilitysolution.com/watch-replay" class="{{ input_cls }}">
     {% endcall %}
 
-    {% call field('Application Link', 'Stored here so it is in one place. Nothing sends it yet: the manual gives the URL but not the stage it belongs to, so no prompt or conversation references it.') %}
-      <input type="url" name="apply_link" value="{{ cfg.apply_link or '' }}" placeholder="https://www.thefertilitysolution.com/apply" class="{{ input_cls }}">
-    {% endcall %}
-
     {% call field('Free Resource Wording', 'How the free option is offered to someone who is not ready. Warm, no pressure.', 'mb-0') %}
       <textarea name="kb_free_resource" rows="5" class="{{ textarea_cls }}">{{ cfg.kb_free_resource or '' }}</textarea>
     {% endcall %}
@@ -134,25 +130,21 @@
     {% endcall %}
   </section>
 
-  <!-- ── Reel Keywords ────────────────────────────────────────────────── -->
-  <section data-panel="openers" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Reel Keywords</h2>
+  <!-- ── Welcome ──────────────────────────────────────────────────────── -->
+  <section data-panel="welcome" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Welcome</h2>
 
     <div class="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 mb-6 text-xs text-slate-600 leading-relaxed">
-      When a conversation opens with one of these words and nothing else, the AI is not called at all.
-      The welcome below is sent exactly as typed, and then it waits for her answer.
+      When someone's first message is a single word, like a keyword she was asked to comment, the AI is
+      not called at all. The welcome below is sent exactly as typed, and then it waits for her answer.
       <br><br>
-      The keyword tells us nothing about her, so it does not qualify her for anything: "READY" means she
-      watched a reel to the end, not that she is ready to book. Anything longer than a bare keyword, or a
-      keyword typed later in a conversation, goes to the AI as normal.
+      Any word works, so a new reel needs nothing set up here. The word tells us nothing about her, so it
+      does not qualify her for anything: "READY" means she watched a reel to the end, not that she is
+      ready to book. A longer first message, or a single word later in a conversation, goes to the AI.
     </div>
 
-    {% call field('CTA Keywords', 'One per line, the words you ask people to comment. Case, punctuation and emoji are ignored, so AMH, amh and "AMH 🤍" all match. A message that only contains a keyword inside a longer sentence does not.') %}
-      {{ dynamic_list('cta-list', 'cta_keywords', cta_items, 'e.g. AMH', 'Add Keyword') }}
-    {% endcall %}
-
-    {% call field('Welcome Message', 'Sent word for word when a keyword arrives, so it is one of the few messages a lead receives that the AI did not write. Welcome her and ask one or two discovery questions. Leave it empty to switch the whole thing off and let the AI answer keywords itself.', 'mb-0') %}
-      <textarea name="cta_welcome_message" rows="5" class="{{ textarea_cls }}">{{ cfg.cta_welcome_message or '' }}</textarea>
+    {% call field('Welcome Message', 'Sent word for word. Welcome her and ask one question. Leave it empty to switch this off and let the AI answer the word itself.', 'mb-0') %}
+      <textarea name="cta_welcome_message" rows="3" class="{{ textarea_cls }}">{{ cfg.cta_welcome_message or '' }}</textarea>
     {% endcall %}
   </section>
 
@@ -220,7 +212,7 @@
 
 <script>
 // ── Tabs ──────────────────────────────────────────────────────────────────────
-const TABS = ['about', 'money', 'team', 'openers', 'safety', 'engine'];
+const TABS = ['about', 'money', 'team', 'welcome', 'safety', 'engine'];
 
 function activateTab(name) {
   const target = TABS.includes(name) ? name : TABS[0];
@@ -287,7 +279,6 @@ document.querySelectorAll('.dynamic-row textarea').forEach(ta => {
 // ── Sync hidden textareas on submit ──────────────────────────────────────────
 const DYNAMIC_LISTS = {
   'takeover-list': 'human_takeover_triggers_hidden',
-  'cta-list': 'cta_keywords_hidden',
 };
 
 document.querySelector('form').addEventListener('submit', function () {

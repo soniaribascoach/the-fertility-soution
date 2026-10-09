@@ -31,13 +31,13 @@ templates.env.globals["app_started_at"] = APP_STARTED_AT.strftime("%Y-%m-%d %H:%
 
 # The knowledge base and the operational knobs. Everything the brain may state as fact lives
 # here, so Sonia can correct a price or a link without a deploy, and the prompt layers in
-# `prompts/` carry only behaviour, never facts.
+# `prompts_simple/` carry only behaviour, never facts.
 CONFIG_KEYS = [
     "kb_about", "kb_program", "kb_pricing", "kb_boundaries", "kb_team", "kb_faq",
     "kb_free_resource",
-    "booking_link", "masterclass_link", "replay_link", "apply_link", "price_range",
+    "booking_link", "masterclass_link", "replay_link", "price_range",
     "years_experience", "babies_welcomed",
-    "cta_keywords", "cta_welcome_message",
+    "cta_welcome_message",
     "human_takeover_triggers", "qualified_tag_id",
     "handover_message_team", "handover_message_crisis", "handover_message_urgent_medical",
     "brain_model", "read_model", "brain_temperature",
@@ -110,7 +110,6 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
         cfg.setdefault(key, "")
 
     takeover_items = [t for t in cfg.get("human_takeover_triggers", "").split("\n") if t.strip()]
-    cta_items = [k for k in cfg.get("cta_keywords", "").split("\n") if k.strip()]
 
     return templates.TemplateResponse(
         request,
@@ -118,7 +117,6 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
         {
             "cfg": cfg,
             "takeover_items": takeover_items,
-            "cta_items": cta_items,
             "saved": saved == "true",
         },
     )

@@ -64,7 +64,7 @@ def normalise(data: dict) -> dict:
     if language not in ("en", "es", "other"):
         language = "en"
 
-    # Manual v2.0 §A: which of the 4 conversation types this message is. Unknown means no note.
+    # Manual §A: which of the 4 conversation types this message is. Unknown means no note.
     path = data.get("path")
     if path not in PATHS:
         path = None
@@ -224,75 +224,12 @@ async def _confirm_language(
 # trying naturally?", on "should I push for more testing?" and on "is there really nothing that can
 # open them up?", and ended five conversations that were going correctly. They stay with the main
 # extraction, which can see what she is referring to.
-# These four are defined twice: here, and in `prompts/70_read.md` for the main extraction. The two
-# have to agree. This pass is additive and can only turn a flag ON, so where they disagree this one
-# wins and the carve-outs in the prompt file are silently discarded. That is exactly what happened
-# to client review point 9: the phone-number carve-out was added to `70_read.md`, this copy was not
-# touched, and the flag kept firing. `test_the_two_asked_for_human_definitions_agree` pins them.
+# These four are defined twice: in `safety.md` for this pass, and in `read.md` for the main
+# extraction. The two have to agree. This pass is additive and can only turn a flag ON, so where
+# they disagree this one wins and the carve-outs in `read.md` are silently discarded. That is
+# exactly what happened to client review point 9: the phone-number carve-out was added to the
+# reader prompt, the safety copy was not touched, and the flag kept firing.
 SAFETY_FLAGS = ("crisis", "urgent_medical", "asked_if_ai", "asked_for_human")
-
-# Legacy wording, kept for reference. The live prompt is `prompts_simple/safety.md`.
-_SAFETY_PROMPT ="""You are checking one Instagram message to a fertility coach against four \
-triggers. Return ONE JSON object: {"triggers": [...]}, listing every one that applies, or an empty \
-list.
-
-- `crisis`: she says explicitly that she does not want to be alive, or that she is thinking of
-  harming herself, or she states an intent, a plan or a method. Exhaustion and despair about
-  fertility are NOT this, however final they sound: "I can't do this anymore", "I'm done with all
-  of it", "I've given up", "I can't keep going through this", "this was my last try at asking
-  anyone". Those are about the process, not about her life, and this trigger sends her a crisis
-  message. If you cannot tell which one she means, the answer is an empty list.
-- `urgent_medical`: something is happening in her body right now that needs to be seen today.
-  Bleeding, severe pain, fainting, a suspected ectopic, signs of OHSS. A question about a past
-  event or a routine symptom is NOT this.
-- `asked_if_ai`: she asks or wonders whether she is talking to a real person, a bot, an AI or an
-  automated system.
-
-  **Asking for a phone number is not this.** "Can I get Sonia's number so I can call her
-  directly?" is a request for a different channel to the same person. Referring to Sonia by name
-  or as "her" is how anybody writes to a business account and is not a doubt about who is typing.
-  Setting this makes the reply volunteer that it is an AI, in answer to a question about a phone
-  number, and the boundary she actually asked about never gets said. Set it only when the message
-  questions what is replying: a bot, a person, automated, AI, real.
-- `asked_for_human`: she wants to stop talking to whoever is replying and be handed to somebody
-  else. "Can I speak to a real person?", "is there an actual human there?", "I'd rather talk to
-  someone on your team instead".
-
-  She is already talking to the coach, so anything she asks the coach for is NOT this, and neither
-  is anything about the consultation, which is a call with the team and the thing the whole
-  conversation is for. "How do I book?", "can we both be on the call?", "can someone call me to
-  arrange it?", "what's the next step?", "how do I work with you?" are NOT this flag. Nor is
-  wanting to talk to someone before she decides: "a free call is fine, I'd like to talk to someone
-  at least", "can I talk to someone about it first?", "is there someone I can speak to before I
-  commit?". That someone is the consultation, and she is asking for the link. The word "call", the
-  word "team" and the word "someone" do not decide it. Only set it when she is asking to be taken
-  away from this conversation, and when you are unsure, do not set it.
-
-  **Asking for the coach's phone number is NOT this flag.** "Can I get Sonia's number?", "what's
-  your WhatsApp?", "I'd rather call her directly and explain before I book anything", "is there a
-  number I can reach you on?" are asking for a different channel to the same person, not for a
-  different person. She wants more of this conversation, not less of it. The reply tells her the
-  number is not given out and points her at the consultation, and that reply cannot be written if
-  this flag has ended the turn.
-
-  **Asking to speak to Sonia is NOT this flag, ever.** You are reading messages sent to Sonia and
-  she is the one replying, so "I want to talk to Sonia", "can I speak to her directly", "I'd rather
-  deal with Sonia herself", "is Sonia there?" are requests for the person who is already in the
-  conversation. Naming her, or saying "her" or "she", does not make it a request for somebody else.
-  Most of the time she just prefers a call to typing. She is raising no question about who is
-  replying, so this does not make `asked_if_ai` true either.
-
-  Set this flag only when she asks for a person **other than Sonia**: the team, an assistant, a
-  human, anyone at all who is not the person writing back.
-Nothing else is a trigger. Questions about treatment, medication, supplements, procedures, test
-results, her odds, the price or the program are all ordinary and belong to the conversation. If the
-message is a fertility question of any kind, the answer is an empty list.
-
-Judge only the message below. Do not infer, do not be generous, and do not consider what a longer \
-conversation might have contained. Three of these end the conversation and hand it to a person, \
-and `asked_if_ai` requires the reply to tell her the truth about what she is talking to, so set \
-one only when the message in front of you plainly matches it. An empty list is the common and \
-correct answer."""
 
 
 async def _safety_read(
@@ -390,7 +327,7 @@ async def read_turn(
         if not second:
             logger.warning("Language check returned nothing. Leaving the extraction as it is")
         elif read["language"] == "other" and second != "other":
-            # `70_read.md` asks for `needs_human` on the same line that asks for `other`, so the
+            # `read.md` asks for `needs_human` on the same line that asks for `other`, so the
             # flag is part of the answer being withdrawn and has to go with it. Anything that
             # genuinely needs a person is read again from the whole transcript next turn.
             read["flags"].pop("needs_human", None)
