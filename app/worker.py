@@ -35,30 +35,21 @@ logger = logging.getLogger(__name__)
 
 _processing_users: set[str] = set()
 _MEDIA_URL_RE = re.compile(r"^https?://\S+$")
-_EMAIL_RE = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
 
 
 def _is_media_url(text: str) -> bool:
     return bool(_MEDIA_URL_RE.match(text))
 
 
-def contains_email(texts) -> bool:
-    return any(_EMAIL_RE.search(t or "") for t in texts)
+async def _paused_after_link(db, ig_user_id: str) -> bool:
+    """A lead paused because she has the booking link still reaches the brain.
 
-
-async def _is_booking_email(db, ig_user_id: str, rows) -> bool:
-    """The one message a paused-after-booking lead may still get a reply to.
-
-    After the booking link the AI pauses on anything that is not "I booked" or an
-    email. So a lead who says "ok thanks!" and only THEN sends her email would be
-    skipped and the email lost forever. If she is paused for exactly that reason
-    and the message carries an email, let the turn run so the brain captures it
-    and confirms. Every other paused lead stays paused.
+    Saying she booked, her booking email and her partner's attendance are still the AI's to
+    answer (2B.2 §8); the brain decides, and stays silent on everything else. Every other pause is
+    a person's, and nothing reaches the brain until the team resumes her.
     """
     state = await get_or_create_state(db, ig_user_id)
-    if state.pause_reason != "qualified_link_sent":
-        return False
-    return contains_email(r.content for r in rows)
+    return state.pause_reason == "qualified_link_sent"
 
 
 async def start_worker(app_state) -> None:
@@ -91,20 +82,17 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             await asyncio.sleep(random.uniform(0, settings.debounce_extra_seconds))
 
         async with AsyncSessionLocal() as db:
-            # The batch is read BEFORE the pause check: a lead paused right after
-            # booking still gets her email captured (see _is_booking_email), and
-            # that decision needs the message text.
             await lock_batch(db, ig_user_id)
             rows = await get_locked_batch(db, ig_user_id)
             if not rows:
                 return
 
             if await is_ai_paused(db, ig_user_id):
-                if not await _is_booking_email(db, ig_user_id, rows):
+                if not await _paused_after_link(db, ig_user_id):
                     logger.info("AI paused for user %s. Skipping", ig_user_id)
                     await mark_batch_processed(db, ig_user_id)
                     return
-                logger.info("Paused lead %s sent a booking email. Capturing it", ig_user_id)
+                logger.info("Lead %s has the booking link. Reading her message", ig_user_id)
 
             # Duplicate guard: skip if an assistant reply was already sent after these messages
             last_user_msg_time = max(r.received_at for r in rows).replace(tzinfo=None)

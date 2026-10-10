@@ -1,5 +1,8 @@
 import json as _json
 import os
+import re
+
+from markupsafe import Markup, escape
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -19,27 +22,30 @@ from app.api.admin.auth import is_authenticated
 from config import settings, APP_VERSION, APP_BRAIN, APP_REVISION, APP_STARTED_AT
 
 FEW_SHOTS_DIR = "few_shots"
+# Written by `manual_testing/showcase.py`, with the notes added by hand after the run.
+SHOWCASE_PATH = "showcase/v3.json"
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 templates.env.filters["fromjson"] = lambda s: _json.loads(s) if s else {}
 templates.env.filters["split_bubbles"] = lambda s: [b.strip() for b in s.split("\n\n") if b.strip()] or [s]
+templates.env.filters["linkify"] = lambda s: Markup(
+    re.sub(r"(https?://[^\s<]+)", r'<a href="\1" target="_blank" rel="noopener">\1</a>', str(escape(s)))
+)
 templates.env.globals["app_version"] = APP_VERSION
 templates.env.globals["app_brain"] = APP_BRAIN
 templates.env.globals["app_revision"] = APP_REVISION
 templates.env.globals["app_started_at"] = APP_STARTED_AT.strftime("%Y-%m-%d %H:%M UTC")
 
-# The knowledge base and the operational knobs. Everything the brain may state as fact lives
-# here, so Sonia can correct a price or a link without a deploy, and the prompt layers in
-# `prompts_simple/` carry only behaviour, never facts.
+# Only what the code reads: the links and numbers `knowledge.md` fills in, the fixed lines sent
+# without the writer, and the engine knobs. Program facts (length, modules, levels) are in
+# `prompts_simple/knowledge.md`, from manual Part 5, not here.
 CONFIG_KEYS = [
-    "kb_about", "kb_program", "kb_pricing", "kb_boundaries", "kb_team", "kb_faq",
-    "kb_free_resource",
     "booking_link", "masterclass_link", "replay_link", "price_range",
     "years_experience", "babies_welcomed",
     "cta_welcome_message",
-    "human_takeover_triggers", "qualified_tag_id",
-    "handover_message_team", "handover_message_crisis", "handover_message_urgent_medical",
+    "qualified_tag_id",
+    "handover_message_review", "handover_message_crisis", "handover_message_urgent_medical",
     "brain_model", "read_model", "brain_temperature",
 ]
 
@@ -109,14 +115,11 @@ async def config_get(request: Request, saved: str = None, db: AsyncSession = Dep
     for key in CONFIG_KEYS:
         cfg.setdefault(key, "")
 
-    takeover_items = [t for t in cfg.get("human_takeover_triggers", "").split("\n") if t.strip()]
-
     return templates.TemplateResponse(
         request,
         "admin/config.html",
         {
             "cfg": cfg,
-            "takeover_items": takeover_items,
             "saved": saved == "true",
         },
     )
@@ -181,6 +184,19 @@ async def config_save(request: Request, db: AsyncSession = Depends(get_db)):
 
     reload_layers()
     return RedirectResponse("/admin/config?saved=true", status_code=302)
+
+
+# ── Showcase ──────────────────────────────────────────────────────────────────
+
+@router.get("/admin/showcase", response_class=HTMLResponse)
+async def showcase_get(request: Request):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    data = None
+    if os.path.isfile(SHOWCASE_PATH):
+        with open(SHOWCASE_PATH, encoding="utf-8") as fh:
+            data = _json.load(fh)
+    return templates.TemplateResponse(request, "admin/showcase.html", {"data": data})
 
 
 # ── Few-shots ─────────────────────────────────────────────────────────────────

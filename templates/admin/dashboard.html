@@ -126,6 +126,8 @@
         "qualified_link_sent": ("Qualified · booking link sent · team handoff", "ok"),
         "not_ready_nurture": ("Nurture close · masterclass sent", "ok"),
         "human_handover": ("Matched trigger phrase", "warn"),
+        "age_review": ("Age 48+ · review before the booking link", "warn"),
+        "asked_for_human": ("Asked for a person", "warn"),
       } %}
       {% for lead in paused_leads %}
       {% set label, tone = reason_labels.get(lead.pause_reason, (lead.pause_reason or "-", "warn")) %}
@@ -133,6 +135,10 @@
         <td class="px-6 py-3.5 text-sm font-semibold text-slate-800">{{ lead.instagram_user_id }}</td>
         <td class="px-4 py-3.5">
           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ 'bg-emerald-50 text-emerald-700' if tone == 'ok' else 'bg-amber-50 text-amber-700' }}">{{ label }}</span>
+          {% set attendance = ((lead.qualification or {}).get('slots') or {}).get('attendance') %}
+          {% if attendance in ('decides_alone', 'partner_cannot_attend') %}
+          <div class="mt-1 text-xs text-slate-500">Attendance exception agreed: {{ 'decides alone' if attendance == 'decides_alone' else 'partner cannot attend' }}</div>
+          {% endif %}
         </td>
         <td class="px-4 py-3.5 text-xs text-slate-500">{{ lead.phase or "-" }}</td>
         <td class="px-4 py-3.5 text-xs text-slate-400">{{ lead.paused_at.strftime("%d %b %Y, %H:%M") if lead.paused_at else "-" }}</td>

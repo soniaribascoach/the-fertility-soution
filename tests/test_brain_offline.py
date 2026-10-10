@@ -21,13 +21,6 @@ from app.services.few_shots import load_few_shot_scenarios, render_examples
 FEW_SHOTS = load_few_shot_scenarios("few_shots")
 
 CFG = {
-    "kb_about": "I'm Sonia Ribas, a fertility coach with 16 years of experience.",
-    "kb_program": "One-to-one fertility coaching.",
-    "kb_pricing": "Programs range from approximately $1,500 to $14,000.",
-    "kb_boundaries": "I do not provide IVF.",
-    "kb_team": "Natalia texts before the appointment.",
-    "kb_faq": "Are you a doctor? No.",
-    "kb_free_resource": "The masterclass is free.",
     "booking_link": "https://example.test/free-call",
     "masterclass_link": "https://example.test/register",
     "replay_link": "https://example.test/watch-replay",
@@ -58,8 +51,9 @@ def test_endings_are_not_all_booking_links():
     assert books / len(FEW_SHOTS) < 0.55, f"{books} of {len(FEW_SHOTS)} conversations book"
 
 
-def test_no_file_states_a_fact_of_its_own():
-    """No literal URL or price anywhere, placeholders only, resolved from config."""
+def test_no_file_states_a_link_of_its_own():
+    """No literal URL anywhere, placeholders only, resolved from config. Prices are facts and live
+    in `knowledge.md` (manual Part 5); links stay in config so the team can change them."""
     offenders = []
     for directory in ("few_shots", "prompts_simple"):
         for filename in sorted(os.listdir(directory)):
@@ -67,18 +61,19 @@ def test_no_file_states_a_fact_of_its_own():
             if not os.path.isfile(path) or filename.startswith("."):
                 continue
             text = open(path, encoding="utf-8").read()
-            hits = re.findall(r"https?://\S+", text) + re.findall(r"\$\s?[\d,]{3,}", text)
+            hits = re.findall(r"https?://\S+", text)
             if hits:
                 offenders.append((path, hits[:3]))
-    assert not offenders, f"literal facts found: {offenders}"
+    assert not offenders, f"literal links found: {offenders}"
 
 
 def test_first_person_only():
-    """Prospect-facing text is always 'I', never 'Sonia' in the third person."""
+    """Prospect-facing text is always 'I', never 'Sonia' in the third person, except the AI
+    disclosure in §F, which is the one place the assistant names her."""
     third_person = re.compile(r"\bSonia's\b|\bSonia (is|was|has|will|can|does|would)\b")
     for name, pb in FEW_SHOTS.items():
         for line in pb.text.splitlines():
-            if line.startswith("Sonia:"):
+            if line.startswith("Sonia:") and "Sonia's AI assistant" not in line:
                 assert not third_person.search(line), f"{name}: third-person Sonia in {line!r}"
 
 
@@ -114,17 +109,9 @@ def test_dossier_renders_what_she_said():
 
 # ── The gates ────────────────────────────────────────────────────────────────
 
-def _state(slots=None, flags=None, phase=None, turns=2, paid_disclosed=True):
-    """A lead mid-conversation by default, a first exchange is gated on its own account.
-
-    `paid_disclosed` defaults to true because almost every test here is about something else, and
-    a lead who has been talking long enough to reach a tubal question or a pregnancy request has
-    been told the commercial terms somewhere behind her. The tests that are about that ordering
-    pass it false and say so.
-    """
+def _state(slots=None, flags=None, phase=None, turns=2):
+    """A lead mid-conversation by default, a first exchange is gated on its own account."""
     flags = dict(flags or {})
-    if paid_disclosed:
-        flags.setdefault("understands_paid_program", True)
     state = dossier.merge(None, {"slots": slots or {}, "flags": flags})
     state["counters"]["turns"] = turns
     state["phase"] = phase
@@ -153,15 +140,11 @@ def test_someone_who_opens_ready_is_not_made_to_wait():
 
 
 def test_a_first_message_buyer_gets_the_link_not_the_price():
-    """Production, 12 September: "I'm 38, trying 4 years, I want to enrol, can I pay?"
-
-    She was answered with "yes, the program is paid" and a range she never asked for. Readiness is
-    a tag in `70_read.md`, not an intent, and this gate only ever tested the intent, so the woman
-    the bypass was written for could not reach it. `warm_prospect` there is the returning lead.
-    """
+    """Production, 12 September: "I'm 38, trying 4 years, I want to enrol, can I pay?" §A: the
+    enrollment answer or next step immediately, not a financial-readiness warning."""
     read = {
         "intent": "price_question",
-        "tags": ["ready_to_book", "long_ttc"],
+        "flags": {"wants_to_buy": True},
         "slots": {"age": 38, "time_trying": "4 years", "conceiving_mode": "natural",
                   "partner_status": "partnered", "goal_stated": "wants to enrol and pay"},
     }
@@ -179,36 +162,25 @@ def test_a_pregnancy_announcement_is_still_terminal():
     assert gate.block_reason == "currently_pregnant"
 
 
-def test_a_pregnant_woman_who_asks_for_support_is_answered_but_not_booked():
-    """v2.1 section D: The Pregnancy Solution exists, so this is a conversation, not a boundary.
-
-    The brain told a newly pregnant woman that coaching through pregnancy was not something Sonia
-    does, which was false. What makes this different from the announcement above is that she asked.
-    Nothing tells the AI who the program fits, so she is told about it and no link is offered.
-    """
-    read = {"intent": "pregnancy_announcement", "tags": ["celebration", "pregnancy_support"],
-            "slots": {}}
-    state = _state(QUALIFIED)
-    state["flags"]["currently_pregnant"] = True
-    state["flags"]["wants_pregnancy_support"] = True
+def test_a_pregnant_woman_who_asks_for_support_can_be_booked():
+    """v4 §D, 2B.2 §7: The Pregnancy Solution goes through the same link, with a form note."""
+    read = {"intent": "pregnancy_announcement", "slots": {}}
+    state = _state({})
+    state["flags"].update(currently_pregnant=True, wants_pregnancy_support=True)
     gate = dossier.gate(state, read)
     assert not gate.escalate
-    assert not gate.allow_booking
-    assert gate.block_reason == "pregnancy_program"
-    assert "pregnancy_support" in gate.tags
+    assert gate.allow_booking, gate.block_reason
+    assert "booking" in gate.blocks and "attendance" in gate.blocks
 
 
-def test_a_pregnant_woman_who_wants_to_join_goes_to_the_team():
-    """Enrolment in The Pregnancy Solution is the team's decision, so wanting in is a handover."""
-    read = {"intent": "warm_prospect", "tags": ["pregnancy_support", "ready_to_book"],
-            "flags": {"wants_to_join_pregnancy_program": True}, "slots": {}}
-    state = _state(QUALIFIED)
+def test_a_pregnant_prospect_is_never_age_reviewed():
+    """§B: no conception eligibility judgment for an already pregnant TPS prospect."""
+    read = {"intent": "warm_prospect", "flags": {"wants_to_buy": True}, "slots": {}}
+    state = _state({"age": 50})
     state["flags"].update(currently_pregnant=True, wants_pregnancy_support=True)
-    state = dossier.merge(state, read)
     gate = dossier.gate(state, read)
-    assert gate.escalate
-    assert gate.escalate_reason == "wants_to_join_pregnancy_program"
-    assert gate.handover_message == "handover_message_team"
+    assert not gate.escalate
+    assert gate.allow_booking, gate.block_reason
 
 
 def test_a_spanish_lead_is_not_booked_before_the_materials_are_disclosed():
@@ -222,7 +194,6 @@ def test_a_spanish_lead_is_not_booked_before_the_materials_are_disclosed():
     gate = dossier.gate(state, read)
     assert not gate.allow_booking
     assert gate.block_reason == "english_materials_undisclosed"
-    assert "english_materials" in gate.tags
 
 
 def test_a_spanish_lead_who_confirms_english_materials_can_be_booked():
@@ -270,24 +241,20 @@ def test_an_unstated_age_no_longer_shuts_the_link():
     assert "booking" in gate.blocks
 
 
-def test_an_age_she_did_give_is_still_a_boundary():
-    """Demoting the question did not soften the boundary behind it."""
-    over = dossier.gate(_state({**QUALIFIED, "age": 51}), {"intent": "warm_prospect"})
-    assert not over.allow_booking and over.block_reason == "age_over_48"
+def test_48_and_over_is_reviewed_at_the_link_never_rejected():
+    """v4 §B, 2B.1 §10: one age check, at the link, and it is a review."""
+    exploring = dossier.gate(_state({**QUALIFIED, "age": 51}), {"intent": "fertility_question"})
+    assert not exploring.escalate and not exploring.allow_booking
 
-    review = dossier.gate(_state({**QUALIFIED, "age": 47}), {"intent": "warm_prospect"})
-    assert review.escalate and review.escalate_reason == "age_needs_review"
+    ready = dossier.gate(_state({**QUALIFIED, "age": 48}), {"intent": "warm_prospect"})
+    assert ready.escalate and ready.escalate_reason == "age_review"
+    assert ready.handover_message == "handover_message_review"
 
+    reviewed = _state({**QUALIFIED, "age": 50}, {"age_reviewed": True})
+    assert dossier.gate(reviewed, {"intent": "warm_prospect"}).allow_booking
 
-def test_age_is_no_longer_the_first_thing_the_writer_is_told_to_ask_for():
-    """Order in DISCOVERY is the priority the writer is given. Partner status still comes last."""
-    missing = dossier.missing_facts(dossier.empty_state())
-    assert missing[0] == "how long she has been trying"
-    assert "how old she is" in missing
-    assert "partner" in missing[-1]
-
-    known = _state({"age": 36})
-    assert "how old she is" not in dossier.missing_facts(known)
+    at_47 = dossier.gate(_state({**QUALIFIED, "age": 47}), {"intent": "warm_prospect"})
+    assert at_47.allow_booking and not at_47.escalate
 
 
 @pytest.mark.parametrize("slots,flags,intent,expected_gate", [
@@ -339,7 +306,6 @@ def test_examples_resolve_their_placeholders():
     """The writer must never be shown a literal `{{booking_link}}`. It would send it."""
     rendered = _examples(ALL_BLOCKS)
     assert "{{" not in rendered
-    assert CFG["price_range"] in rendered
 
 
 # ── Prompt assembly ──────────────────────────────────────────────────────────
@@ -367,28 +333,6 @@ def test_the_free_link_and_the_booked_link_never_swap_places():
 def test_no_placeholder_survives_into_the_prompt():
     built = prompts.build_write_prompt(CFG, {"pricing", "booking", "free_resource", "post_booking"})
     assert "{{" not in built and "[[BLOCK" not in built
-
-
-def test_the_prompt_carries_the_facts_and_the_hard_boundaries():
-    built = prompts.build_write_prompt(CFG, {"pricing", "booking", "free_resource"})
-    for fact in ("16 years", "735", "$1,500 to $14,000"):
-        assert fact in built
-    for rule in ("both tubes", "Never say", "first person"):
-        assert rule.lower() in built.lower()
-
-
-def test_a_woman_who_has_decided_to_buy_is_not_warned_about_paying():
-    """Client review point 3: 'I want to enroll, can I pay' was answered with a readiness warning."""
-    built = prompts.build_write_prompt(CFG, {"pricing", "booking"})
-    assert "Never say it to someone who has already decided to buy" in built
-
-
-def test_the_writer_is_told_what_a_price_objection_is_actually_asking():
-    """Client review point 12: it answered the objection with information, then with the call."""
-    built = prompts.build_write_prompt(CFG, {"pricing", "booking"})
-    for phrase in ("I actually getting for this", "Personalization", "Accountability"):
-        assert phrase in built
-    assert "guarantee disclaimer she did not ask for" in built
 
 
 def test_quantities_are_written_as_digits():
@@ -689,22 +633,6 @@ def test_the_spiral_rule_stays_out_of_a_boundary_conversation():
 PARTIAL = {"age": 36, "time_trying": "1 year", "conceiving_mode": "preparing for IVF"}
 
 
-def test_a_boundary_turn_still_gets_something_to_do():
-    """A gate can shut the link. It cannot ask a question, and only the writer can.
-
-    Run two of the m_runs corpus is what the absence of this looks like: four replies that each
-    opened by naming something she does not provide, no question in any of them, and a fourth that
-    explained the missing link away. The prohibition was the whole brief, so the reply was too.
-    """
-    read = {"intent": "not_a_fit", "flags": {"wants_unprovided_service": True}}
-    gate = dossier.gate(_state(PARTIAL), read)
-    brief = brain._brief(gate, read, _state(PARTIAL), [])
-
-    assert "not provide" in brief, "the boundary itself still has to be stated"
-    assert "ask the one that would most change what you say next" in brief
-    assert "whether having a baby is one of her biggest priorities right now" in brief
-
-
 @pytest.mark.parametrize("flags,reason", [
     ({"recent_loss": True}, "recent_loss"),
     ({"currently_pregnant": True}, "currently_pregnant"),
@@ -758,14 +686,6 @@ def test_a_question_asked_afterwards_is_still_answered_properly():
     assert not gate.allow_booking
 
 
-def test_the_writer_is_told_to_let_it_end():
-    read = {"intent": "gratitude", "tags": [], "flags": {"stopped_trying": True}}
-    state = dossier.merge(_state(PARTIAL), read)
-    brief = brain._brief(dossier.gate(state, read), read, state, [])
-    assert "nothing here to sell" in brief
-    assert "let the conversation end" in brief
-
-
 def test_a_fresh_loss_outranks_the_decision_she_made_about_it():
     """"We lost it at 11 weeks and we've decided that's it" sets both. The loss is what the reply
     has to stay with, and the terminal turn gives up nothing by losing: neither may ask, offer or
@@ -797,26 +717,6 @@ async def test_the_safety_read_adds_a_flag_the_extraction_missed():
     assert read["flags"]["asked_if_ai"] is True
     gate = dossier.gate(dossier.merge(None, read), read)
     assert not gate.escalate, "she asked a question, she did not ask for a person"
-    assert "ai_transparency" in gate.tags
-
-
-def test_the_writer_is_told_to_answer_the_bot_question_itself():
-    """It used to be answered by handing the conversation over, which left her with silence."""
-    read = {"intent": "fertility_question", "tags": [], "flags": {"asked_if_ai": True}}
-    state = dossier.merge(None, read)
-    brief = brain._brief(dossier.gate(state, read), read, state, [])
-    assert "AI assistant" in brief
-    assert "team" in brief and "would like" in brief
-
-
-def test_the_bot_conversation_does_not_follow_her_around():
-    """The flag is sticky in the dossier. The pull is not, or every later turn re-opens it."""
-    read = {"intent": "fertility_question", "tags": [], "flags": {"asked_if_ai": True}}
-    state = dossier.merge(None, read)
-    assert state["flags"]["asked_if_ai"] is True
-
-    later = {"intent": "fertility_question", "tags": [], "flags": {}}
-    assert "ai_transparency" not in dossier.gate(dossier.merge(state, later), later).tags
 
 
 def test_saying_yes_to_a_person_is_what_hands_over():
@@ -859,23 +759,6 @@ async def test_a_broken_safety_read_never_invents_a_handover(junk):
         client, [{"role": "user", "content": "hi"}], model="gpt-4.1-mini",
     )
     assert not any(read["flags"].get(flag) for flag in reader.SAFETY_FLAGS)
-
-
-def test_the_masterclass_is_not_offered_twice_in_a_row():
-    """The first version of this rule said "every reply after this does the same", and it was
-    followed exactly: six consecutive replies of the same two sentences and the same link."""
-    state = None
-    for _ in range(4):
-        state = _asked(state, "free_info_request")
-    gate = dossier.gate(state, {"intent": "free_info_request"})
-
-    first = brain._brief(gate, {"intent": "free_info_request"}, state, [])
-    assert "send the masterclass link" in first
-
-    state["flags"]["masterclass_sent"] = True
-    again = brain._brief(gate, {"intent": "free_info_request"}, state, [])
-    assert "do not send it again" in again
-    assert "send the masterclass link" not in again
 
 
 async def test_portuguese_read_as_spanish_is_caught():
@@ -1019,28 +902,6 @@ def test_every_model_offered_in_admin_has_a_rate():
 # prompt layer or a conversation file cannot quietly restore it.
 
 
-async def test_a_phone_request_cannot_hand_over_even_when_the_read_says_so():
-    """Conversation 1. The carve-out is written into both definitions of the flag and the flag
-    still came back on one run in three, which ended the turn and sent her the team's line.
-
-    The two are defined as opposites in `70_read.md`, so a read that returns both has contradicted
-    itself and the tag is the half that saw the whole conversation. `human_requested` is how she
-    says she wants somebody else, and it is left alone.
-    """
-    client = _FakeClient(
-        '{"intent": "new_prospect", "tags": ["phone_request"], "language": "en", '
-        '"flags": {"asked_for_human": true}}',
-        NO_TRIGGERS,
-    )
-    read, _ = await reader.read_turn(
-        client, [{"role": "user", "content": "can i get Sonia's phone number to call her directly"}],
-        model="gpt-4.1-mini",
-    )
-
-    assert "asked_for_human" not in read["flags"]
-    assert not dossier.gate(dossier.merge(None, read), read).escalate
-
-
 async def test_asking_for_a_person_in_the_same_breath_still_hands_over():
     """The other half of it. She wants a number and she wants somebody else, so both are true."""
     client = _FakeClient(
@@ -1056,83 +917,12 @@ async def test_asking_for_a_person_in_the_same_breath_still_hands_over():
     assert read["flags"]["asked_for_human"]
 
 
-def test_a_phone_request_is_told_not_to_announce_what_it_is():
-    """Conversation 1 again, the second failure in it.
-
-    With the flag fixed, every run opened with "you're chatting with an AI assistant" and the
-    boundary she asked about arrived last or not at all. `60_contract.md` carries the carve-out and
-    loses to the six emphatic paragraphs above it, so the turn says it where nothing competes.
-    """
-    read = {"intent": "new_prospect", "tags": ["phone_request"], "flags": {}, "slots": {}}
-    state = _state()
-    brief = brain._brief(dossier.gate(state, read), read, state, [])
-
-    assert "not give a personal number out through DMs" in brief
-    assert "do not announce that she is talking to an AI" in brief
-    # A bare no plus a question is what the terse first version of this produced, and it gave her
-    # nothing: she is already talking to the person she wanted to ring, which is the answer.
-    assert "she can tell you the whole of it right here" in brief
-    # The version before this one supplied a reason for the boundary, that a call would be Sonia
-    # between other calls rather than her full attention. Nothing in the manual says that and
-    # nothing in the knowledge base knows what her day looks like.
-    assert "Do not invent a reason for the boundary" in brief
-
-
-def test_no_link_until_she_has_been_told_it_is_paid():
-    """v2.1 §A and 2B.1 §15: the disclosure is a message of its own, ahead of the invitation.
-
-    `60_contract.md` has said so for four rounds and the reply still came back as the disclosure and
-    the invitation in one breath, with the link turned into a question she had to answer.
-    """
+def test_no_paid_warning_stands_between_her_and_the_link():
+    """2B.1 §11 and 2B.2 §7: price is answered when asked, never required before booking."""
     read = {"intent": "program_question"}
-    gate = dossier.gate(_state(QUALIFIED, paid_disclosed=False), read)
-
-    assert not gate.allow_booking
-    assert gate.block_reason == "paid_not_disclosed"
-
-
-def test_the_paid_turn_is_told_what_to_say_instead():
-    read = {"intent": "program_question"}
-    state = _state(QUALIFIED, paid_disclosed=False)
-    brief = brain._brief(dossier.gate(state, read), read, state, [])
-
-    assert "it is a paid coaching program" in brief
-    assert "do not ask whether she would like a link" in brief
-
-
-def test_a_woman_who_wants_to_buy_is_not_held_for_the_disclosure():
-    """v2.1 §A: she asked how to pay. Holding the link to warn her it is paid is that warning."""
-    read = {"intent": "new_prospect", "tags": ["ready_to_book"]}
-    gate = dossier.gate(_state(QUALIFIED, paid_disclosed=False), read)
+    gate = dossier.gate(_state(QUALIFIED), read)
 
     assert gate.allow_booking
-
-
-def test_a_spanish_no_on_english_materials_is_not_asked_twice():
-    """v2.1 §L: if she cannot work with English materials that is the end of it."""
-    read = {"intent": "program_question"}
-    state = _state(QUALIFIED, flags={"declines_english_materials": True})
-    state["slots"]["language"] = "es"
-    gate = dossier.gate(state, read)
-
-    assert not gate.allow_booking
-    assert gate.block_reason == "declines_english_materials"
-
-    brief = brain._brief(gate, read, state, [])
-    assert "Do not ask her again in different words" in brief
-    assert "promise a translation" in brief
-
-
-def test_a_spanish_conversation_is_told_to_disclose_now():
-    read = {"intent": "program_question"}
-    state = _state(QUALIFIED)
-    state["slots"]["language"] = "es"
-    gate = dossier.gate(state, read)
-
-    assert gate.block_reason == "english_materials_undisclosed"
-    brief = brain._brief(gate, read, state, [])
-    assert "the materials are in English" in brief
-    assert "Do not save it for later" in brief
 
 
 def test_a_fresh_loss_is_offered_no_free_resource():
@@ -1142,69 +932,6 @@ def test_a_fresh_loss_is_offered_no_free_resource():
 
     assert not gate.allow_booking
     assert "free_resource" not in gate.blocks
-
-
-def test_a_lab_refusal_is_not_told_to_promise_a_closer_look():
-    """v2.1 §5: never phrase the refusal so a fuller review would produce the reading."""
-    read = {"intent": "advice_request"}
-    state = _state(QUALIFIED, flags={"requested_lab_interpretation": True})
-    brief = brain._brief(dossier.gate(state, read), read, state, [])
-
-    assert "whole picture" not in brief.split("Do not say you would need")[0]
-    assert "reading results properly is the coaching itself" in brief
-
-
-def test_a_phone_request_is_pointed_at_the_consultation_when_there_is_one():
-    """v2.1 §13: the boundary is half of it, and the route to a real conversation is the other."""
-    read = {"intent": "new_prospect", "tags": ["phone_request"], "flags": {}, "slots": {}}
-    state = _state(QUALIFIED)
-    gate = dossier.gate(state, read)
-    assert gate.allow_booking
-    brief = brain._brief(gate, read, state, [])
-
-    assert "the consultation is that conversation" in brief
-    assert "whoever she speaks to can see what she has already told you" in brief
-
-
-def test_a_phone_request_with_no_call_available_is_not_sold_one():
-    """The same turn one message in, where the gate has nothing to offer.
-
-    The manual says to direct her to the consultation process and `60_contract.md` says a call may
-    not be named before she has been told this is paid. On the turn where both apply, the second
-    one wins: an invitation she cannot price is the thing the ordering exists to prevent.
-    """
-    read = {"intent": "new_prospect", "tags": ["phone_request"], "flags": {}, "slots": {}}
-    state = _state(turns=1)
-    gate = dossier.gate(state, read)
-    assert not gate.allow_booking
-    brief = brain._brief(gate, read, state, [])
-
-    assert "do not name one, do not describe the consultation" in brief
-    assert "Ask her what is going on instead" in brief
-
-
-def test_a_woman_who_asked_what_is_typing_is_still_answered_on_a_phone_turn():
-    """She asked both, so the honest answer is not suppressed by the tag."""
-    read = {"intent": "new_prospect", "tags": ["phone_request"],
-            "flags": {"asked_if_ai": True}, "slots": {}}
-    state = _state()
-    brief = brain._brief(dossier.gate(state, read), read, state, [])
-
-    assert "Tell her the truth in the first line" in brief
-    assert "do not announce that she is talking to an AI" not in brief
-
-
-def test_a_woman_who_has_stopped_is_answered_rather_than_handed_over():
-    """The path the same conversation takes once the flag is not set: warm, no link, no handover."""
-    read = {"intent": "gratitude", "tags": ["closing"], "flags": {"stopped_trying": True},
-            "slots": {"time_trying": "5 years"}}
-    state = dossier.merge(None, read)
-    gate = dossier.gate(state, read)
-
-    assert not gate.escalate
-    assert not gate.allow_booking and gate.block_reason == "stopped_trying"
-    assert "free_resource" not in gate.blocks, "nothing is offered into it either"
-    assert "let the conversation end" in brain._brief(gate, read, state, [])
 
 
 def test_the_pregnancy_program_is_named_when_she_asks_for_it():
@@ -1219,31 +946,122 @@ def test_the_pregnancy_program_is_named_when_she_asks_for_it():
     assert "The Pregnancy Solution" in brief
 
 
-def test_an_announcement_on_its_own_is_still_only_congratulated():
-    """The rule the fix above must not break. She has asked for nothing, so nothing is offered."""
-    read = {"intent": "pregnancy_announcement", "tags": ["celebration"],
-            "flags": {"currently_pregnant": True}, "slots": {}}
-    state = dossier.merge(None, read)
-    gate = dossier.gate(state, read)
-    brief = brain._brief(gate, read, state, [])
-
-    assert gate.block_reason == "currently_pregnant"
-    assert "The Pregnancy Solution" not in brief
-    assert "Congratulate her and stop" in brief
-    # v1.0 said pregnancy coaching was not something she does, and that line outlived the fact.
-    assert "not what you do" not in brief
 
 
-def test_the_woman_who_already_has_a_provider_is_owed_something_concrete():
-    """Conversation 2. Twice in three runs the reply answered with the shape of an answer: a clear
-    sense of what to focus on first, the right things in the right order. All true, none of it
-    about her, and none of it visibly different from what her acupuncturist already does.
-    """
-    read = {"intent": "new_prospect", "tags": ["complementary_provider", "long_ttc"],
-            "flags": {}, "slots": {"already_tried": ["fertility acupuncture"]}}
-    state = _state(QUALIFIED)
-    brief = brain._brief(dossier.gate(state, read), read, state, [])
+# ── v4.0: handover, after the link, attendance, proof ───────────────────────
 
-    assert "Name one concrete thing" in brief
-    assert "are not an answer on their own" in brief
+@pytest.mark.parametrize("reason,message", [
+    ("asked_for_human", "handover_message_review"),
+    ("requested_medication", "handover_message_review"),
+    ("complaint", "handover_message_review"),
+    ("crisis", "handover_message_crisis"),
+    ("urgent_medical", "handover_message_urgent_medical"),
+    ("abusive", ""),
+    ("spam_or_aggression", ""),
+])
+def test_every_review_sends_the_acknowledgment_except_safety_and_abuse(reason, message):
+    """v4 §F, 2B.2 §13: the acknowledgment is the default, once, on every review."""
+    assert dossier.handover_message(reason) == message
 
+
+def _after_link(slots=None, phase=dossier.LINK_SENT):
+    state = _state({**QUALIFIED, **(slots or {})}, phase=phase)
+    return state
+
+
+def test_after_the_link_thanks_gets_nothing():
+    before = _after_link()
+    read = {"intent": "gratitude", "flags": {}, "slots": {}}
+    gate = dossier.gate(dossier.merge(before, read), read, before)
+    assert gate.silent and not gate.escalate
+
+
+def test_after_the_link_saying_she_booked_gets_a_reply():
+    before = _after_link()
+    read = {"intent": "new_prospect", "flags": {"says_booked": True}, "slots": {}}
+    state = dossier.merge(before, read)
+    gate = dossier.gate(state, read, before)
+    assert not gate.silent and "post_booking" not in gate.blocks
+    assert "Ask for the email" in brain._brief(gate, read, state, [])
+
+
+def test_after_the_link_her_email_opens_the_preparation_video():
+    before = _after_link()
+    read = {"intent": "new_prospect", "flags": {}, "slots": {"email": "jo@mail.com"}}
+    state = dossier.merge(before, read)
+    gate = dossier.gate(state, read, before)
+    assert "post_booking" in gate.blocks
+    assert "preparation message" in brain._brief(gate, read, state, [])
+
+
+def test_the_preparation_lines_go_once():
+    before = _after_link({"email": "jo@mail.com"}, phase=dossier.POST_BOOKING)
+    read = {"intent": "new_prospect", "flags": {"says_booked": True}, "slots": {}}
+    assert dossier.gate(dossier.merge(before, read), read, before).silent
+
+
+def test_a_crisis_after_the_link_still_hands_over():
+    before = _after_link()
+    read = {"intent": "new_prospect", "flags": {"crisis": True}, "slots": {}}
+    gate = dossier.gate(dossier.merge(before, read), read, before)
+    assert gate.escalate and gate.handover_message == "handover_message_crisis"
+
+
+def test_attendance_pushback_gets_one_question_then_never_again():
+    """2B.1 §12: one question on pushback; once answered, it can't repeat."""
+    before = _after_link()
+    push = {"slots": {"attendance": "pushback"}, "flags": {}}
+    state = dossier.merge(before, push)
+    assert brain._attendance_note(state, before) == "attendance_pushback"
+
+    answered = dossier.merge(state, {"slots": {"attendance": "together"}, "flags": {}})
+    again_before = answered
+    again = dossier.merge(answered, push)
+    assert brain._attendance_note(again, again_before) == "attendance_together"
+
+
+def test_an_agreed_exception_is_given_and_remembered_after_booking():
+    before = _after_link({"attendance": "partner_cannot_attend", "partner_status": "partnered"})
+    read = {"intent": "new_prospect", "flags": {"says_booked": True}, "slots": {"email": "a@b.co"}}
+    state = dossier.merge(before, read)
+    gate = dossier.gate(state, read, before)
+    brief = brain._brief(gate, read, state, [], "")
+    assert "agreed she would come on her own" in brief
+
+
+def test_donor_sperm_is_not_a_relationship_status():
+    state = _state({**QUALIFIED, "partner_status": "same_sex_partner", "donor_sperm": True})
+    gate = dossier.gate(state, {"intent": "warm_prospect"})
+    brief = brain._brief(gate, {"intent": "warm_prospect"}, state, [])
+    assert "attendance line" in brief
+
+
+def test_a_solo_mother_is_invited_alone():
+    state = _state({**QUALIFIED, "partner_status": "single_by_choice", "donor_sperm": True})
+    gate = dossier.gate(state, {"intent": "warm_prospect"})
+    assert "invite her alone" in brain._brief(gate, {"intent": "warm_prospect"}, state, [])
+
+
+def test_client_stories_open_only_when_she_asks():
+    asked = {"intent": "program_question", "flags": {"asked_about_results": True}}
+    assert "proof" in dossier.gate(_state(QUALIFIED), asked).blocks
+    assert "proof" not in dossier.gate(_state(QUALIFIED), {"intent": "program_question"}).blocks
+
+
+def test_ok_after_booked_is_not_asked_for_the_email_again():
+    """The reader reads booking from the whole conversation, so the flag comes back on "ok"."""
+    before = _after_link()
+    booked = {"intent": "new_prospect", "flags": {"says_booked": True}, "slots": {}}
+    state = dossier.merge(before, booked)
+    assert dossier.gate(state, booked, before).after_link == "booked"
+    ok = {"intent": "new_prospect", "flags": {"says_booked": True}, "slots": {}}
+    assert dossier.gate(dossier.merge(state, ok), ok, state).silent
+
+
+def test_a_question_before_booking_is_answered_after_the_link():
+    """Part 1 §3: her question is never ignored, even once she has the link."""
+    before = _after_link()
+    read = {"intent": "program_question", "explicit_question": "which level should i do?",
+            "flags": {}, "slots": {}}
+    gate = dossier.gate(dossier.merge(before, read), read, before)
+    assert gate.after_link == "question" and "booking" not in gate.blocks

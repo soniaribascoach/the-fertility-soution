@@ -6,11 +6,11 @@ from datetime import datetime, timezone
 from pydantic_settings import BaseSettings
 
 # Product version shown in the admin UI. Bump on notable releases.
-# v2.0 = three-stage brain: reader extracts facts, dossier gates them, brain writes.
-APP_VERSION = "v2.0"
+# v3.0 = manual v4.0 build of the three-stage brain (reader, dossier gate, writer).
+APP_VERSION = "v3.0"
 
 # Name of the brain generation, so the sidebar says which one is live, not only a number.
-APP_BRAIN = "brain v2"
+APP_BRAIN = "brain v3"
 
 _REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 

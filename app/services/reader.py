@@ -26,6 +26,7 @@ VALID_INTENTS = {
     "program_question", "price_question", "ivf_question", "emotional_distress",
     "grief_or_loss", "advice_request", "free_info_request", "collaboration",
     "media_request", "technical_support", "complaint", "not_a_fit", "spam_or_aggression",
+    "opt_out",
 }
 
 PATHS = ("terminal", "direct_answer", "nurturing", "qualification")

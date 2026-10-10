@@ -531,9 +531,9 @@
     input.value = '';
     autoResize();
     updateSendBtn();
-    // Same as the worker: a paused lead's message is kept but not answered, except her email
-    // after the booking link.
-    if (paused && !(paused === 'qualified_link_sent' && /[^\s@]+@[^\s@]+\.[^\s@]+/.test(text))) {
+    // Same as the worker: a paused lead's message is kept but not answered, except after the
+    // booking link, where the brain decides whether it is part of booking.
+    if (paused && paused !== 'qualified_link_sent') {
       appendNote('AI paused (' + paused + '). No reply sent, the team has this conversation.');
       return;
     }
@@ -558,8 +558,8 @@
       }
       pushTrace(turn, data);
       if (data.human_takeover) {
+        if (paused !== data.takeover_reason) appendTakeoverBanner(data.takeover_reason);
         setPaused(data.takeover_reason);
-        appendTakeoverBanner(data.takeover_reason);
       } else if (!data.reply) {
         appendMessage('ai', 'Something went wrong. Please try again.');
       }

@@ -147,7 +147,50 @@ def _usage(read_model: str, write_model: str, read_usage: dict, response) -> dic
     }
 
 
-def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> str:
+def _attendance_note(state: dict, before: dict) -> str:
+    """The attendance note for this turn, "" when what she said about it hasn't changed.
+
+    2B.1 §12: pushback gets one question. Once she has answered it, pushing back again is not a
+    new question; she is encouraged to find a time they can both make.
+    """
+    attendance = (state.get("slots") or {}).get("attendance")
+    if attendance == ((before.get("slots") or {}).get("attendance")):
+        return ""
+    if attendance == "pushback":
+        if (state.get("flags") or {}).get("attendance_asked"):
+            return "attendance_together"
+        state["flags"]["attendance_asked"] = True
+        return "attendance_pushback"
+    if attendance == "together":
+        return "attendance_together"
+    if attendance in ("decides_alone", "partner_cannot_attend"):
+        return "attendance_exception"
+    return ""
+
+
+def _after_link_notes(gate: dossier.Gate, state: dict, attendance: str) -> list[str]:
+    """What a reply after the link has to do (2B.2 §8): the email, then the preparation lines."""
+    slots = state.get("slots") or {}
+    notes = [attendance] if attendance else []
+    if gate.after_link == "question":
+        notes.append("after_link_question")
+    if gate.after_link in ("booked", "email"):
+        if not slots.get("email"):
+            notes.append("after_link_ask_email")
+            return notes
+        notes.append("after_link_prepare")
+        if attendance:
+            return notes
+        if slots.get("attendance") in ("decides_alone", "partner_cannot_attend"):
+            notes.append("after_link_remind_exception")
+        elif (slots.get("partner_status") in ("partnered", "same_sex_partner")
+              and slots.get("attendance") != "together"):
+            notes.append("after_link_remind_partner")
+    return notes
+
+
+def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str],
+           attendance: str = "") -> str:
     """The per-turn notes: what this reply has to do, and what it must not contain.
 
     This only decides which notes apply. Their wording lives in `prompts_simple/turn.md`, so a
@@ -166,9 +209,16 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
 
     flags = read.get("flags") or {}
     sticky = state.get("flags") or {}
+    slots = state.get("slots") or {}
 
     if read.get("explicit_question"):
         add("question", question=read["explicit_question"])
+
+    if state.get("phase") in (dossier.LINK_SENT, dossier.POST_BOOKING):
+        for name in _after_link_notes(gate, state, attendance):
+            add(name)
+        return "\n".join(lines)
+
     if read.get("path"):
         add(f"path_{read['path']}")
 
@@ -184,14 +234,18 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str]) -> 
         add("pregnancy_support")
     if flags.get("has_other_provider"):
         add("has_other_provider")
+    if "proof" in gate.blocks:
+        add("proof")
 
     if gate.allow_booking:
         add("booking_open")
-        if not dossier._stated((state.get("slots") or {}).get("age")):
+        if not dossier._stated(slots.get("age")) and not dossier._pregnancy_prospect(state):
             add("age_unknown")
-        add("partner")
+        add("partner_solo" if slots.get("partner_status") == "single_by_choice" else "partner_invite")
     else:
         add("booking_shut")
+    if attendance:
+        add(attendance)
 
     if gate.block_reason in ("not_enough_context", "first_exchange"):
         add("early")
@@ -285,6 +339,7 @@ async def run_turn(
     before = state
     state = dossier.merge(state, read)
     gate = dossier.gate(state, read, before)
+    attendance = _attendance_note(state, before) if not (gate.escalate or gate.silent) else ""
 
     trace = {
         "read": read,
@@ -297,6 +352,14 @@ async def run_turn(
         },
     }
 
+    if gate.silent:
+        # After the link, and nothing she said is part of booking. The team has her.
+        return TurnResult(
+            lead_state=state, pause=True, pause_reason="qualified_link_sent",
+            action="AFTER_LINK_SILENT", usage=_usage(read_model, model, read_usage, None),
+            trace=trace,
+        )
+
     if gate.escalate:
         # The writer is never called on a handover turn, so nothing about it is generated. She
         # gets either nothing or one fixed line Sonia wrote, which is the only way to be certain
@@ -307,6 +370,8 @@ async def run_turn(
             "fixed line" if fixed else "silent",
         )
         state["phase"] = state.get("phase") or dossier.EXPLORING
+        if gate.escalate_reason == "age_review":
+            state["flags"]["age_reviewed"] = True
         return TurnResult(
             reply_text=fixed or None, lead_state=state, pause=True,
             pause_reason=gate.escalate_reason, add_tag=True,
@@ -322,7 +387,7 @@ async def run_turn(
             build_write_prompt(cfg, gate.blocks),
             render_examples(chosen, allowed_blocks=gate.blocks, values=config_values(cfg)),
             dossier.render(state),
-            _brief(gate, read, state, openings),
+            _brief(gate, read, state, openings, attendance),
         ) if part
     )
 
@@ -354,12 +419,14 @@ async def run_turn(
     if masterclass_link and masterclass_link in reply:
         state["flags"]["masterclass_sent"] = True
 
-    if state.get("phase") == dossier.LINK_SENT and (state.get("slots") or {}).get("email"):
-        state["phase"] = dossier.POST_BOOKING
+    if state.get("phase") in (dossier.LINK_SENT, dossier.POST_BOOKING):
+        # Still paused: the team has her. The preparation lines go once, with the email.
+        if state["phase"] == dossier.LINK_SENT and (state.get("slots") or {}).get("email"):
+            state["phase"] = dossier.POST_BOOKING
         return TurnResult(
             reply_text=reply or None, lead_state=state, pause=True,
             pause_reason="qualified_link_sent", add_tag=False,
-            action="POST_BOOKING", usage=usage, trace=trace,
+            action="AFTER_LINK", usage=usage, trace=trace,
         )
 
     if sent_link:

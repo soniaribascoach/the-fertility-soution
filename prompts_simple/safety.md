@@ -11,10 +11,10 @@ JSON object: {"triggers": [...]} with every trigger that applies, or an empty li
   symptom is not this.
 - `asked_if_ai`: she asks or wonders whether she is talking to a real person, a bot, an AI or an
   automated system. Asking for a phone number is not this.
-- `asked_for_human`: she wants to stop talking to whoever is replying and be handed to someone
-  other than Sonia. "Can I speak to a real person?", "I'd rather talk to someone on your team".
-  None of these are this trigger:
-  - Asking for Sonia, her number, her WhatsApp, or to call her. That is the same person.
+- `asked_for_human`: she wants to stop talking to the AI and be handed to a person, Sonia herself
+  or someone on the team. "Can I speak to a real person?", "I'd rather talk to Sonia herself", "I'd
+  rather talk to someone on your team". None of these are this trigger:
+  - Asking for Sonia's number, her WhatsApp, or to call her. That is a request for a channel.
   - Anything about booking or the consultation: "how do I book?", "can we both be on the call?",
     "what's the next step?", "can I talk to someone before I decide?". That someone is the
     consultation.

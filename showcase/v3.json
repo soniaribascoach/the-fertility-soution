@@ -1,0 +1,881 @@
+{
+  "version": "v3.0",
+  "revision": "7c36cf5",
+  "manual": "v4.0 (Oct 8, 2026)",
+  "run_at": "2026-10-10 14:58 UTC",
+  "conversations": [
+    {
+      "id": "ivf_prep_to_booked",
+      "title": "IVF prep, booking a call",
+      "turns": [
+        {
+          "lead": "hi sonia! i'm 38, one failed ivf last year and we're doing another transfer in the spring. is there anything that can actually make a difference before then?",
+          "reply": "Yes, there are meaningful things to work on before a spring transfer, even though no one can predict how much they’ll change the outcome. After a failed IVF, I’d look at your sleep, blood sugar, stress and daily routines, and what might be getting in the way of feeling well prepared for the transfer.",
+          "note": "path nurturing | intent new_prospect | flags open_to_ivf | slots {\"age\": 38, \"ivf_history\": \"one failed IVF last year\", \"conceiving_mode\": \"ivf\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"goal_stated\": \"make a difference before another transfer in the spring\"} | gate no link: first_exchange | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "nurturing",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": "is there anything that can actually make a difference before then?",
+              "slots": {
+                "age": 38,
+                "ivf_history": "one failed IVF last year",
+                "conceiving_mode": "ivf",
+                "partner_status": "partnered",
+                "pregnancy_priority": "high",
+                "goal_stated": "make a difference before another transfer in the spring"
+              },
+              "flags": {
+                "open_to_ivf": true
+              }
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "no link: first_exchange"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "how does working with you actually work?",
+          "reply": "My method is DETOX, NOURISH and FLOW: we look at everyday factors that may be getting in your way, what your body needs, and how to build supportive routines you can sustain. For you, that could mean working on sleep, blood sugar and stress as you prepare for your spring transfer.\n\nThe Fertility Solution takes you through 16 modules over 6 months, with different levels of support depending on how closely you want to work with me.",
+          "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 38, \"ivf_history\": \"one failed ivf\", \"conceiving_mode\": \"ivf\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": "how does working with you actually work?",
+              "slots": {
+                "age": 38,
+                "ivf_history": "one failed ivf",
+                "conceiving_mode": "ivf",
+                "partner_status": "partnered",
+                "pregnancy_priority": "high"
+              },
+              "flags": {}
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "how much is it?",
+          "reply": "The 6-month program ranges from $1,500 to $7,200, depending on the level of support. Self paced is $1,500, Group is $3,800, and Full is $7,200.\n\nFull includes up to 2 private sessions with me each month and unlimited texting between sessions. Group includes live sessions twice a week, recordings and the private community. Self paced gives you the modules and resources to work through on your own.",
+          "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 38, \"ivf_history\": \"one failed IVF last year\", \"conceiving_mode\": \"ivf\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": "how much is it?",
+              "slots": {
+                "age": 38,
+                "ivf_history": "one failed IVF last year",
+                "conceiving_mode": "ivf",
+                "partner_status": "partnered",
+                "pregnancy_priority": "high"
+              },
+              "flags": {}
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "that's a lot. how do i know it's worth it?",
+          "reply": "That’s a significant investment, especially when you’ve already been through a failed IVF cycle. What you’d be paying for is structured support around the months before your spring transfer, not a promise of a different outcome. Full adds private sessions and ongoing texting with me, Group gives you live sessions and community support, and Self paced is the modules and resources. Which level of support would be useful depends on what you want help with day to day.",
+          "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 38, \"conceiving_mode\": \"ivf\", \"ivf_history\": \"one failed IVF last year\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": "how do i know it's worth it?",
+              "slots": {
+                "age": 38,
+                "conceiving_mode": "ivf",
+                "ivf_history": "one failed IVF last year",
+                "partner_status": "partnered",
+                "pregnancy_priority": "high"
+              },
+              "flags": {}
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "ok i think i want the full one. how do i book?",
+          "reply": "The next step is a free call with my team to talk through your goals and whether Full is the right level of support. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call?utm_source=dm&utm_medium=ai&utm_campaign=ig_recovery\n\nI strongly encourage you to choose a time when you and your partner can attend, especially if you make fertility or pregnancy decisions and decisions about joining a program together. It’s a chance for you both to understand the approach, ask questions and decide on the next steps.",
+          "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 38, \"ivf_history\": \"one failed IVF last year\", \"conceiving_mode\": \"ivf\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
+          "action": "BOOKING_SENT",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "warm_prospect",
+              "language": "en",
+              "explicit_question": "how do i book?",
+              "slots": {
+                "age": 38,
+                "ivf_history": "one failed IVF last year",
+                "conceiving_mode": "ivf",
+                "partner_status": "partnered",
+                "pregnancy_priority": "high"
+              },
+              "flags": {
+                "wants_to_buy": true
+              }
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          },
+          "tag": 86596410,
+          "qualified": true,
+          "paused_now": "qualified_link_sent"
+        },
+        {
+          "lead": "does my husband really have to come? he works nights and genuinely can't make any of the times",
+          "reply": "Okay, we’ll make an exception and see you on your own. Please mention that we agreed this when you speak with my team.",
+          "note": "path direct_answer | intent warm_prospect | flags - | slots {\"age\": 38, \"ivf_history\": \"one failed IVF last year\", \"conceiving_mode\": \"ivf\", \"partner_status\": \"partnered\", \"attendance\": \"partner_cannot_attend\", \"pregnancy_priority\": \"high\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent",
+          "action": "AFTER_LINK",
+          "trace": {
+            "read": {
+              "path": "direct_answer",
+              "intent": "warm_prospect",
+              "language": "en",
+              "explicit_question": "does my husband really have to come? he works nights and genuinely can't make any of the times",
+              "slots": {
+                "age": 38,
+                "ivf_history": "one failed IVF last year",
+                "conceiving_mode": "ivf",
+                "partner_status": "partnered",
+                "attendance": "partner_cannot_attend",
+                "pregnancy_priority": "high"
+              },
+              "flags": {}
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "after the link: attendance"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "booked for thursday! my email is hannah.m@gmail.com",
+          "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nPlease mention to my team that we agreed you’d come on your own.",
+          "note": "path qualification | intent warm_prospect | flags says_booked | slots {\"age\": 38, \"ivf_history\": \"one failed IVF\", \"conceiving_mode\": \"ivf\", \"partner_status\": \"partnered\", \"attendance\": \"partner_cannot_attend\", \"pregnancy_priority\": \"high\", \"email\": \"hannah.m@gmail.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
+          "action": "AFTER_LINK",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "warm_prospect",
+              "language": "en",
+              "explicit_question": null,
+              "slots": {
+                "age": 38,
+                "ivf_history": "one failed IVF",
+                "conceiving_mode": "ivf",
+                "partner_status": "partnered",
+                "attendance": "partner_cannot_attend",
+                "pregnancy_priority": "high",
+                "email": "hannah.m@gmail.com"
+              },
+              "flags": {
+                "says_booked": true
+              }
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "after the link: email"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "age_48_review",
+      "title": "Age 48",
+      "turns": [
+        {
+          "lead": "hi, my husband and i have been trying for 2 years and everything comes back unexplained. can coaching actually help with that?",
+          "reply": "Yes, coaching can help you look at areas that may not show up in standard tests. With 2 years of unexplained infertility, I’d look at how your daily routines, cycle, sleep and stress fit together, and include your husband’s side too.\n\nAre you trying naturally at the moment, or considering treatment?",
+          "note": "path qualification | intent new_prospect | flags - | slots {\"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"diagnoses\": [\"unexplained\"]} | gate no link: first_exchange | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": "can coaching actually help with that?",
+              "slots": {
+                "time_trying": "2 years",
+                "partner_status": "partnered",
+                "pregnancy_priority": "high",
+                "diagnoses": [
+                  "unexplained"
+                ]
+              },
+              "flags": {}
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "no link: first_exchange"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "what would you look at with me?",
+          "reply": "I’d look at how your cycle is working, your sleep, stress and everyday routines, and whether anything in your environment may be getting in the way. Since you’re trying together, I’d also look at your husband’s side, so you’re not left focusing only on you.",
+          "note": "path nurturing | intent new_prospect | flags - | slots {\"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained infertility\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "nurturing",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": "what would you look at with me?",
+              "slots": {
+                "time_trying": "2 years",
+                "diagnoses": [
+                  "unexplained infertility"
+                ],
+                "partner_status": "partnered",
+                "pregnancy_priority": "high"
+              },
+              "flags": {}
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "ok, i'd like to book a call",
+          "reply": "Before I send you the link, can I ask how old you are?",
+          "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:warm_prospect",
+          "action": "REPLY:warm_prospect",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "warm_prospect",
+              "language": "en",
+              "explicit_question": null,
+              "slots": {
+                "time_trying": "2 years",
+                "partner_status": "partnered",
+                "pregnancy_priority": "high"
+              },
+              "flags": {
+                "wants_to_buy": true
+              }
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "48",
+          "reply": "Thank you for sharing this with me ♡ We'll take a closer look so we can give you a thoughtful, personal response.",
+          "note": "path qualification | intent warm_prospect | flags - | slots {\"age\": 48, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained infertility\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate handover: age_review, fixed line handover_message_review | action HANDOVER:age_review | pause age_review | tag 86596410 (review) | state: paused",
+          "action": "HANDOVER:age_review",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "warm_prospect",
+              "language": "en",
+              "explicit_question": null,
+              "slots": {
+                "age": 48,
+                "time_trying": "2 years",
+                "diagnoses": [
+                  "unexplained infertility"
+                ],
+                "partner_status": "partnered",
+                "pregnancy_priority": "high"
+              },
+              "flags": {}
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": true,
+              "reason": "age_review",
+              "handover_message": "handover_message_review",
+              "notes": [
+                "handover: age_review, fixed line handover_message_review"
+              ]
+            }
+          },
+          "tag": 86596410,
+          "qualified": false,
+          "paused_now": "age_review"
+        },
+        {
+          "lead": "thank you",
+          "paused": "age_review"
+        },
+        {
+          "lead": "hello? are you there?",
+          "paused": "age_review"
+        },
+        {
+          "resume": true
+        },
+        {
+          "lead": "hi again, can i book now?",
+          "reply": "Yes, you can book a free call with my team. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call?utm_source=dm&utm_medium=ai&utm_campaign=ig_recovery\n\nI strongly encourage you to choose a time when you and your husband can attend, especially if you make fertility or program decisions together. It’s a chance for you both to understand the approach, ask questions and decide on next steps.",
+          "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 48, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained infertility\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
+          "action": "BOOKING_SENT",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "warm_prospect",
+              "language": "en",
+              "explicit_question": "hi again, can i book now?",
+              "slots": {
+                "age": 48,
+                "time_trying": "2 years",
+                "diagnoses": [
+                  "unexplained infertility"
+                ],
+                "partner_status": "partnered",
+                "pregnancy_priority": "high"
+              },
+              "flags": {
+                "wants_to_buy": true
+              }
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          },
+          "tag": 86596410,
+          "qualified": true,
+          "paused_now": "qualified_link_sent"
+        }
+      ]
+    },
+    {
+      "id": "grief_ai_human",
+      "title": "After a loss",
+      "turns": [
+        {
+          "lead": "i lost my baby last week at 10 weeks. i can't do this anymore.",
+          "reply": "I’m so sorry. Losing your baby last week is so recent, and you don’t have to figure out what comes next right now. Be gentle with yourself.",
+          "note": "path nurturing | intent new_prospect | flags recent_loss | gate no link: recent_loss | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "nurturing",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": null,
+              "slots": {},
+              "flags": {
+                "recent_loss": true
+              }
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "no link: recent_loss"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "thank you. is this actually sonia or a bot?",
+          "reply": "You're chatting with Sonia's AI assistant right now. I'm trained to answer questions here, support you and point you in the right direction based on Sonia's approach. If you'd prefer to speak with a human, I can bring someone from the team into the conversation. Would you like me to do that?",
+          "note": "path direct_answer | intent new_prospect | flags asked_if_ai | slots {\"miscarriage_history\": \"lost my baby last week at 10 weeks\"} | gate no link: recent_loss | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "direct_answer",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": "is this actually sonia or a bot?",
+              "slots": {
+                "miscarriage_history": "lost my baby last week at 10 weeks"
+              },
+              "flags": {
+                "asked_if_ai": true
+              }
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "no link: recent_loss"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "yes please, i'd like to talk to someone",
+          "reply": "Thank you for sharing this with me ♡ We'll take a closer look so we can give you a thoughtful, personal response.",
+          "note": "path nurturing | intent new_prospect | flags asked_for_human, asked_if_ai | slots {\"miscarriage_history\": \"lost my baby last week at 10 weeks\"} | gate handover: asked_for_human, fixed line handover_message_review | action HANDOVER:asked_for_human | pause asked_for_human | tag 86596410 (review) | state: paused",
+          "action": "HANDOVER:asked_for_human",
+          "trace": {
+            "read": {
+              "path": "nurturing",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": null,
+              "slots": {
+                "miscarriage_history": "lost my baby last week at 10 weeks"
+              },
+              "flags": {
+                "asked_for_human": true,
+                "asked_if_ai": true
+              }
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": true,
+              "reason": "asked_for_human",
+              "handover_message": "handover_message_review",
+              "notes": [
+                "handover: asked_for_human, fixed line handover_message_review"
+              ]
+            }
+          },
+          "tag": 86596410,
+          "qualified": false,
+          "paused_now": "asked_for_human"
+        },
+        {
+          "lead": "thanks",
+          "paused": "asked_for_human"
+        }
+      ]
+    },
+    {
+      "id": "low_amh_medical",
+      "title": "Low AMH and medical questions",
+      "turns": [
+        {
+          "lead": "I'm scared my low AMH means I've missed my chance.",
+          "reply": "That fear can feel so heavy. AMH gives information about ovarian reserve and how you may respond to stimulation, but it doesn’t measure egg quality or, on its own, tell you whether you can get pregnant.",
+          "note": "path nurturing | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "nurturing",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": null,
+              "slots": {},
+              "flags": {}
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "no link: not_enough_context"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "it was 0.5, i'm 39. i also take metformin for insulin resistance",
+          "reply": "Seeing 0.5 alongside that fear can feel frightening, but AMH alone can’t tell you that you’ve missed your chance. It reflects ovarian reserve and can help indicate how you may respond to stimulation, not egg quality or your overall chances. What’s the next step you’re considering, trying naturally or IVF?",
+          "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 39, \"diagnoses\": [\"insulin resistance\"], \"already_tried\": [\"metformin\"], \"testing_done\": [\"AMH 0.5\"]} | gate link available | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "nurturing",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": null,
+              "slots": {
+                "age": 39,
+                "diagnoses": [
+                  "insulin resistance"
+                ],
+                "already_tried": [
+                  "metformin"
+                ],
+                "testing_done": [
+                  "AMH 0.5"
+                ]
+              },
+              "flags": {}
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "are you a doctor?",
+          "reply": "No, I’m a fertility coach, not a doctor. I’ve been doing this for nearly 2 decades.",
+          "note": "path direct_answer | intent new_prospect | flags - | slots {\"age\": 39, \"diagnoses\": [\"insulin resistance\"], \"testing_done\": [\"AMH 0.5\"], \"already_tried\": [\"metformin\"]} | gate link available | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "direct_answer",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": "are you a doctor?",
+              "slots": {
+                "age": 39,
+                "diagnoses": [
+                  "insulin resistance"
+                ],
+                "testing_done": [
+                  "AMH 0.5"
+                ],
+                "already_tried": [
+                  "metformin"
+                ]
+              },
+              "flags": {}
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "so could you monitor my hormones?",
+          "reply": "I can help you understand cycle awareness and track patterns as part of coaching, but I don’t monitor or interpret hormone results. That would need to be handled by your medical team.",
+          "note": "path direct_answer | intent new_prospect | flags - | slots {\"age\": 39, \"diagnoses\": [\"insulin resistance\"], \"already_tried\": [\"metformin\"], \"testing_done\": [\"AMH 0.5\"]} | gate link available | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "direct_answer",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": "so could you monitor my hormones?",
+              "slots": {
+                "age": 39,
+                "diagnoses": [
+                  "insulin resistance"
+                ],
+                "already_tried": [
+                  "metformin"
+                ],
+                "testing_done": [
+                  "AMH 0.5"
+                ]
+              },
+              "flags": {}
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "have you worked with women like me?",
+          "reply": "Yes, I’ve supported women with low AMH and insulin resistance. I don’t have a documented client story that matches both of those details, so I’d rather be honest than stretch someone else’s story.",
+          "note": "path direct_answer | intent new_prospect | flags asked_about_results | slots {\"age\": 39, \"diagnoses\": [\"insulin resistance\"], \"already_tried\": [\"metformin\"], \"testing_done\": [\"AMH 0.5\"]} | gate link available | action REPLY:new_prospect",
+          "action": "REPLY:new_prospect",
+          "trace": {
+            "read": {
+              "path": "direct_answer",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": "have you worked with women like me?",
+              "slots": {
+                "age": 39,
+                "diagnoses": [
+                  "insulin resistance"
+                ],
+                "already_tried": [
+                  "metformin"
+                ],
+                "testing_done": [
+                  "AMH 0.5"
+                ]
+              },
+              "flags": {
+                "asked_about_results": true
+              }
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "should i take dhea before ivf? how much?",
+          "reply": "Thank you for sharing this with me ♡ We'll take a closer look so we can give you a thoughtful, personal response.",
+          "note": "path direct_answer | intent new_prospect | flags open_to_ivf, requested_medication | slots {\"age\": 39, \"conceiving_mode\": \"ivf\", \"diagnoses\": [\"insulin resistance\"], \"testing_done\": [\"AMH 0.5\"], \"already_tried\": [\"metformin\"], \"pregnancy_priority\": \"high\"} | gate handover: requested_medication, fixed line handover_message_review | action HANDOVER:requested_medication | pause requested_medication | tag 86596410 (review) | state: paused",
+          "action": "HANDOVER:requested_medication",
+          "trace": {
+            "read": {
+              "path": "direct_answer",
+              "intent": "new_prospect",
+              "language": "en",
+              "explicit_question": "should i take dhea before ivf? how much?",
+              "slots": {
+                "age": 39,
+                "conceiving_mode": "ivf",
+                "diagnoses": [
+                  "insulin resistance"
+                ],
+                "testing_done": [
+                  "AMH 0.5"
+                ],
+                "already_tried": [
+                  "metformin"
+                ],
+                "pregnancy_priority": "high"
+              },
+              "flags": {
+                "requested_medication": true,
+                "open_to_ivf": true
+              }
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": true,
+              "reason": "requested_medication",
+              "handover_message": "handover_message_review",
+              "notes": [
+                "handover: requested_medication, fixed line handover_message_review"
+              ]
+            }
+          },
+          "tag": 86596410,
+          "qualified": false,
+          "paused_now": "requested_medication"
+        }
+      ]
+    },
+    {
+      "id": "pregnant_spanish",
+      "title": "Pregnant, in Spanish",
+      "turns": [
+        {
+          "lead": "hola sonia! estoy embarazada de 12 semanas después de 2 pérdidas. ¿me puedes acompañar en el embarazo?",
+          "reply": "¡Enhorabuena por tus 12 semanas! Después de 2 pérdidas, es muy comprensible querer apoyo durante el embarazo. Sí, puedo acompañarte con The Pregnancy Solution, mi programa de 6 meses para mujeres embarazadas.\n\nLas sesiones privadas conmigo pueden ser en español, pero las sesiones grupales, los materiales y los vídeos están en inglés. ¿Te sentirías cómoda con eso?",
+          "note": "path qualification | intent pregnancy_announcement | flags wants_pregnancy_support | slots {\"miscarriage_history\": \"2 pérdidas\"} | gate no link: english_materials_undisclosed | action REPLY:pregnancy_announcement",
+          "action": "REPLY:pregnancy_announcement",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "pregnancy_announcement",
+              "language": "es",
+              "explicit_question": "¿me puedes acompañar en el embarazo?",
+              "slots": {
+                "miscarriage_history": "2 pérdidas"
+              },
+              "flags": {
+                "wants_pregnancy_support": true
+              }
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "no link: english_materials_undisclosed"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "¿cómo funciona y cuánto cuesta?",
+          "reply": "The Pregnancy Solution dura 6 meses y tiene 18 módulos con vídeos, hojas de trabajo y recursos para acompañarte durante el embarazo, desde cómo cuidarte hasta la preparación para el parto y la llegada del bebé. Hay 3 niveles: Self paced incluye los módulos y recursos; Group añade sesiones grupales semanales, grabaciones y comunidad; y Full suma hasta 2 sesiones privadas de 20 minutos conmigo al mes y mensajes ilimitados entre sesiones.\n\nCuesta $1,500 en Self paced, $3,800 en Group y $7,200 en Full. Puedes pagar en un solo pago o en 2 partes, la mitad ahora y la otra mitad en 30 días, sin coste extra.\n\nComo te comenté, las sesiones privadas conmigo pueden ser en español, pero las sesiones grupales, los materiales y los vídeos están en inglés. ¿Te resulta bien esa combinación?",
+          "note": "path qualification | intent pregnancy_announcement | flags wants_pregnancy_support | slots {\"miscarriage_history\": \"2 pérdidas\"} | gate no link: english_materials_undisclosed | action REPLY:pregnancy_announcement",
+          "action": "REPLY:pregnancy_announcement",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "pregnancy_announcement",
+              "language": "es",
+              "explicit_question": "¿cómo funciona y cuánto cuesta?",
+              "slots": {
+                "miscarriage_history": "2 pérdidas"
+              },
+              "flags": {
+                "wants_pregnancy_support": true
+              }
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "no link: english_materials_undisclosed"
+              ]
+            }
+          }
+        },
+        {
+          "lead": "sí, entiendo bien el inglés. me interesa el nivel group, ¿cómo empiezo?",
+          "reply": "El primer paso es una llamada gratuita con mi equipo para conversar sobre lo que necesitas y ver si The Pregnancy Solution y el nivel Group encajan contigo. Al rellenar el formulario, indica que estás embarazada y buscas apoyo durante el embarazo:\n\nhttps://www.thefertilitysolution.com/free-call?utm_source=dm&utm_medium=ai&utm_campaign=ig_recovery\n\nTe animo a elegir un horario en el que tú y tu pareja podáis asistir, especialmente si tomáis juntos las decisiones sobre el embarazo y sobre uniros a un programa. Así podéis conocer el enfoque, hacer preguntas y decidir los siguientes pasos.",
+          "note": "path qualification | intent pregnancy_announcement | flags accepts_english_materials, wants_pregnancy_support, wants_to_buy | slots {\"miscarriage_history\": \"2 pérdidas\", \"goal_stated\": \"acompañarme en el embarazo\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
+          "action": "BOOKING_SENT",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "pregnancy_announcement",
+              "language": "es",
+              "explicit_question": "¿cómo empiezo?",
+              "slots": {
+                "miscarriage_history": "2 pérdidas",
+                "goal_stated": "acompañarme en el embarazo"
+              },
+              "flags": {
+                "wants_to_buy": true,
+                "wants_pregnancy_support": true,
+                "accepts_english_materials": true
+              }
+            },
+            "gate": {
+              "allow_booking": true,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "link available"
+              ]
+            }
+          },
+          "tag": 86596410,
+          "qualified": true,
+          "paused_now": "qualified_link_sent"
+        },
+        {
+          "lead": "¡reservado! mi email es lucia.g@gmail.com",
+          "reply": "Antes de la llamada, mira este vídeo. Explica mi método y cómo trabajo, y comparte casos para que puedas llegar preparada.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportante: recibirás un mensaje de texto de mi equipo para confirmar la cita. Tienes que responder a ese mensaje para finalizar la confirmación.",
+          "note": "path qualification | intent pregnancy_announcement | flags accepts_english_materials, says_booked, wants_pregnancy_support | slots {\"miscarriage_history\": \"2 pérdidas\", \"email\": \"lucia.g@gmail.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
+          "action": "AFTER_LINK",
+          "trace": {
+            "read": {
+              "path": "qualification",
+              "intent": "pregnancy_announcement",
+              "language": "es",
+              "explicit_question": null,
+              "slots": {
+                "miscarriage_history": "2 pérdidas",
+                "email": "lucia.g@gmail.com"
+              },
+              "flags": {
+                "says_booked": true,
+                "wants_pregnancy_support": true,
+                "accepts_english_materials": true
+              }
+            },
+            "gate": {
+              "allow_booking": false,
+              "escalate": false,
+              "reason": "",
+              "handover_message": "",
+              "notes": [
+                "after the link: email"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

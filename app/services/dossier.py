@@ -24,7 +24,8 @@ POST_BOOKING = "POST_BOOKING"
 # Slots whose value is replaced when she restates it, vs. slots that accumulate.
 SCALAR_SLOTS = (
     "age", "time_trying", "conceiving_mode", "ivf_history", "iui_history",
-    "miscarriage_history", "partner_status", "pregnancy_priority", "email", "goal_stated",
+    "miscarriage_history", "partner_status", "donor_sperm", "attendance", "pregnancy_priority",
+    "email", "goal_stated",
 )
 LIST_SLOTS = ("diagnoses", "already_tried", "testing_done")
 
@@ -43,28 +44,31 @@ LIST_SLOTS = ("diagnoses", "already_tried", "testing_done")
 # unanswerable: she asked whether she was talking to a person and the conversation went silent,
 # which is the loudest possible yes and reads as a dodge. She is now told the truth and offered a
 # person, and only her answer to that offer, which arrives as `asked_for_human`, hands over.
-#
-# `wants_to_join_pregnancy_program` is here because nobody has written down who The Pregnancy
-# Solution is for. The fertility gate below decides whether a call is honest from what she has told
-# us about trying to conceive, and none of that applies to a woman who is already pregnant. So the AI
-# tells her the program exists and what it is, and the moment she wants in, a person takes over.
 ESCALATION_FLAGS = (
-    "crisis", "urgent_medical", "abusive", "asked_for_human", "wants_to_join_pregnancy_program",
-    "needs_human",
+    "crisis", "urgent_medical", "abusive", "asked_for_human", "needs_human",
     "requested_medication", "requested_surgery_advice", "is_existing_client", "is_former_client",
 )
-ESCALATION_INTENTS = ("complaint", "collaboration", "media_request", "spam_or_aggression")
+ESCALATION_INTENTS = (
+    "complaint", "collaboration", "media_request", "spam_or_aggression", "technical_support",
+    "opt_out",
+)
 
-# A handover turn never calls the writer, so nothing about it is generated. Most handovers send
-# nothing at all. These send one fixed line from config first, because silence is its own harm:
-# a woman in crisis must not be met with an unanswered message, and someone bleeding needs to be
-# told to be seen today whether or not a human is awake.
+# A handover turn never calls the writer, so nothing about it is generated. She gets one fixed line
+# from config. By default that is the review acknowledgment (§F, 2B.2 §13), sent once on every
+# review, age review included. Two reasons carry a safety line instead, because someone in crisis
+# or bleeding needs more than "we'll take a closer look". Abuse stays silent, because an
+# acknowledgment that thanks her for sharing would be absurd there, and so does a request to stop
+# receiving messages, which a reply would ignore.
+REVIEW_MESSAGE = "handover_message_review"
 HANDOVER_MESSAGES = {
     "crisis": "handover_message_crisis",
     "urgent_medical": "handover_message_urgent_medical",
-    "asked_for_human": "handover_message_team",
-    "wants_to_join_pregnancy_program": "handover_message_team",
 }
+SILENT_HANDOVERS = ("abusive", "spam_or_aggression", "opt_out")
+
+# Fertility prospects this age or over are reviewed by a person before the link (§B, 2B.1 §10).
+# Never a rejection, and never applied to a pregnant woman asking about The Pregnancy Solution.
+AGE_REVIEW = 48
 
 # Structural findings that close off a booking entirely (2B.1 §6, §9).
 BLOCKING_STRUCTURAL = ("no_uterus", "menopause")
@@ -80,6 +84,8 @@ SLOT_LABELS = {
     "already_tried": "Already tried",
     "testing_done": "Testing done",
     "partner_status": "Partner",
+    "donor_sperm": "Using donor sperm",
+    "attendance": "Partner on the call",
     "pregnancy_priority": "How much of a priority pregnancy is",
     "email": "Email",
     "goal_stated": "What she says she wants",
@@ -96,34 +102,15 @@ class Gate:
     blocks: set = field(default_factory=set)
     notes: list = field(default_factory=list)
     block_reason: str = ""
-    tags: list = field(default_factory=list)   # extra selection tags this turn's facts imply
-
-    @property
-    def silent(self) -> bool:
-        """A handover that sends nothing at all."""
-        return self.escalate and not self.handover_message
+    silent: bool = False              # after the link, a message that needs no reply
+    after_link: str = ""              # after the link, what this reply is for
 
 
-# Boundary conversations are pulled by the fact that triggered the gate, not by whatever emotional
-# tag the reader happened to pick. Someone of 38 who is frightened of running out of time must not
-# be shown the conversation written for someone of 51.
-_REASON_TAGS = {
-    "age_over_48": "age_limit",
-    "structural_menopause": "age_limit",
-    "structural_no_uterus": "no_uterus",
-    "tubal_status_unclear": "tubal",
-    "both_tubes_without_ivf": "tubal",
-    "demands_guarantee": "guarantee",
-    "out_of_scope_request": "out_of_scope",
-    "lab_request": "lab_request",
-    "recent_loss": "loss_recent",
-    "not_a_priority": "not_priority",
-    "refuses_paid_coaching": "affordability",
-    "currently_pregnant": "celebration",
-    "stopped_trying": "stopped_trying",
-    "english_materials_undisclosed": "english_materials",
-    "declines_english_materials": "english_materials",
-}
+def handover_message(reason: str) -> str:
+    """The config key of the line a handover sends, "" for none."""
+    if reason in SILENT_HANDOVERS:
+        return ""
+    return HANDOVER_MESSAGES.get(reason, REVIEW_MESSAGE)
 
 
 # The reader is asked to omit what she did not say, and mostly does. When it does not, it says so
@@ -259,11 +246,13 @@ def _escalation_reason(state: dict, read: dict, before: dict | None = None) -> s
     if flags.get("structural") == "unclear_menopause" and new("flags", "structural"):
         return "menopause_unclear"
 
-    age = slots.get("age")
-    if isinstance(age, int) and 46 <= age <= 48 and new("slots", "age"):
-        return "age_needs_review"
-
     return ""
+
+
+def _pregnancy_prospect(state: dict) -> bool:
+    """Pregnant and asking about The Pregnancy Solution: none of the fertility checks apply."""
+    flags = state.get("flags") or {}
+    return bool(flags.get("currently_pregnant") and flags.get("wants_pregnancy_support"))
 
 
 def _booking_blocked(state: dict, read: dict) -> str:
@@ -272,9 +261,9 @@ def _booking_blocked(state: dict, read: dict) -> str:
     slots = state.get("slots") or {}
     structural = flags.get("structural")
 
-    age = slots.get("age")
-    if isinstance(age, int) and age > 48:
-        return "age_over_48"
+    # 2B.2 §10: a current client is never qualified or sold to.
+    if flags.get("in_my_program"):
+        return "in_my_program"
     if structural in BLOCKING_STRUCTURAL:
         return f"structural_{structural}"
     if structural == "unclear_tubal":
@@ -324,23 +313,9 @@ def _booking_blocked(state: dict, read: dict) -> str:
         # the announcement that usually precedes it, and the reader only sets the flag when she has
         # actually asked, so congratulating her stays the whole of the reply until she does.
         return "currently_pregnant"
-    if flags.get("wants_pregnancy_support"):
-        # She has asked about The Pregnancy Solution. Nothing here can say whether it fits her, so
-        # there is no link to offer: the writer names the program, and her asking to join it is a
-        # handover rather than a booking.
-        return "pregnancy_program"
-    if slots.get("pregnancy_priority") == "low":
+    if slots.get("pregnancy_priority") == "low" and not _pregnancy_prospect(state):
         return "not_a_priority"
 
-    # Age used to be a precondition here: no number, no link, whatever else was known. §B
-    # ends that. It is a boundary check, not a gate, so the two age branches at the top of this
-    # function still fire on a number she has given and nothing fires on a blank.
-    #
-    # What that buys is the whole of §A: qualification stops sitting on top of the conversation.
-    # What it costs is real and was accepted with it. Over 48 is still a hard boundary, and a
-    # boundary that can only be applied to a number she volunteered is a boundary that a woman who
-    # never mentions her age can walk past. She reaches a consultation the team then screens.
-    #
     # 2B.1 §15: enough of her situation has to be understood before an invitation is honest.
     # Two facts is a first message, not an understanding, an invitation that early is the
     # "every message is a sales opportunity" failure the manual opens by ruling out.
@@ -360,6 +335,11 @@ def _booking_blocked(state: dict, read: dict) -> str:
             return "declines_english_materials"
         return "english_materials_undisclosed"
 
+    # The context count is about trying to conceive. A pregnant woman asking for support has told
+    # us what matters by asking (§D, 2B.2 §7).
+    if _pregnancy_prospect(state):
+        return ""
+
     known = sum(
         1 for key in ("age", "time_trying", "conceiving_mode", "ivf_history", "iui_history",
                       "pregnancy_priority", "partner_status", "goal_stated")
@@ -368,23 +348,8 @@ def _booking_blocked(state: dict, read: dict) -> str:
     if known < 3:
         return "not_enough_context"
 
-    # 2B.1 §15 and §A: she has to know this is paid before she is invited, and it has to
-    # arrive in a message of its own rather than bolted to the link. The writer prompt has said so
-    # in the strongest wording available for four rounds and the reply still came back as "my
-    # program is paid, and my team can take you through a free consultation, would you like the
-    # link?", which is the disclosure and the invitation in one breath with the link turned into a
-    # question she has to answer. So the ordering is held here instead of asked for: no disclosure,
-    # no link, and the turn after it is said the gate opens on its own.
-    #
-    # The woman who has told you she wants to buy is the exception, and she is the same exception
-    # `gate` makes below. §A: "a high-intent person who asks how to pay or enroll should
-    # receive the enrollment answer or next step immediately; do not warn her about financial
-    # readiness before answering." Holding the link from her to tell her it is paid is that warning
-    # wearing a gate.
-    ready_to_buy = read.get("intent") == "warm_prospect" or (read.get("flags") or {}).get("wants_to_buy")
-    if not flags.get("understands_paid_program") and not ready_to_buy:
-        return "paid_not_disclosed"
-
+    # No paid-program step before the link. 2B.1 §11 and 2B.2 §7: price is answered when she asks,
+    # never held over the invitation as a warning she has to acknowledge.
     return ""
 
 
@@ -392,31 +357,53 @@ def _first_exchange(state: dict) -> bool:
     return int((state.get("counters") or {}).get("turns", 0)) <= 1
 
 
+def _after_link_reply(state: dict, read: dict, before: dict | None) -> str:
+    """What a message sent after the booking link needs a reply for, "" for nothing (2B.2 §8).
+
+    She is paused once she has the link, and the team has her. Booking itself is still the AI's:
+    she says she booked, she gives the email she booked with, what she says about her partner
+    attending changes, or she asks a question before she has booked (Part 1 §3: her question is
+    never ignored). Each counts only when it is new, because the reader reads booking from the
+    whole conversation and "ok" after "booked!" must not be asked for the email again. Anything
+    else, "thanks" included, is left for the team.
+    """
+    slots = state.get("slots") or {}
+    previous = (before or {}).get("slots") or {}
+    if slots.get("attendance") != previous.get("attendance"):
+        return "attendance"
+    if state.get("phase") == POST_BOOKING:
+        return ""
+    if slots.get("email") and slots.get("email") != previous.get("email"):
+        return "email"
+    already_booked = ((before or {}).get("flags") or {}).get("says_booked")
+    if (read.get("flags") or {}).get("says_booked") and not already_booked:
+        return "booked"
+    if read.get("explicit_question") and not already_booked:
+        return "question"
+    return ""
+
+
 def gate(state: dict, read: dict, before: dict | None = None) -> Gate:
     """Decide what the WRITE prompt may contain this turn. `before` is the pre-merge dossier."""
     reason = _escalation_reason(state, read, before)
     if reason:
-        message = HANDOVER_MESSAGES.get(reason, "")
-        return Gate(
-            allow_booking=False,
-            escalate=True,
-            escalate_reason=reason,
-            handover_message=message,
-            blocks=set(),
-            notes=[f"handover: {reason}" + (f", fixed line {message}" if message else ", silent")],
-        )
+        return _handover(reason)
+
+    flags = state.get("flags") or {}
+    raised = read.get("flags") or {}
+
+    if state.get("phase") in (LINK_SENT, POST_BOOKING):
+        reply_for = _after_link_reply(state, read, before)
+        if not reply_for:
+            return Gate(silent=True, notes=["after the link: nothing to answer"])
+        blocks = {"attendance", "pricing"}
+        if (state.get("slots") or {}).get("email"):
+            blocks.add("post_booking")
+        return Gate(blocks=blocks, after_link=reply_for, notes=[f"after the link: {reply_for}"])
 
     blocks = {"pricing", "free_resource"}
-    extra_tags = []
-    if state.get("phase") in (LINK_SENT, POST_BOOKING):
-        blocks.add("post_booking")
-        extra_tags.append("post_booking")
-
-    # Read from this turn rather than from the dossier. The flag is sticky, as every flag here is,
-    # and a sticky pull would put the "are you a bot" conversation in front of the writer for the
-    # rest of her conversation, long after she has been answered and moved on.
-    if (read.get("flags") or {}).get("asked_if_ai"):
-        extra_tags.append("ai_transparency")
+    if raised.get("asked_about_results"):
+        blocks.add("proof")
 
     # The turn she tells you she has stopped is the terminal one, and §A allows it no CTA. The
     # booking block is already shut below; this shuts the other one, because a masterclass offered
@@ -425,56 +412,50 @@ def gate(state: dict, read: dict, before: dict | None = None) -> Gate:
     #
     # This turn only. If she comes back three messages later and asks something, that is a question
     # and it gets an honest answer, free resource included. What stays shut for good is the link.
-    if (read.get("flags") or {}).get("stopped_trying"):
+    if raised.get("stopped_trying"):
         blocks.discard("free_resource")
 
     # Same reasoning, days after a loss. `_booking_blocked` already shuts the link on `recent_loss`
     # and the brief tells the writer to offer nothing, but the masterclass was still rendered into
     # the prompt, which leaves a free resource sitting in front of a model told to be warm. A
     # course offered to a woman whose pregnancy ended on Saturday is a CTA wearing sympathy.
-    if (state.get("flags") or {}).get("recent_loss"):
+    if flags.get("recent_loss"):
         blocks.discard("free_resource")
-
-    # Sticky, unlike the two above: once she has asked for support through her pregnancy that is
-    # what the conversation is about, and it stays that way while it is arranged.
-    if state.get("flags", {}).get("wants_pregnancy_support"):
-        extra_tags.append("pregnancy_support")
 
     blocked_for = _booking_blocked(state, read)
     # Someone who opens with "how do I work with you" is ready and should not be re-qualified;
-    # everyone else gets at least one real exchange before a call is mentioned.
-    #
-    # Readiness arrives as a tag, not as an intent. `warm_prospect` in the old reader prompt was
-    # the woman picking a conversation back up, and nothing there made a first-message buyer one,
-    # so this test could never see the lead it was written for. "I'm 38, trying 4 years, I want to
-    # enrol, can I pay" was read correctly and tagged `ready_to_book`, and was then blocked here on
-    # turn one. With no link available the only thing left to say about paying was that the program
-    # is paid and what it costs, which is client review point 3 arriving through the gate after
-    # v2.0 closed it in the prompt.
-    #
-    # `_booking_blocked` still runs first and is untouched, so this skips the blanket first-turn
-    # rule and nothing else. A woman who says "take my money" and tells you nothing about herself
-    # is still held by the `known < 3` check: readiness to buy is not the same as being understood
-    # well enough to invite honestly.
-    ready = read.get("intent") == "warm_prospect" or (read.get("flags") or {}).get("wants_to_buy")
-    # `paid_not_disclosed` is true of a first message and so is this, and this is the more useful
-    # of the two to hand the writer: it pairs with the missing-facts instruction, where the other
-    # one would have the reply announce the commercial terms to a woman who has said one thing.
-    if _first_exchange(state) and not ready and blocked_for in ("", "paid_not_disclosed"):
+    # everyone else gets at least one real exchange before a call is mentioned. A woman who says
+    # "take my money" and tells you nothing about herself is still held by the `known < 3` check:
+    # readiness to buy is not the same as being understood well enough to invite honestly.
+    ready = read.get("intent") == "warm_prospect" or raised.get("wants_to_buy")
+    if _first_exchange(state) and not ready and not blocked_for:
         blocked_for = "first_exchange"
 
-    if blocked_for:
-        tag = _REASON_TAGS.get(blocked_for)
-        return Gate(
-            allow_booking=False,
-            blocks=blocks,
-            notes=[f"no link: {blocked_for}"],
-            block_reason=blocked_for,
-            tags=extra_tags + ([tag] if tag else []),
-        )
+    # §B: at 48 or over a person looks at it before the link goes out. The conversation carries on
+    # until she is moving toward a call, and that turn is the review, never a rejection. Once the
+    # team has released her the link opens as it would for anyone.
+    age = (state.get("slots") or {}).get("age")
+    if (not blocked_for and isinstance(age, int) and age >= AGE_REVIEW
+            and not _pregnancy_prospect(state) and not flags.get("age_reviewed")):
+        if ready:
+            return _handover("age_review")
+        blocked_for = "age_review_pending"
 
-    blocks.add("booking")
-    return Gate(allow_booking=True, blocks=blocks, notes=["link available"], tags=extra_tags)
+    if blocked_for:
+        return Gate(blocks=blocks, notes=[f"no link: {blocked_for}"], block_reason=blocked_for)
+
+    blocks |= {"booking", "attendance"}
+    return Gate(allow_booking=True, blocks=blocks, notes=["link available"])
+
+
+def _handover(reason: str) -> Gate:
+    message = handover_message(reason)
+    return Gate(
+        escalate=True,
+        escalate_reason=reason,
+        handover_message=message,
+        notes=[f"handover: {reason}" + (f", fixed line {message}" if message else ", silent")],
+    )
 
 
 def render(state: dict) -> str:
@@ -493,10 +474,6 @@ def render(state: dict) -> str:
 
     if flags.get("structural") and flags["structural"] not in ("none",):
         lines.append(f"- Structural finding she has mentioned: {flags['structural']}")
-    if flags.get("understands_coach_not_clinic"):
-        lines.append("- She already understands I am a coach and not a clinic. Do not re-explain it")
-    if flags.get("understands_paid_program"):
-        lines.append("- She already knows this is a paid program. Do not re-announce it")
     if flags.get("wants_natural_only"):
         lines.append("- She wants natural conception and is not open to IVF")
     if flags.get("open_to_ivf"):
