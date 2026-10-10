@@ -22,8 +22,8 @@ from app.api.admin.auth import is_authenticated
 from config import settings, APP_VERSION, APP_BRAIN, APP_REVISION, APP_STARTED_AT
 
 FEW_SHOTS_DIR = "few_shots"
-# Written by `manual_testing/showcase.py`, with the notes added by hand after the run.
-SHOWCASE_PATH = "showcase/v3.json"
+# Written by `manual_testing/acceptance.py`, with the verdicts added by hand after the run.
+ACCEPTANCE_PATH = "showcase/acceptance.json"
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -186,17 +186,22 @@ async def config_save(request: Request, db: AsyncSession = Depends(get_db)):
     return RedirectResponse("/admin/config?saved=true", status_code=302)
 
 
-# ── Showcase ──────────────────────────────────────────────────────────────────
+# ── Acceptance results ────────────────────────────────────────────────────────
 
-@router.get("/admin/showcase", response_class=HTMLResponse)
-async def showcase_get(request: Request):
+@router.get("/admin/showcase")
+async def showcase_get():
+    return RedirectResponse("/admin/acceptance", status_code=301)
+
+
+@router.get("/admin/acceptance", response_class=HTMLResponse)
+async def acceptance_get(request: Request):
     if not is_authenticated(request):
         return RedirectResponse("/admin/login", status_code=302)
     data = None
-    if os.path.isfile(SHOWCASE_PATH):
-        with open(SHOWCASE_PATH, encoding="utf-8") as fh:
+    if os.path.isfile(ACCEPTANCE_PATH):
+        with open(ACCEPTANCE_PATH, encoding="utf-8") as fh:
             data = _json.load(fh)
-    return templates.TemplateResponse(request, "admin/showcase.html", {"data": data})
+    return templates.TemplateResponse(request, "admin/acceptance.html", {"data": data})
 
 
 # ── Few-shots ─────────────────────────────────────────────────────────────────
