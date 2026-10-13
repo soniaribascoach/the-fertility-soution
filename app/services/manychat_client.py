@@ -16,7 +16,7 @@ class ManyChatClient:
         self._token = api_token
         self._client = httpx.AsyncClient(timeout=15.0)
 
-    async def send_message(self, subscriber_id: str, text: str) -> None:
+    async def send_message(self, subscriber_id: str, text: str) -> bool:
         payload = {
             "subscriber_id": subscriber_id,
             "data": {
@@ -37,7 +37,7 @@ class ManyChatClient:
                     _SEND_URL, json=payload, headers=headers
                 )
                 response.raise_for_status()
-                return
+                return True
             except httpx.HTTPStatusError as exc:
                 body = exc.response.text
                 if delay is None:
@@ -45,7 +45,7 @@ class ManyChatClient:
                         "ManyChat send_message failed after %d attempts for subscriber %s: %s | payload: %s | response: %s",
                         attempt - 1, subscriber_id, exc, payload, body,
                     )
-                    return
+                    return False
                 logger.warning(
                     "ManyChat send_message attempt %d failed (%s) | response: %s, retrying in %ds",
                     attempt, exc, body, delay,
@@ -57,14 +57,16 @@ class ManyChatClient:
                         "ManyChat send_message failed after %d attempts for subscriber %s: %s",
                         attempt - 1, subscriber_id, exc,
                     )
-                    return
+                    return False
                 logger.warning(
                     "ManyChat send_message attempt %d failed (%s), retrying in %ds",
                     attempt, exc, delay,
                 )
                 await asyncio.sleep(delay)
 
-    async def add_tag(self, subscriber_id: str, tag_id: int) -> None:
+    async def add_tag(self, subscriber_id: str, tag_id: int) -> bool:
+        """Tag the contact. Returns whether ManyChat accepted it, because a handover line that
+        says the team knows is only honest when this went through."""
         payload = {"subscriber_id": subscriber_id, "tag_id": tag_id}
         headers = {"Authorization": f"Bearer {self._token}"}
 
@@ -74,7 +76,7 @@ class ManyChatClient:
                     _TAG_URL, json=payload, headers=headers
                 )
                 response.raise_for_status()
-                return
+                return True
             except httpx.HTTPStatusError as exc:
                 body = exc.response.text
                 if delay is None:
@@ -82,7 +84,7 @@ class ManyChatClient:
                         "ManyChat add_tag failed after %d attempts for subscriber %s tag_id %s: %s | response: %s",
                         attempt - 1, subscriber_id, tag_id, exc, body,
                     )
-                    return
+                    return False
                 logger.warning(
                     "ManyChat add_tag attempt %d failed (%s) | response: %s, retrying in %ds",
                     attempt, exc, body, delay,
@@ -94,7 +96,7 @@ class ManyChatClient:
                         "ManyChat add_tag failed after %d attempts for subscriber %s tag_id %s: %s",
                         attempt - 1, subscriber_id, tag_id, exc,
                     )
-                    return
+                    return False
                 logger.warning(
                     "ManyChat add_tag attempt %d failed (%s), retrying in %ds",
                     attempt, exc, delay,

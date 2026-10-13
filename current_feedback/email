@@ -1,0 +1,44 @@
+Hi Asjad,
+
+I’ve reviewed the acceptance conversations and updated the manual to v4.1. Attached are the revised manual and detailed feedback with the specific examples.
+
+There are 2 important changes to my instructions:
+
+1. Pricing
+
+For a first general price question, explain that we have different options depending on the support she needs and offer a free call to discuss fit and pricing.
+
+If she asks again or needs cost information before booking, give the range clearly. If she specifically asks for a range, a particular tier or a comparison in her first message, answer directly.
+
+The prices themselves have not changed. This is a change to when and how we introduce them.
+
+2. Prompt words
+
+The AI cannot depend on a fixed list of keywords. I continuously introduce new words in reels, and those words must work without anyone registering them first.
+
+The response should naturally acknowledge the topic. Someone sending AMH should receive an AMH relevant opening, rather than the same generic TTC question used for every word. For an unfamiliar word, acknowledge it and clarify what she wants help with, without inventing the reel’s message or a promised resource.
+
+Separately, several behaviors need correcting:
+
+STOP, human and PREGNANT received the generic fertility welcome. These intents must take priority.
+
+Program explanations remain too general, especially after someone says the answer feels vague. Explain what working closely with me actually includes, using the correct tier.
+
+Remove repeated questions and unsupported assumptions about her circumstances.
+
+Remove unsolicited guarantee disclaimers when someone simply asks about a success story.
+
+Correct wording that implies Sonia is personally typing, including “you’re already talking with me here.”
+
+Verify that handoffs reach the team, preserve history and pause replies, and that opt-outs suppress automated follow-ups.
+
+Please apply v4.1 throughout the system, including prompts, retrieval content, settings, keyword handling and older examples.
+
+The test results and live sidebar show different build identifiers. Please clarify that difference and return complete conversation tests from the version actually deployed, with pass or fail results and evidence of the routing and pause behavior.
+
+Please confirm the exact delivery date and time for the changes and completed regression testing before my next round.
+
+Thanks,
+
+
+Sonia

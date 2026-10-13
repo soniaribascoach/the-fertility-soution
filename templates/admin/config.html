@@ -30,7 +30,7 @@
 <!-- ── Tab Navigation ──────────────────────────────────────────────────── -->
 <div class="border-b border-slate-200 mb-6">
   <nav class="-mb-px flex gap-0" aria-label="Settings sections">
-    {% for tab in [('facts','Facts & Links'), ('welcome','Welcome'), ('safety','Safety & Handover'), ('engine','Engine')] %}
+    {% for tab in [('facts','Facts & Links'), ('welcome','Openers & Price'), ('safety','Safety & Handover'), ('engine','Engine')] %}
     <button type="button" data-tab="{{ tab[0] }}"
       class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap">
       {{ tab[1] }}
@@ -58,10 +58,6 @@
       </div>
     </div>
 
-    {% call field('Price Range', 'Stated verbatim the first time someone asks what it costs. The AI never deflects a pricing question.') %}
-      <input type="text" name="price_range" value="{{ cfg.price_range or '' }}" placeholder="$1,500 to $14,000" class="{{ input_cls }}">
-    {% endcall %}
-
     {% call field('Booking Link', 'Rendered into the prompt only on turns where a consultation is genuinely appropriate. Include UTM params here if you track them, nothing else in the system hardcodes a URL.') %}
       <input type="url" name="booking_link" value="{{ cfg.booking_link or '' }}" placeholder="https://www.thefertilitysolution.com/free-call" class="{{ input_cls }}">
     {% endcall %}
@@ -75,21 +71,21 @@
     {% endcall %}
   </section>
 
-  <!-- ── Welcome ──────────────────────────────────────────────────────── -->
+  <!-- ── Openers & Price ──────────────────────────────────────────────── -->
   <section data-panel="welcome" hidden class="bg-white border border-slate-200 rounded-xl p-7 mb-3 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
-    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Welcome</h2>
+    <h2 class="text-[0.7rem] font-bold uppercase tracking-widest text-slate-400 mb-4">Openers &amp; Price</h2>
 
     <div class="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 mb-6 text-xs text-slate-600 leading-relaxed">
-      When someone's first message is a single word, like a keyword she was asked to comment, the AI is
-      not called at all. The welcome below is sent exactly as typed, and then it waits for her answer.
+      When someone's first message is a single word, like a keyword from a reel, a small dedicated call
+      decides what it means (prompt: <code class="text-violet-600">prompts_simple/opener.md</code>). STOP records
+      an opt out, "human" goes to the team, "price?" gets the reply below, and any other word gets a short
+      reply that acknowledges the topic and asks what she would like help with.
       <br><br>
-      Any word works, so a new reel needs nothing set up here. The word tells us nothing about her, so it
-      does not qualify her for anything: "READY" means she watched a reel to the end, not that she is
-      ready to book. A longer first message, or a single word later in a conversation, goes to the AI.
+      There is no keyword list. A new reel needs nothing set up here.
     </div>
 
-    {% call field('Welcome Message', 'Sent word for word. Welcome her and ask one question. Leave it empty to switch this off and let the AI answer the word itself.', 'mb-0') %}
-      <textarea name="cta_welcome_message" rows="3" class="{{ textarea_cls }}">{{ cfg.cta_welcome_message or '' }}</textarea>
+    {% call field('First Price Reply', 'Approved reply to a first general price question, such as "price?" or "how much is it?". Gives no figures and offers the free call. A repeated or specific question gets the figures.', 'mb-0') %}
+      <textarea name="price_first_reply" rows="4" class="{{ textarea_cls }}">{{ cfg.price_first_reply or '' }}</textarea>
     {% endcall %}
   </section>
 
@@ -108,12 +104,24 @@
       the contact, and sends one of the lines below exactly as typed here. Abuse and spam get no message.
     </div>
 
-    {% call field('Handover Message: Review', 'The approved review acknowledgment, sent once on every handover except crisis, urgent medical and abuse. No promise about timing.') %}
+    {% call field('Handover Message: Review', 'The approved review acknowledgment, sent once on every handover except crisis, urgent medical, medication, procedure and abuse. No promise about timing.') %}
       <textarea name="handover_message_review" rows="4" class="{{ textarea_cls }}">{{ cfg.handover_message_review or '' }}</textarea>
     {% endcall %}
 
     {% call field('Handover Message: Crisis', 'Sent when someone writes about not wanting to be alive. Include a helpline. This is the one message that must never be left empty.') %}
       <textarea name="handover_message_crisis" rows="5" class="{{ textarea_cls }}">{{ cfg.handover_message_crisis or '' }}</textarea>
+    {% endcall %}
+
+    {% call field('Handover Message: Crisis, Alert Failed', 'Sent instead of the crisis line when the team tag did not go through, so it must not say the team has been told.') %}
+      <textarea name="handover_message_crisis_unrouted" rows="5" class="{{ textarea_cls }}">{{ cfg.handover_message_crisis_unrouted or '' }}</textarea>
+    {% endcall %}
+
+    {% call field('Handover Message: Medication', 'Sent when someone asks whether to take, stop, change or dose a medication or hormone (DHEA included). Points the decision to her doctor. Must not suggest the team will give a dose.') %}
+      <textarea name="handover_message_medication" rows="4" class="{{ textarea_cls }}">{{ cfg.handover_message_medication or '' }}</textarea>
+    {% endcall %}
+
+    {% call field('Handover Message: Procedure', 'Sent when someone asks whether to have, delay or skip a procedure. Points the decision to her doctor.') %}
+      <textarea name="handover_message_procedure" rows="4" class="{{ textarea_cls }}">{{ cfg.handover_message_procedure or '' }}</textarea>
     {% endcall %}
 
     {% call field('Handover Message: Urgent Medical', 'Sent for acute symptoms: heavy bleeding, severe pain, a suspected ectopic. Tell her to be seen today.') %}

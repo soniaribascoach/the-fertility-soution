@@ -12,9 +12,9 @@ A handover turn is the limit case of that: the writer is not called at all. She 
 or one fixed line from config, so the AI cannot answer the question it has just decided it should
 not be answering.
 
-A one-word opener is the other turn no model sees, for the opposite reason. A conversation that
-begins with the word she commented on a post contains nothing to read and nothing to answer, so it
-gets Sonia's welcome from config and waits.
+A one-word opener skips both stages for the opposite reason: there is nothing to read yet. It gets
+one small call of its own (`opener.py`) that decides what the word means and, for an ordinary
+topic word, writes the acknowledgment.
 
 Two things the app needs from any implementation, both unchanged:
 
@@ -32,6 +32,7 @@ from openai import AsyncOpenAI
 from app.services import dossier
 from app.services.few_shots import load_few_shot_scenarios, render_examples
 from app.services.message_splitter import strip_dashes, use_digits
+from app.services.opener import read_opener
 from app.services.prompts import build_write_prompt, config_values, turn_notes
 from app.services.reader import read_turn
 
@@ -86,10 +87,6 @@ def _write_tuning(model: str, temperature: float) -> dict:
 
 _playbook_cache: dict | None = None
 
-# Gated turns that still have a conversation in front of them: the boundary is about the thing she
-# just asked for, and the next question is still worth asking. See `_brief`.
-CONTINUES = ("out_of_scope_request", "lab_request", "demands_guarantee")
-
 
 @dataclass
 class TurnResult:
@@ -98,6 +95,9 @@ class TurnResult:
     lead_state: dict = field(default_factory=dict)
     pause: bool = False                   # stop the AI; a human takes over
     pause_reason: Optional[str] = None
+    handover: bool = False                # a person is being brought in; log it
+    reply_if_unrouted: Optional[str] = None  # sent instead when the team tag failed
+    opt_out: bool = False                 # record the opt out; nothing is ever sent again
     add_tag: bool = False                 # flag her in ManyChat
     qualified: bool = False               # tag as qualified rather than review
     action: Optional[str] = None          # short label for the log
@@ -214,6 +214,9 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str],
     if read.get("explicit_question"):
         add("question", question=read["explicit_question"])
 
+    if gate.price:
+        add(f"price_{gate.price}")
+
     if state.get("phase") in (dossier.LINK_SENT, dossier.POST_BOOKING):
         for name in _after_link_notes(gate, state, attendance):
             add(name)
@@ -228,7 +231,11 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str],
     # about who is typing. If she raised both, the AI note above covers it.
     elif flags.get("asked_for_phone"):
         add("asked_for_phone")
-        add("phone_with_link" if gate.allow_booking else "phone_no_link")
+        if gate.allow_booking:
+            add("phone_with_link")
+
+    if flags.get("ambiguous_answer"):
+        add("ambiguous_answer")
 
     if sticky.get("wants_pregnancy_support"):
         add("pregnancy_support")
@@ -242,17 +249,17 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str],
         if not dossier._stated(slots.get("age")) and not dossier._pregnancy_prospect(state):
             add("age_unknown")
         add("partner_solo" if slots.get("partner_status") == "single_by_choice" else "partner_invite")
-    else:
+    elif gate.price != "offer":
+        # The approved first price reply offers the free call itself (v4.1 §5.3), so on that turn
+        # the note that forbids mentioning a call would contradict it.
         add("booking_shut")
     if attendance:
         add(attendance)
 
-    if gate.block_reason in ("not_enough_context", "first_exchange"):
+    if gate.block_reason in ("not_enough_context", "first_exchange") and gate.price != "offer":
         add("early")
     if gate.block_reason:
         add(f"reason_{gate.block_reason}")
-    if gate.block_reason in CONTINUES:
-        add("continues")
 
     # The education spiral, counted in `dossier` rather than left to the writer to notice. Only
     # where she is being taught: a woman working through a boundary asks the same shape of
@@ -264,7 +271,7 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str],
         add("teaching_repeat")
     elif teaching >= 3:
         add("teaching_many", count=teaching)
-    elif teaching == 2:
+    elif teaching == 2 and not sticky.get("masterclass_sent"):
         add("teaching_two")
 
     if openings and notes.get("openings"):
@@ -276,7 +283,7 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str],
 
 
 # Manual §O. Any single word counts, so a new reel keyword works the day the reel goes out, with no
-# list for the team to keep up to date.
+# list for the team to keep up to date. What the word means is the opener call's job.
 _WORD = re.compile(r"\w+")
 
 
@@ -287,6 +294,65 @@ def is_opener(history: list[dict]) -> bool:
         and history[0].get("role") == "user"
         and len(_WORD.findall(history[0].get("content") or "")) == 1
     )
+
+
+def _handover_result(gate: dossier.Gate, cfg: dict, state: dict, usage: dict,
+                     trace: dict, ig_user_id: str) -> TurnResult:
+    """The writer is never called on a handover turn, so nothing about it is generated. She gets
+    either nothing or one fixed line Sonia wrote, which is the only way to be certain the AI cannot
+    answer her question on its way out of the conversation."""
+    fixed = (cfg.get(gate.handover_message) or "").strip() if gate.handover_message else ""
+    unrouted_key = dossier.unrouted_message(gate.escalate_reason)
+    unrouted = (cfg.get(unrouted_key) or "").strip() if unrouted_key else ""
+    logger.info(
+        "Handover for %s: %s (%s)", ig_user_id, gate.escalate_reason,
+        "fixed line" if fixed else "silent",
+    )
+    state["phase"] = state.get("phase") or dossier.EXPLORING
+    if gate.escalate_reason == "age_review":
+        # The review was asked for. Only the team's approval, recorded separately, opens the link.
+        state["flags"]["age_review_requested"] = True
+    return TurnResult(
+        reply_text=fixed or None, reply_if_unrouted=unrouted or None, lead_state=state,
+        pause=True, pause_reason=gate.escalate_reason, add_tag=True, handover=True,
+        action=f"HANDOVER:{gate.escalate_reason}", usage=usage, trace=trace,
+    )
+
+
+async def _opener_turn(openai_client: AsyncOpenAI, word: str, cfg: dict, state: dict,
+                       model: str, ig_user_id: str) -> Optional[TurnResult]:
+    """Her first message is one word. None means fall through to a normal turn."""
+    try:
+        decided, opener_usage = await read_opener(
+            openai_client, word, model=model,
+            tuning=_write_tuning(model, float(cfg.get("brain_temperature") or 0.8)),
+        )
+    except Exception:
+        logger.exception("Opener call failed for %s. Taking the normal turn", ig_user_id)
+        return None
+
+    usage = _usage(model, model, opener_usage, None)
+    trace = {"opener": word, "decision": decided}
+    state["phase"] = state.get("phase") or dossier.OPENING
+    action = decided["action"]
+    logger.info("One-word opener for %s: %s", ig_user_id, action)
+
+    if action == "stop":
+        return TurnResult(lead_state=state, opt_out=True, action="OPENER:stop",
+                          usage=usage, trace=trace)
+    if action == "human":
+        return _handover_result(dossier._handover("asked_for_human"), cfg, state, usage, trace,
+                                ig_user_id)
+    if action == "price":
+        line = (cfg.get("price_first_reply") or "").strip()
+        if not line:
+            return None
+        # Her first general price question. The next one, or a specific one, gets the figures.
+        state.setdefault("counters", {})["price_asks"] = 1
+        return TurnResult(reply_text=line, lead_state=state, action="OPENER:price",
+                          usage=usage, trace=trace)
+    return TurnResult(reply_text=use_digits(strip_dashes(decided["reply"])), lead_state=state,
+                      action="OPENER:reply", usage=usage, trace=trace)
 
 
 async def run_turn(
@@ -312,17 +378,15 @@ async def run_turn(
     if not history:
         return TurnResult(lead_state=state, action="NO_HISTORY")
 
-    # No model called: she gets `cta_welcome_message` from config as written. Leaving it empty in
-    # admin switches this off and the brain answers the word. The counters are left alone on
-    # purpose, which makes her *answer* the first real exchange rather than the second.
-    welcome = (cfg.get("cta_welcome_message") or "").strip()
-    if welcome and is_opener(history):
-        logger.info("One-word opener for %s, sending the welcome", ig_user_id)
-        state["phase"] = state.get("phase") or dossier.OPENING
-        return TurnResult(
-            reply_text=welcome, lead_state=state, action="OPENER_WELCOME",
-            trace={"opener": history[0].get("content", "")},
+    # The counters are left alone on purpose, which makes her *answer* the first real exchange
+    # rather than the second.
+    if is_opener(history):
+        opened = await _opener_turn(
+            openai_client, (history[0].get("content") or "").strip(), cfg, state, model,
+            ig_user_id,
         )
+        if opened:
+            return opened
 
     try:
         read, read_usage = await read_turn(openai_client, history, model=read_model)
@@ -348,9 +412,17 @@ async def run_turn(
             "escalate": gate.escalate,
             "reason": gate.escalate_reason,
             "handover_message": gate.handover_message,
+            "price": gate.price,
             "notes": gate.notes,
         },
     }
+
+    if gate.opt_out:
+        # Nothing is sent. The worker records it and never runs a turn for her again.
+        return TurnResult(
+            lead_state=state, opt_out=True, action="OPT_OUT",
+            usage=_usage(read_model, model, read_usage, None), trace=trace,
+        )
 
     if gate.silent:
         # After the link, and nothing she said is part of booking. The team has her.
@@ -361,23 +433,8 @@ async def run_turn(
         )
 
     if gate.escalate:
-        # The writer is never called on a handover turn, so nothing about it is generated. She
-        # gets either nothing or one fixed line Sonia wrote, which is the only way to be certain
-        # the AI cannot answer her question on its way out of the conversation.
-        fixed = (cfg.get(gate.handover_message) or "").strip() if gate.handover_message else ""
-        logger.info(
-            "Handover for %s: %s (%s)", ig_user_id, gate.escalate_reason,
-            "fixed line" if fixed else "silent",
-        )
-        state["phase"] = state.get("phase") or dossier.EXPLORING
-        if gate.escalate_reason == "age_review":
-            state["flags"]["age_reviewed"] = True
-        return TurnResult(
-            reply_text=fixed or None, lead_state=state, pause=True,
-            pause_reason=gate.escalate_reason, add_tag=True,
-            action=f"HANDOVER:{gate.escalate_reason}",
-            usage=_usage(read_model, model, read_usage, None), trace=trace,
-        )
+        return _handover_result(gate, cfg, state, _usage(read_model, model, read_usage, None),
+                                trace, ig_user_id)
 
     chosen = list(_playbooks().values())
     trace["playbooks"] = [pb.name for pb in chosen]
@@ -418,6 +475,10 @@ async def run_turn(
     masterclass_link = (cfg.get("masterclass_link") or "").strip()
     if masterclass_link and masterclass_link in reply:
         state["flags"]["masterclass_sent"] = True
+
+    # Told once (v4.1 §L). From the next turn the gate stops asking for the explanation again.
+    if gate.block_reason == "english_materials_undisclosed" and reply:
+        state["flags"]["english_materials_told"] = True
 
     if state.get("phase") in (dossier.LINK_SENT, dossier.POST_BOOKING):
         # Still paused: the team has her. The preparation lines go once, with the email.

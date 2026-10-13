@@ -36,10 +36,11 @@ grep -rn "[—–]" --include="*.py" --include="*.html" --include="*.md" . \
 - `prompts_simple/`: `write.md` plus `knowledge.md` are the writer's system prompt. `knowledge.md`
   carries `{{key}}` config placeholders and `[[BLOCK:name]]` sections the gate opens per turn.
   `turn.md` holds the per-turn notes `brain.py` picks from. `read.md` is the extractor, with
-  `safety.md` and `language.md` as its narrow second looks.
+  `safety.md` and `language.md` as its narrow second looks. `opener.md` is the separate call made
+  only when a lead's first message is a single word.
 - `few_shots/*`: complete example conversations, first message to final outcome. All of them go
   to the writer on every turn (`app/services/few_shots.py`); there is no selection.
-- `manual/`: the Operating Manual (v4.0), the source of truth for all of the above.
+- `manual/`: the Operating Manual (v4.1), the source of truth for all of the above.
 
 Prefer changing a prompt layer or a few-shot conversation over adding Python. Gates in
 `dossier.py` decide what the writer is *given*; nothing inspects generated text after the fact.

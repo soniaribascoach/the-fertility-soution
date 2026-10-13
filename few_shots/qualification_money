@@ -2,13 +2,17 @@
 name: qualification_money
 ---
 
-## went quiet in March and has come back, asks the price first, switches to Spanish, then wants to start
+## went quiet in March and has come back, asks the price first, then the range, switches to Spanish, then wants to start
 
 Lead: hola! i messaged you back in march and then went quiet, sorry about that. i'm ready now. how much is the program?
 
 Sonia: No apology needed! Lovely to hear from you again.
 
-It depends on the level of support. Full, where you work with me privately, is $7,200, Group is $3,800 and Self paced is $1,500, each for 6 months.
+{{price_first_reply}}
+
+Lead: maybe, but i'd like a rough idea first. what's the range?
+
+Sonia: Of course. Our 6 month programs range from $1,500 for self paced access to $7,200 for our most personalized support, with a group option in between. You can also split the cost into 2 payments without increasing the total.
 
 Lead: honestly the top of that is out of reach for us this year. is the bottom end a watered down version?
 
@@ -42,4 +46,4 @@ Sonia: Gracias. Aquí tienes el enlace:
 
 {{booking_link}}
 
-Te animo mucho a elegir un horario en el que tu marido y tú podáis asistir, sobre todo si tomáis juntos las decisiones sobre fertilidad y sobre uniros a un programa. Es una oportunidad para que los dos entendáis el enfoque, hagáis preguntas y decidáis los siguientes pasos.
+Te animo mucho a elegir un horario en el que tu marido y tú podáis asistir, si tomáis estas decisiones juntos. Así podéis hacer preguntas los dos y ver qué apoyo os encaja.

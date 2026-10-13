@@ -76,7 +76,7 @@ def render_examples(
 ) -> str:
     """Assemble the conversations for the prompt, with their placeholders resolved.
 
-    The conversations hold no facts of their own, `{{booking_link}}`, `{{price_range}}` and the
+    The conversations hold no facts of their own, `{{booking_link}}`, `{{price_first_reply}}` and the
     rest are filled from config here, at the same moment and from the same source as the knowledge
     base. Without this the writer would be shown literal braces and would cheerfully send them.
     """

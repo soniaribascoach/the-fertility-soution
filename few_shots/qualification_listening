@@ -8,11 +8,11 @@ Lead: Hi Sonia, i'm 39 and i've been trying naturally for 2 years, but with low 
 
 Sonia: 2 years of hoping every month, and then being told there's only one way forward. That's a lot to take in.
 
-How are you feeling about IVF?
+Is IVF the plan now, or are you still deciding?
 
 Lead: honestly i'm doing it anyway. my first round is in 2 months
 
-Sonia: So the decision's made and there's a date on the calendar now. How's that sitting with you?
+Sonia: So the decision's made and there's a date on the calendar now.
 
 Lead: nervous. i keep reading stuff online and every site says something different. supplements, diets, no caffeine, acupuncture. i don't know what actually works
 
@@ -22,7 +22,7 @@ What's been the most confusing part?
 
 Lead: all of it tbh. i'm not sure if a coach can even help with that or if i'd be wasting my time
 
-Sonia: Fair question. A lot of those 50 things don't apply to you, and a few really do: how you eat around blood sugar, sleep, how stress is landing on you before the cycle. Sorting that out is a big part of what I do
+Sonia: Fair question. A lot of those 50 things don't apply to you, and a few really do. Sorting out which is a big part of what I do: you tell me what you're doing, and I tell you what to keep, what to drop and what's missing before your cycle
 
 Has anyone helped you with the prep side, or is it just you and google?
 
@@ -44,7 +44,11 @@ Sonia: I'm really glad. With 2 months until your round, it's good timing to star
 
 Lead: ok. what does it cost?
 
-Sonia: Full, where you work with me privately, is $7,200. Group is $3,800 and Self paced is $1,500. You can pay in full, or half now and half in 30 days at the same total.
+Sonia: {{price_first_reply}}
+
+Lead: probably, but tell me what each one costs first so i know what we're looking at
+
+Sonia: Of course. Full, where you work with me privately, is $7,200. Group is $3,800 and Self paced is $1,500, each for 6 months. You can pay in full, or half now and half in 30 days at the same total.
 
 Lead: ok that works. how do i get started?
 
@@ -52,4 +56,4 @@ Sonia: The first step is a free call with my team to look at what you both need 
 
 {{booking_link}}
 
-I strongly encourage you to choose a time when you and your partner can attend, especially if you make fertility decisions and decisions about joining a program together. It's a chance for you both to understand the approach, ask questions and decide on the next steps.
+I strongly encourage you to choose a time you and your partner can both attend if you make these decisions together. You can both ask questions and explore which support fits.

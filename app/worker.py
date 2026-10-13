@@ -19,9 +19,11 @@ from app.repositories.pending_message import (
     mark_batch_processed,
     release_stale_locks,
 )
+from app.repositories.lead_event import log_event
 from app.repositories.user_state import (
     get_or_create_state,
     is_ai_paused,
+    opt_out,
     pause_ai,
     get_lead_state,
     save_lead_state,
@@ -85,6 +87,12 @@ async def _handle_conversation(ig_user_id: str, app_state) -> None:
             await lock_batch(db, ig_user_id)
             rows = await get_locked_batch(db, ig_user_id)
             if not rows:
+                return
+
+            # She asked to stop. Nothing she sends is answered again, and no release clears it.
+            if (await get_or_create_state(db, ig_user_id)).opted_out_at:
+                logger.info("User %s opted out. Skipping", ig_user_id)
+                await mark_batch_processed(db, ig_user_id)
                 return
 
             if await is_ai_paused(db, ig_user_id):
@@ -154,24 +162,39 @@ async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
 
     await save_lead_state(db, ig_user_id, result.lead_state)
 
-    if result.reply_text:
-        await save_message(
-            db, ig_user_id, "assistant", result.reply_text,
-            token_cost=result.usage.get("token_cost"),
-            prompt_tokens=result.usage.get("prompt_tokens"),
-            completion_tokens=result.usage.get("completion_tokens"),
-            ai_model=result.usage.get("ai_model"),
-        )
-        await _send_bubbles(app_state, manychat_contact_id, result.reply_text)
+    if result.opt_out:
+        if await opt_out(db, ig_user_id):
+            await log_event(db, ig_user_id, "opt_out")
 
-    if result.pause:
-        await pause_ai(db, ig_user_id, result.pause_reason or "human_handover")
+    # The tag goes first, because on a handover the line she is sent depends on whether it went
+    # through: a line that says the team knows is only sent when the team was told (v4.1 §R).
+    tagged = None
     if result.add_tag:
         tag_id = HUMAN_REVIEW_TAG
         if result.qualified:
             qtag = (cfg.get("qualified_tag_id") or "").strip()
             tag_id = int(qtag) if qtag.isdigit() else HUMAN_REVIEW_TAG
-        await app_state.manychat_client.add_tag(manychat_contact_id, tag_id)
+        tagged = await app_state.manychat_client.add_tag(manychat_contact_id, tag_id)
+
+    reply = result.reply_text
+    if result.handover:
+        if not tagged:
+            logger.error("Team tag failed on handover for %s (%s)", ig_user_id, result.pause_reason)
+            reply = result.reply_if_unrouted or reply
+        await log_event(db, ig_user_id, "handoff", reason=result.pause_reason, ok=bool(tagged))
+
+    if reply:
+        await save_message(
+            db, ig_user_id, "assistant", reply,
+            token_cost=result.usage.get("token_cost"),
+            prompt_tokens=result.usage.get("prompt_tokens"),
+            completion_tokens=result.usage.get("completion_tokens"),
+            ai_model=result.usage.get("ai_model"),
+        )
+        await _send_bubbles(app_state, manychat_contact_id, reply)
+
+    if result.pause:
+        await pause_ai(db, ig_user_id, result.pause_reason or "human_handover")
 
     logger.info(
         "Brain turn for %s: action=%s pause=%s violations=%s",

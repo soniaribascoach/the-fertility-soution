@@ -84,11 +84,24 @@ def normalise(data: dict) -> dict:
     if structural:
         flags["structural"] = structural
 
+    # v4.1 §H: a first general price question and a specific one get different replies.
+    price_ask = data.get("price_ask")
+    if price_ask not in ("general", "specific"):
+        price_ask = None
+
+    explained = data.get("explained")
+    if isinstance(explained, str):
+        explained = [explained]
+    if not isinstance(explained, list):
+        explained = []
+
     return {
         "path": path,
         "intent": intent,
         "language": language,
         "explicit_question": data.get("explicit_question") or None,
+        "price_ask": price_ask,
+        "explained": [str(e) for e in explained if e],
         "slots": slots,
         "flags": flags,
     }

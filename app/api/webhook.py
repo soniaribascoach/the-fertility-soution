@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.repositories.conversation import save_message
 from app.repositories.pending_message import insert_message, is_duplicate
-from app.services.resume import resume_lead
+from app.services.resume import RESUMED, approve_lead_age, resume_lead
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -55,8 +55,12 @@ async def resume_webhook(
     if not ig_user_id:
         raise HTTPException(status_code=400, detail="Missing ig_id")
 
-    prior_reason = await resume_lead(db, ig_user_id)
-    return {"status": "ok", "was_paused": prior_reason is not None}
+    # Booking approval at 48 or over is its own field, never implied by the release (v4.1 §R).
+    if payload.get("approve_age") in (True, "true", "1", 1):
+        await approve_lead_age(db, ig_user_id)
+
+    outcome = await resume_lead(db, ig_user_id)
+    return {"status": "ok" if outcome == RESUMED else outcome}
 
 
 @router.post("/webhook")

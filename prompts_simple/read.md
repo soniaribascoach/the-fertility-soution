@@ -7,6 +7,8 @@ to her. Report what she has said as one JSON object. No prose, no code fences. T
   "intent": "<one of INTENTS>",
   "language": "en" | "es" | "other",
   "explicit_question": "<her question from her latest message, word for word, or null>",
+  "price_ask": "general" | "specific" | null,
+  "explained": ["<what Sonia has already explained, see EXPLAINED>"],
   "structural": "<one of STRUCTURAL, or omit>",
   "slots": { only SLOTS she has stated },
   "flags": { only FLAGS that are true }
@@ -17,14 +19,15 @@ Read slots, structural and her position flags from the whole conversation. Judge
 question and the other flags on her latest message. Report only what she said. Never guess. A slot
 she hasn't stated stays out, even when it seems likely. Never add a key that isn't listed.
 
-If her message is only a reel keyword (AMH, PCOS, BABY, IVF, READY, HOPE and so on), it is the topic
-of the reel, not a fact about her: `nurturing`, `new_prospect`, no slots, no flags.
+A single word that opened the conversation (AMH, PCOS, BABY, IVF, READY, PREGNANT and so on) is the
+topic of a reel she commented on, not a fact about her. It fills no slot and sets no flag. PREGNANT
+on its own does not mean she is pregnant.
 
 ## PATH
 
 - `terminal`: thanks, goodbye, news (pregnancy, birth), or she has stopped trying.
 - `direct_answer`: she asked a question and the answer is the point.
-- `nurturing`: she is exploring, unsure or not ready. She wants information or support, not a program.
+- `nurturing`: she is exploring or not ready, and isn't asking about the program.
 - `qualification`: she is asking about working with Sonia, the program, the price or booking, or is
   clearly looking for paid help.
 
@@ -39,7 +42,8 @@ of the reel, not a fact about her: `nurturing`, `new_prospect`, no slots, no fla
   about herself in it.
 - `complaint`: about Sonia, her team or her program. Anger at her clinic is not this.
 - `technical_support`: a link, the booking page, a login or a payment isn't working.
-- `opt_out`: she asks to stop receiving messages or to unsubscribe ("STOP").
+- `opt_out`: she asks to stop receiving messages or to unsubscribe ("STOP", "stop!",
+  "unsubscribe", "please stop messaging me").
 - `collaboration`, `media_request`, `spam_or_aggression`.
 
 ## SLOTS
@@ -52,6 +56,11 @@ of the reel, not a fact about her: `nurturing`, `new_prospect`, no slots, no fla
   - A doctor recommending it is `undecided`.
   - `natural` only when she says she is trying naturally or without treatment. How long she has
     been trying says nothing about how.
+  - A round that is over (a failed IVF, a cancelled cycle) goes in `ivf_history` or `iui_history`
+    and says nothing about what she is doing now or plans next. Leave `conceiving_mode` out unless
+    she says.
+- `cycles`: `regular` | `irregular`, only when she says which. A "yes" or "no" to a question that
+  offered both is neither.
 - `ivf_history`, `iui_history`, `miscarriage_history`: her words.
 - `diagnoses`: a list, in her words.
 - `already_tried`: a list of things she has done.
@@ -134,6 +143,11 @@ messages ago, followed by "ok thanks" or a new question, sets nothing now.
 - `says_booked`: she says she has booked the consultation call.
 - `asked_about_results`: she asks about results, whether Sonia has helped women like her, or for
   client stories.
+- `doubts_value`: she doubts what working with Sonia would add. "That sounds vague", "what would
+  you actually do with me?", "how is that different from reading stuff online?", "how do I know
+  it's worth it?".
+- `ambiguous_answer`: Sonia's last message offered a choice ("regular, or do they vary?",
+  "naturally, or with a clinic?") and her reply doesn't say which: "yes", "no", "ok", "maybe".
 
 **Her position.** These stay set, so set them only on her own words.
 
@@ -142,11 +156,31 @@ messages ago, followed by "ok thanks" or a new question, sets nothing now.
   Pregnancy Solution.
 - `in_my_program`: she says she is in Sonia's program now.
 - `wants_natural_only`: she has ruled out IVF.
-- `open_to_ivf`: she is doing IVF, preparing for it, or would consider it.
+- `open_to_ivf`: she is doing IVF, preparing for it, or would consider it. A past round alone is not
+  this.
 - `refuses_paid_coaching`: she says she can't or won't pay.
 - `stopped_trying`: she says trying is over. Exhaustion, a break, or leaving one clinic is not this.
 - `accepts_english_materials` / `declines_english_materials`: she writes in Spanish, was told the
   group coaching and materials are in English, and said yes or no.
+
+## PRICE
+
+`price_ask`, from her latest message only. Leave it null unless she is asking about cost.
+
+- `general`: she asks what a program costs. "How much is it?", "price?", "how much is The
+  Fertility Solution?".
+- `specific`: she asks for the range, the cheapest, a named level (Full, Group, Self paced), what
+  each level costs, or how payment works, or says she needs the cost before she books.
+How the levels differ is not a price question, nor is "that's a lot" before she was given a figure.
+
+## EXPLAINED
+
+`explained`: short labels for what Sonia has already explained in her own messages, read from the
+whole conversation, so it is never explained again. One line each, in plain words: "what AMH
+measures and doesn't", "the 3 levels and what each includes", "DETOX, NOURISH and FLOW", "private
+coaching can be in Spanish, groups and materials are in English", "the price range", "the free
+masterclass". Only what Sonia actually explained, not what she mentioned in passing. An empty list
+when there is nothing.
 
 ## STRUCTURAL
 
@@ -166,18 +200,18 @@ messages ago, followed by "ok thanks" or a new question, sets nothing now.
 Conversation:
 Lead: im 41, amh 0.4 and fsh 14. my clinic says ivf is our only shot
 
-{"path": "nurturing", "intent": "new_prospect", "language": "en", "explicit_question": null, "slots": {"age": 41, "testing_done": ["AMH 0.4", "FSH 14"], "conceiving_mode": "undecided", "partner_status": "partnered"}, "flags": {}}
+{"path": "nurturing", "intent": "new_prospect", "language": "en", "explicit_question": null, "price_ask": null, "explained": [], "slots": {"age": 41, "testing_done": ["AMH 0.4", "FSH 14"], "conceiving_mode": "undecided", "partner_status": "partnered"}, "flags": {}}
 
 Conversation:
 Lead: hi, endo diagnosed last year. trying 2.5 years now
 Sonia: 2.5 years is a long time to keep hoping every month. What has your doctor suggested so far?
 Lead: nothing really. i just want help. is it paid? how do i sign up
 
-{"path": "qualification", "intent": "warm_prospect", "language": "en", "explicit_question": "is it paid? how do i sign up", "slots": {"time_trying": "2.5 years", "diagnoses": ["endometriosis"], "pregnancy_priority": "high"}, "flags": {"wants_to_buy": true}}
+{"path": "qualification", "intent": "warm_prospect", "language": "en", "explicit_question": "is it paid? how do i sign up", "price_ask": "general", "explained": [], "slots": {"time_trying": "2.5 years", "diagnoses": ["endometriosis"], "pregnancy_priority": "high"}, "flags": {"wants_to_buy": true}}
 
 Conversation:
 Lead: third failed transfer. i cant do this anymore
 Sonia: That is a huge amount to carry.
 Lead: are you even a real person? can i just get sonias number
 
-{"path": "direct_answer", "intent": "new_prospect", "language": "en", "explicit_question": "are you even a real person? can i just get sonias number", "slots": {"conceiving_mode": "ivf", "ivf_history": "3 failed transfers", "pregnancy_priority": "high"}, "flags": {"asked_if_ai": true, "asked_for_phone": true}}
+{"path": "direct_answer", "intent": "new_prospect", "language": "en", "explicit_question": "are you even a real person? can i just get sonias number", "price_ask": null, "explained": [], "slots": {"conceiving_mode": "ivf", "ivf_history": "3 failed transfers", "pregnancy_priority": "high"}, "flags": {"asked_if_ai": true, "asked_for_phone": true}}

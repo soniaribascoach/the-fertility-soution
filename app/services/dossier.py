@@ -23,7 +23,7 @@ POST_BOOKING = "POST_BOOKING"
 
 # Slots whose value is replaced when she restates it, vs. slots that accumulate.
 SCALAR_SLOTS = (
-    "age", "time_trying", "conceiving_mode", "ivf_history", "iui_history",
+    "age", "time_trying", "conceiving_mode", "cycles", "ivf_history", "iui_history",
     "miscarriage_history", "partner_status", "donor_sperm", "attendance", "pregnancy_priority",
     "email", "goal_stated",
 )
@@ -50,21 +50,31 @@ ESCALATION_FLAGS = (
 )
 ESCALATION_INTENTS = (
     "complaint", "collaboration", "media_request", "spam_or_aggression", "technical_support",
-    "opt_out",
 )
 
 # A handover turn never calls the writer, so nothing about it is generated. She gets one fixed line
 # from config. By default that is the review acknowledgment (§F, 2B.2 §13), sent once on every
-# review, age review included. Two reasons carry a safety line instead, because someone in crisis
-# or bleeding needs more than "we'll take a closer look". Abuse stays silent, because an
-# acknowledgment that thanks her for sharing would be absurd there, and so does a request to stop
-# receiving messages, which a reply would ignore.
+# review, age review included. Some reasons carry their own line instead: someone in crisis or
+# bleeding needs more than "we'll take a closer look", and a medication or procedure decision gets
+# the clinician boundary (v4.1 §J), because the review line alone reads as if the team will come
+# back with a dose. Abuse stays silent, because an acknowledgment that thanks her for sharing would
+# be absurd there.
+#
+# An opt out is not a handover at all. It is its own recorded state (v4.1 §R), see `Gate.opt_out`.
 REVIEW_MESSAGE = "handover_message_review"
 HANDOVER_MESSAGES = {
     "crisis": "handover_message_crisis",
     "urgent_medical": "handover_message_urgent_medical",
+    "requested_medication": "handover_message_medication",
+    "requested_surgery_advice": "handover_message_procedure",
 }
-SILENT_HANDOVERS = ("abusive", "spam_or_aggression", "opt_out")
+SILENT_HANDOVERS = ("abusive", "spam_or_aggression")
+
+# A line that tells her the team has been told is only honest once the tag went through. When it
+# did not, the worker sends this variant instead (v4.1 §R).
+UNROUTED_MESSAGES = {
+    "crisis": "handover_message_crisis_unrouted",
+}
 
 # Fertility prospects this age or over are reviewed by a person before the link (§B, 2B.1 §10).
 # Never a rejection, and never applied to a pregnant woman asking about The Pregnancy Solution.
@@ -76,7 +86,8 @@ BLOCKING_STRUCTURAL = ("no_uterus", "menopause")
 SLOT_LABELS = {
     "age": "Age",
     "time_trying": "Trying for",
-    "conceiving_mode": "Currently",
+    "conceiving_mode": "How she is trying now",
+    "cycles": "Cycles",
     "ivf_history": "IVF history",
     "iui_history": "IUI history",
     "miscarriage_history": "Losses",
@@ -104,6 +115,8 @@ class Gate:
     block_reason: str = ""
     silent: bool = False              # after the link, a message that needs no reply
     after_link: str = ""              # after the link, what this reply is for
+    opt_out: bool = False             # she asked to stop: record it, reply nothing, never again
+    price: str = ""                   # "offer" (no figures) or "figures", "" when she didn't ask
 
 
 def handover_message(reason: str) -> str:
@@ -111,6 +124,11 @@ def handover_message(reason: str) -> str:
     if reason in SILENT_HANDOVERS:
         return ""
     return HANDOVER_MESSAGES.get(reason, REVIEW_MESSAGE)
+
+
+def unrouted_message(reason: str) -> str:
+    """The config key of the line to send instead when the team tag failed, "" to keep the line."""
+    return UNROUTED_MESSAGES.get(reason, "")
 
 
 # The reader is asked to omit what she did not say, and mostly does. When it does not, it says so
@@ -135,7 +153,7 @@ def _stated(value) -> bool:
 
 
 def empty_state() -> dict:
-    return {"phase": None, "slots": {}, "flags": {}, "counters": {}}
+    return {"phase": None, "slots": {}, "flags": {}, "counters": {}, "told": []}
 
 
 def merge(lead_state: dict | None, read: dict) -> dict:
@@ -181,9 +199,22 @@ def merge(lead_state: dict | None, read: dict) -> dict:
     if read.get("language"):
         slots["language"] = read["language"]
 
+    if read.get("price_ask"):
+        counters["price_asks"] = int(counters.get("price_asks", 0)) + 1
+
+    # What I have already explained, read from my own messages. The dossier only ever remembered
+    # what she said, so the same AMH explanation went out three turns running: nothing told the
+    # writer it had already been given.
+    told = list(state.get("told") or [])
+    seen = {str(v).strip().lower() for v in told}
+    for item in read.get("explained") or []:
+        if _stated(item) and str(item).strip().lower() not in seen:
+            told.append(item)
+            seen.add(str(item).strip().lower())
+
     counters["turns"] = int(counters.get("turns", 0)) + 1
     counters["teaching"] = _teaching_run(state, read, counters)
-    state.update(slots=slots, flags=flags, counters=counters)
+    state.update(slots=slots, flags=flags, counters=counters, told=told)
     state.setdefault("phase", None)
     return state
 
@@ -333,11 +364,21 @@ def _booking_blocked(state: dict, read: dict) -> str:
         # the failure §L is written to prevent.
         if flags.get("declines_english_materials"):
             return "declines_english_materials"
+        # Told once, then not again (v4.1 §L). Without this the "tell her and ask" note fired on
+        # every turn until she said yes, and each follow-up question about the videos or the
+        # groups was answered with the whole explanation and the same question.
+        if flags.get("english_materials_told"):
+            return "english_materials_awaiting"
         return "english_materials_undisclosed"
 
     # The context count is about trying to conceive. A pregnant woman asking for support has told
     # us what matters by asking (§D, 2B.2 §7).
     if _pregnancy_prospect(state):
+        return ""
+
+    # Asking for Sonia's number is asking for a conversation, and the free call is that
+    # conversation (v4.1 §F: no number in DMs, offer the appropriate next step). This message only.
+    if (read.get("flags") or {}).get("asked_for_phone"):
         return ""
 
     known = sum(
@@ -383,25 +424,55 @@ def _after_link_reply(state: dict, read: dict, before: dict | None) -> str:
     return ""
 
 
+def _price_mode(state: dict, read: dict) -> str:
+    """Which pricing the writer is given this turn (v4.1 §H, 5.3).
+
+    A first general question gets the support options and the free call, with no figures in the
+    prompt, so there are none to quote. A specific request (range, minimum, a named level, a
+    comparison, payment terms, affordability) or any repeat gets the figures. A turn where she
+    didn't ask gets neither, which is what keeps a price menu out of a value conversation.
+    """
+    ask = read.get("price_ask")
+    if not ask:
+        return ""
+    if ask == "specific" or int((state.get("counters") or {}).get("price_asks", 0)) > 1:
+        return "figures"
+    return "offer"
+
+
+PRICE_BLOCKS = {"offer": {"pricing_offer"}, "figures": {"pricing"}}
+
+
 def gate(state: dict, read: dict, before: dict | None = None) -> Gate:
     """Decide what the WRITE prompt may contain this turn. `before` is the pre-merge dossier."""
+    # Before everything, handovers included: a woman who says STOP is not handed to anyone, she is
+    # left alone. The worker records it and nothing is sent.
+    if read.get("intent") == "opt_out":
+        return Gate(opt_out=True, notes=["opt out: recorded, no reply"])
+
     reason = _escalation_reason(state, read, before)
     if reason:
         return _handover(reason)
 
     flags = state.get("flags") or {}
     raised = read.get("flags") or {}
+    price = _price_mode(state, read)
 
     if state.get("phase") in (LINK_SENT, POST_BOOKING):
         reply_for = _after_link_reply(state, read, before)
         if not reply_for:
             return Gate(silent=True, notes=["after the link: nothing to answer"])
-        blocks = {"attendance", "pricing"}
+        blocks = {"attendance"} | PRICE_BLOCKS.get(price, set())
         if (state.get("slots") or {}).get("email"):
             blocks.add("post_booking")
-        return Gate(blocks=blocks, after_link=reply_for, notes=[f"after the link: {reply_for}"])
+        return Gate(blocks=blocks, after_link=reply_for, price=price,
+                    notes=[f"after the link: {reply_for}"])
 
-    blocks = {"pricing", "free_resource"}
+    blocks = {"free_resource"} | PRICE_BLOCKS.get(price, set())
+    # Sent once. The link stays out of the prompt after that, so a request for something to read
+    # is not answered by sending the same video again (v4.1 §Q).
+    if flags.get("masterclass_sent"):
+        blocks.discard("free_resource")
     if raised.get("asked_about_results"):
         blocks.add("proof")
 
@@ -427,25 +498,40 @@ def gate(state: dict, read: dict, before: dict | None = None) -> Gate:
     # everyone else gets at least one real exchange before a call is mentioned. A woman who says
     # "take my money" and tells you nothing about herself is still held by the `known < 3` check:
     # readiness to buy is not the same as being understood well enough to invite honestly.
-    ready = read.get("intent") == "warm_prospect" or raised.get("wants_to_buy")
+    ready = (read.get("intent") == "warm_prospect" or raised.get("wants_to_buy")
+             or raised.get("asked_for_phone"))
     if _first_exchange(state) and not ready and not blocked_for:
         blocked_for = "first_exchange"
 
+    # She doubts the value: "that sounds vague", "how is that different from reading online". The
+    # answer is what working together looks like, and a call offered before that is answered is
+    # the sales move v4.1 §C rules out. Unless she asked for the price or the call herself.
+    if raised.get("doubts_value") and not price and not ready and not blocked_for:
+        blocked_for = "value_question"
+
     # §B: at 48 or over a person looks at it before the link goes out. The conversation carries on
-    # until she is moving toward a call, and that turn is the review, never a rejection. Once the
-    # team has released her the link opens as it would for anyone.
+    # until she is moving toward a call, and that turn is the review, never a rejection.
+    #
+    # Only the team's explicit approval opens the link (v4.1 §R). The handover records that a
+    # review was asked for, and a release is a release: after it she is answered, but the link
+    # waits for the approval. `age_reviewed` is the old name for the request, from before approval
+    # was a separate state.
     age = (state.get("slots") or {}).get("age")
     if (not blocked_for and isinstance(age, int) and age >= AGE_REVIEW
-            and not _pregnancy_prospect(state) and not flags.get("age_reviewed")):
-        if ready:
+            and not _pregnancy_prospect(state) and not flags.get("age_approved")):
+        if flags.get("age_review_requested") or flags.get("age_reviewed"):
+            blocked_for = "age_review_with_team"
+        elif ready:
             return _handover("age_review")
-        blocked_for = "age_review_pending"
+        else:
+            blocked_for = "age_review_pending"
 
     if blocked_for:
-        return Gate(blocks=blocks, notes=[f"no link: {blocked_for}"], block_reason=blocked_for)
+        return Gate(blocks=blocks, price=price, notes=[f"no link: {blocked_for}"],
+                    block_reason=blocked_for)
 
     blocks |= {"booking", "attendance"}
-    return Gate(allow_booking=True, blocks=blocks, notes=["link available"])
+    return Gate(allow_booking=True, blocks=blocks, price=price, notes=["link available"])
 
 
 def _handover(reason: str) -> Gate:
@@ -480,12 +566,21 @@ def render(state: dict) -> str:
         lines.append("- She is open to IVF")
 
     if not lines:
-        return (
+        about_her = (
             "# WHAT SHE HAS ALREADY TOLD ME\n\n"
             "Nothing yet. This is the start of the conversation."
         )
+    else:
+        about_her = (
+            "# WHAT SHE HAS ALREADY TOLD ME\n\n"
+            "Never ask for any of this again. Build on it.\n\n" + "\n".join(lines)
+        )
 
+    told = state.get("told") or []
+    if not told:
+        return about_her
     return (
-        "# WHAT SHE HAS ALREADY TOLD ME\n\n"
-        "Never ask for any of this again. Build on it.\n\n" + "\n".join(lines)
+        about_her + "\n\n# WHAT I HAVE ALREADY TOLD HER\n\n"
+        "Never explain any of this again. Build on it, or answer only the part she is asking about "
+        "now.\n\n" + "\n".join(f"- {item}" for item in told)
     )

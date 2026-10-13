@@ -7,7 +7,7 @@ from markupsafe import Markup, escape
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, func as sa_func
+from sqlalchemy import select, or_, func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
@@ -15,7 +15,8 @@ from app.models.few_shot_version import FewShotVersion
 from app.models.user_state import UserState
 from app.repositories.config import get_all_config, set_config
 from app.services.brain import reload_playbooks, run_turn
-from app.services.resume import resume_lead
+from app.repositories.lead_event import recent_events
+from app.services.resume import approve_lead_age, resume_lead
 from app.services.few_shots import load_few_shot_scenarios
 from app.services.prompts import reload_layers
 from app.api.admin.auth import is_authenticated
@@ -41,11 +42,12 @@ templates.env.globals["app_started_at"] = APP_STARTED_AT.strftime("%Y-%m-%d %H:%
 # without the writer, and the engine knobs. Program facts (length, modules, levels) are in
 # `prompts_simple/knowledge.md`, from manual Part 5, not here.
 CONFIG_KEYS = [
-    "booking_link", "masterclass_link", "replay_link", "price_range",
+    "booking_link", "masterclass_link", "replay_link",
     "years_experience", "babies_welcomed",
-    "cta_welcome_message",
+    "price_first_reply",
     "qualified_tag_id",
-    "handover_message_review", "handover_message_crisis", "handover_message_urgent_medical",
+    "handover_message_review", "handover_message_crisis", "handover_message_crisis_unrouted",
+    "handover_message_urgent_medical", "handover_message_medication", "handover_message_procedure",
     "brain_model", "read_model", "brain_temperature",
 ]
 
@@ -63,12 +65,13 @@ async def dashboard_get(request: Request, db: AsyncSession = Depends(get_db)):
         return RedirectResponse("/admin/login", status_code=302)
     result = await db.execute(
         select(UserState)
-        .where(UserState.is_ai_paused == True)  # noqa: E712
-        .order_by(UserState.paused_at.desc())
+        .where(or_(UserState.is_ai_paused == True, UserState.opted_out_at.is_not(None)))  # noqa: E712
+        .order_by(UserState.paused_at.desc().nulls_last(), UserState.opted_out_at.desc())
     )
     paused_leads = result.scalars().all()
     return templates.TemplateResponse(
-        request, "admin/dashboard.html", {"paused_leads": paused_leads}
+        request, "admin/dashboard.html",
+        {"paused_leads": paused_leads, "events": await recent_events(db)},
     )
 
 
@@ -76,7 +79,17 @@ async def dashboard_get(request: Request, db: AsyncSession = Depends(get_db)):
 async def lead_resume(request: Request, ig_user_id: str, db: AsyncSession = Depends(get_db)):
     if not is_authenticated(request):
         return RedirectResponse("/admin/login", status_code=302)
+    # Refuses an opted-out lead itself, so this endpoint cannot clear an opt out either.
     await resume_lead(db, ig_user_id)
+    return RedirectResponse("/admin/dashboard", status_code=302)
+
+
+@router.post("/admin/leads/{ig_user_id}/approve-age")
+async def lead_approve_age(request: Request, ig_user_id: str, db: AsyncSession = Depends(get_db)):
+    """Booking approval at 48 or over. Separate from Resume on purpose (v4.1 §R)."""
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    await approve_lead_age(db, ig_user_id)
     return RedirectResponse("/admin/dashboard", status_code=302)
 
 
@@ -157,6 +170,7 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
         "reply": result.reply_text,
         "human_takeover": result.pause,
         "takeover_reason": result.pause_reason,
+        "opt_out": result.opt_out,
         "lead_state": result.lead_state,
         "phase": (result.lead_state or {}).get("phase"),
         "action": result.action,

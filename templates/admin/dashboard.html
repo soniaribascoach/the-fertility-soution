@@ -128,13 +128,26 @@
         "human_handover": ("Matched trigger phrase", "warn"),
         "age_review": ("Age 48+ · review before the booking link", "warn"),
         "asked_for_human": ("Asked for a person", "warn"),
+        "requested_medication": ("Medication decision · clinician line sent", "warn"),
+        "requested_surgery_advice": ("Procedure decision · clinician line sent", "warn"),
+        "crisis": ("Crisis · helpline sent", "warn"),
       } %}
       {% for lead in paused_leads %}
+      {% if lead.opted_out_at %}
+      {% set label, tone = ("Opted out · AI never replies again", "warn") %}
+      {% else %}
       {% set label, tone = reason_labels.get(lead.pause_reason, (lead.pause_reason or "-", "warn")) %}
+      {% endif %}
       <tr class="hover:bg-slate-50/50 transition-colors">
         <td class="px-6 py-3.5 text-sm font-semibold text-slate-800">{{ lead.instagram_user_id }}</td>
         <td class="px-4 py-3.5">
           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ 'bg-emerald-50 text-emerald-700' if tone == 'ok' else 'bg-amber-50 text-amber-700' }}">{{ label }}</span>
+          {% set lead_age = ((lead.qualification or {}).get('slots') or {}).get('age') %}
+          {% if lead.age_approved_at %}
+          <div class="mt-1 text-xs text-emerald-700">Booking approved {{ lead.age_approved_at.strftime("%d %b %Y, %H:%M") }}</div>
+          {% elif lead.pause_reason == 'age_review' or (lead_age is number and lead_age >= 48) %}
+          <div class="mt-1 text-xs text-slate-500">Booking not approved. Resume alone keeps the link shut.</div>
+          {% endif %}
           {% set attendance = ((lead.qualification or {}).get('slots') or {}).get('attendance') %}
           {% if attendance in ('decides_alone', 'partner_cannot_attend') %}
           <div class="mt-1 text-xs text-slate-500">Attendance exception agreed: {{ 'decides alone' if attendance == 'decides_alone' else 'partner cannot attend' }}</div>
@@ -143,6 +156,18 @@
         <td class="px-4 py-3.5 text-xs text-slate-500">{{ lead.phase or "-" }}</td>
         <td class="px-4 py-3.5 text-xs text-slate-400">{{ lead.paused_at.strftime("%d %b %Y, %H:%M") if lead.paused_at else "-" }}</td>
         <td class="px-6 py-3.5 text-right">
+          {% if lead.opted_out_at %}
+          <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-500">Opted out {{ lead.opted_out_at.strftime("%d %b %Y") }}</span>
+          {% else %}
+          <div class="inline-flex items-center gap-2">
+          {% if not lead.age_approved_at and (lead.pause_reason == 'age_review' or (lead_age is number and lead_age >= 48)) %}
+          <form method="post" action="/admin/leads/{{ lead.instagram_user_id }}/approve-age"
+                onsubmit="return confirm('Approve a booking for {{ lead.instagram_user_id }}? This does not resume the AI.');">
+            <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors">
+              Approve booking
+            </button>
+          </form>
+          {% endif %}
           <form method="post" action="/admin/leads/{{ lead.instagram_user_id }}/resume"
                 onsubmit="return confirm('Resume the AI for {{ lead.instagram_user_id }}? It will reply to their next DM.');">
             <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 text-white hover:bg-violet-700 transition-colors">
@@ -150,6 +175,8 @@
               Resume AI
             </button>
           </form>
+          </div>
+          {% endif %}
         </td>
       </tr>
       {% endfor %}
@@ -157,6 +184,43 @@
   </table>
   {% else %}
   <div class="px-6 py-8 text-center text-sm text-slate-400">No paused leads. The AI is handling every conversation.</div>
+  {% endif %}
+</div>
+
+<!-- ── Lead Events (handoff, release, approval, opt out) ─────────────────── -->
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm mb-7">
+  <div class="px-6 py-4 border-b border-slate-100">
+    <h2 class="text-sm font-bold text-slate-900">Lead Events</h2>
+    <p class="text-xs text-slate-400 mt-0.5">Every handoff, release, booking approval and opt out, with whether the team alert went through</p>
+  </div>
+  {% if events %}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-slate-100">
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-6 py-3">When</th>
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-4 py-3">Instagram User ID</th>
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-4 py-3">Event</th>
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-4 py-3">Reason</th>
+        <th class="text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 px-6 py-3">Team alert</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-50">
+      {% for event in events %}
+      <tr>
+        <td class="px-6 py-3 text-xs text-slate-400">{{ event.created_at.strftime("%d %b %Y, %H:%M") }}</td>
+        <td class="px-4 py-3 text-xs font-semibold text-slate-800">{{ event.instagram_user_id }}</td>
+        <td class="px-4 py-3 text-xs text-slate-600">{{ event.kind | replace("_", " ") }}</td>
+        <td class="px-4 py-3 text-xs text-slate-500">{{ event.reason or "" }}</td>
+        <td class="px-6 py-3 text-xs">
+          {% if event.ok is true %}<span class="text-emerald-700 font-semibold">tagged</span>
+          {% elif event.ok is false %}<span class="text-rose-700 font-semibold">failed</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="px-6 py-8 text-center text-sm text-slate-400">No events yet.</div>
   {% endif %}
 </div>
 

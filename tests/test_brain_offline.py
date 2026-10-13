@@ -24,9 +24,9 @@ CFG = {
     "booking_link": "https://example.test/free-call",
     "masterclass_link": "https://example.test/register",
     "replay_link": "https://example.test/watch-replay",
-    "price_range": "$1,500 to $14,000",
     "years_experience": "16 years",
     "babies_welcomed": "735",
+    "price_first_reply": "We have a few different options depending on how much support you'd like.",
 }
 
 
@@ -250,8 +250,15 @@ def test_48_and_over_is_reviewed_at_the_link_never_rejected():
     assert ready.escalate and ready.escalate_reason == "age_review"
     assert ready.handover_message == "handover_message_review"
 
-    reviewed = _state({**QUALIFIED, "age": 50}, {"age_reviewed": True})
-    assert dossier.gate(reviewed, {"intent": "warm_prospect"}).allow_booking
+    # v4.1 §R: the handover asks for the review, a release is only a release, and the link waits
+    # for the team's recorded approval.
+    released = _state({**QUALIFIED, "age": 50}, {"age_review_requested": True})
+    held = dossier.gate(released, {"intent": "warm_prospect"})
+    assert not held.allow_booking and not held.escalate
+    assert held.block_reason == "age_review_with_team"
+
+    approved = _state({**QUALIFIED, "age": 50}, {"age_review_requested": True, "age_approved": True})
+    assert dossier.gate(approved, {"intent": "warm_prospect"}).allow_booking
 
     at_47 = dossier.gate(_state({**QUALIFIED, "age": 47}), {"intent": "warm_prospect"})
     assert at_47.allow_booking and not at_47.escalate
@@ -952,7 +959,8 @@ def test_the_pregnancy_program_is_named_when_she_asks_for_it():
 
 @pytest.mark.parametrize("reason,message", [
     ("asked_for_human", "handover_message_review"),
-    ("requested_medication", "handover_message_review"),
+    ("requested_medication", "handover_message_medication"),
+    ("requested_surgery_advice", "handover_message_procedure"),
     ("complaint", "handover_message_review"),
     ("crisis", "handover_message_crisis"),
     ("urgent_medical", "handover_message_urgent_medical"),

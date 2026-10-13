@@ -10,6 +10,12 @@ class UserState(Base):
     paused_at = Column(DateTime(timezone=True), nullable=True)
     pause_reason = Column(String(50), nullable=True)
 
+    # Recorded states that a release does not touch (manual v4.1 §R). An opt out is permanent: no
+    # admin action or resume webhook clears it. Age approval is written only by the team's
+    # explicit approval, never by the handover that asked for it.
+    opted_out_at = Column(DateTime(timezone=True), nullable=True)
+    age_approved_at = Column(DateTime(timezone=True), nullable=True)
+
     # Qualification-funnel state (new brain). `phase` is kept top-level for
     # admin visibility/indexing; `qualification` holds {slots, flags, counters}.
     phase = Column(String(40), nullable=True)

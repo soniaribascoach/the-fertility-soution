@@ -23,6 +23,7 @@ READ_LAYER = "read.md"
 SAFETY_LAYER = "safety.md"
 LANGUAGE_LAYER = "language.md"
 TURN_LAYER = "turn.md"
+OPENER_LAYER = "opener.md"
 
 _BLOCK_RE = re.compile(r"\[\[BLOCK:(?P<name>\w+)\]\](?P<body>.*?)\[\[/BLOCK\]\]", re.DOTALL)
 _PLACEHOLDER_RE = re.compile(r"\{\{(\w+)\}\}")
@@ -66,7 +67,7 @@ def config_values(cfg: dict) -> dict:
         # offered; `replay_link` is only rendered inside the post-booking block.
         "masterclass_link": cfg.get("masterclass_link", ""),
         "replay_link": cfg.get("replay_link", ""),
-        "price_range": cfg.get("price_range", ""),
+        "price_first_reply": cfg.get("price_first_reply", ""),
         "years_experience": cfg.get("years_experience", ""),
         "babies_welcomed": cfg.get("babies_welcomed", ""),
     }
@@ -94,6 +95,10 @@ def build_safety_prompt() -> str:
 
 def build_language_prompt() -> str:
     return _read_layer(LANGUAGE_LAYER)
+
+
+def build_opener_prompt() -> str:
+    return _read_layer(OPENER_LAYER)
 
 
 def turn_notes() -> dict[str, str]:
