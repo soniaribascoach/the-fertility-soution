@@ -5,10 +5,9 @@ from datetime import datetime, timezone
 
 from pydantic_settings import BaseSettings
 
-# Product version shown in the admin UI. Bump on notable releases.
-# v3.0 = manual v4.0 build of the three-stage brain (reader, dossier gate, writer).
-# v3.1 = manual v4.1: opener call, 2 step pricing, opt out and age approval as recorded states.
-APP_VERSION = "v3.1"
+# Product version shown in the admin UI. It follows the Operating Manual it implements, so the
+# sidebar and the manual use the same number.
+APP_VERSION = "v4.1"
 
 # Name of the brain generation, so the sidebar says which one is live, not only a number.
 APP_BRAIN = "brain v3"
