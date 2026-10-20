@@ -571,7 +571,7 @@
                          : '';
       if (nowAttending && nowAttending !== attending) appendNote(nowAttending);
       attending = nowAttending;
-      if (data.tag) appendNote(`Tag applied: ${data.tag}`);
+      if ((data.tags || []).length) appendNote(`Tags applied: ${data.tags.join(', ')}`);
       // An opt out is answered with silence on purpose, so no reply here is not an error.
       if (data.opt_out) {
         optedOut = true;

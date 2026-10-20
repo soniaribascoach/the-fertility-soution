@@ -120,13 +120,18 @@
             </div>
             {% endif %}
 
+            {% set tags = (t.tags or []) | join(', ') %}
             {% if t.paused_now == "qualified_link_sent" %}
             <div class="flex justify-center py-1">
-              <span class="text-[12px] px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Booking link sent · tag added</span>
+              <span class="text-[12px] px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Booking link sent · {{ ('tags ' ~ tags) if tags else 'tag added' }}</span>
             </div>
             {% elif t.paused_now %}
             <div class="flex justify-center py-1">
-              <span class="text-[12px] px-3 py-1.5 rounded-full bg-violet-50 text-violet-700 border border-violet-100">Handed to the team ({{ reasons.get(t.paused_now, t.paused_now.replace('_', ' ')) }}) · review tag added · AI paused</span>
+              <span class="text-[12px] px-3 py-1.5 rounded-full bg-violet-50 text-violet-700 border border-violet-100">Handed to the team ({{ reasons.get(t.paused_now, t.paused_now.replace('_', ' ')) }}) · {{ ('tags ' ~ tags) if tags else 'review tag added' }} · AI paused</span>
+            </div>
+            {% elif tags %}
+            <div class="flex justify-center py-1">
+              <span class="text-[12px] px-3 py-1.5 rounded-full bg-sky-50 text-sky-700 border border-sky-100">Tags {{ tags }}</span>
             </div>
             {% endif %}
 

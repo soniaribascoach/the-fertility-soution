@@ -184,6 +184,15 @@ async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
             tag_id = int(qtag) if qtag.isdigit() else HUMAN_REVIEW_TAG
         tagged = await app_state.manychat_client.add_tag(manychat_contact_id, tag_id)
 
+    # Labels only tell the team something about her (an agreed exception, a pregnancy transfer).
+    # Nothing she is sent depends on them.
+    for label in result.labels:
+        lid = (cfg.get(f"{label}_tag_id") or "").strip()
+        if lid.isdigit():
+            await app_state.manychat_client.add_tag(manychat_contact_id, int(lid))
+        else:
+            logger.warning("No %s_tag_id set. %s is not tagged %s", label, ig_user_id, label)
+
     reply = result.reply_text
     if result.handover:
         if not tagged:

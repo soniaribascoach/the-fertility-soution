@@ -1,7 +1,7 @@
 {
   "version": "v4.2",
   "manual": "v4.1 (Oct 11, 2026)",
-  "run_at": "2026-10-20 15:14 UTC",
+  "run_at": "2026-10-20 15:30 UTC",
   "sections": [
     {
       "name": "Program basics",
@@ -1133,8 +1133,8 @@
             },
             {
               "lead": "thank you!! i'm in month 3 of your full program, what happens to the rest of my time now?",
-              "reply": "Congratulations again! The time you have left moves into The Pregnancy Solution at your Full level, at no extra cost. Your 6 months don’t restart, so you’ll continue with the time remaining.\n\nMy team will move you over and be in touch about your account.",
-              "note": "path direct_answer | intent pregnancy_announcement | flags in_my_program | gate no link: in_my_program; then handover: pregnancy_transfer | action REPLY_THEN_HANDOVER:pregnancy_transfer | pause pregnancy_transfer | tag 86596410 (review) | state: paused",
+              "reply": "Congratulations again! The time you have left moves into The Pregnancy Solution at your Full level, at no extra cost. It doesn’t restart the 6 months, so you’ll continue with the remaining time you already have.\n\nMy team will move you over and be in touch about your account.",
+              "note": "path direct_answer | intent pregnancy_announcement | flags in_my_program | gate no link: in_my_program; then handover: pregnancy_transfer | action REPLY_THEN_HANDOVER:pregnancy_transfer | pause pregnancy_transfer | tag 86596410 (review) | labels pregnancy_transfer | state: paused",
               "action": "REPLY_THEN_HANDOVER:pregnancy_transfer",
               "trace": {
                 "read": {
@@ -1177,13 +1177,17 @@
               },
               "tag": 86596410,
               "qualified": false,
+              "tags": [
+                "human_handover",
+                "pregnancy_transfer"
+              ],
               "paused_now": "pregnancy_transfer"
             }
           ],
           "id": "e09_pregnancy_transfer",
           "title": "TFS client announces pregnancy",
           "verdict": "pass",
-          "comment": "Celebrates, explains the remaining time moves to TPS at her level at no extra cost without a restart, then hands her to the team to move her account over."
+          "comment": "Celebrates, explains the remaining time moves to TPS at her level at no extra cost without a restart, then hands her to the team (human_handover and pregnancy_transfer tags)."
         }
       ]
     },
@@ -2100,7 +2104,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "requested_medication"
+              "paused_now": "requested_medication",
+              "tags": [
+                "human_handover"
+              ]
             },
             {
               "lead": "thanks",
@@ -2495,7 +2502,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             }
           ],
           "id": "e18_spanish_group",
@@ -2865,7 +2875,10 @@
                   "action": "stop",
                   "reply": ""
                 }
-              }
+              },
+              "tags": [
+                "opted_out"
+              ]
             }
           ],
           "id": "e23_kw_stop",
@@ -2901,7 +2914,10 @@
                     "opt out: recorded, no reply"
                   ]
                 }
-              }
+              },
+              "tags": [
+                "opted_out"
+              ]
             }
           ],
           "id": "e24_unsubscribe",
@@ -2925,7 +2941,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "asked_for_human"
+              "paused_now": "asked_for_human",
+              "tags": [
+                "human_handover"
+              ]
             }
           ],
           "id": "k03_kw_human",
@@ -3184,7 +3203,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             }
           ],
           "id": "e27_partner_unmentioned",
@@ -3245,7 +3267,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             }
           ],
           "id": "e28_solo_parent",
@@ -3304,7 +3329,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             }
           ],
           "id": "e29_partnered_donor",
@@ -3361,7 +3389,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             }
           ],
           "id": "e30_same_sex_couple",
@@ -3373,24 +3404,24 @@
           "turns": [
             {
               "lead": "i'm 36, trying 2 years with my husband, unexplained. i'm ready to work with you, how do i book?",
-              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. You can book here:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your husband can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
-              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
+              "reply": "The first step is a free call with my team to talk through what support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your husband can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
+              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 36, \"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"diagnoses\": [\"unexplained\"], \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
                 "read": {
                   "path": "qualification",
                   "intent": "warm_prospect",
                   "language": "en",
-                  "explicit_question": "how do i book?",
+                  "explicit_question": "i'm ready to work with you, how do i book?",
                   "price_ask": null,
                   "explained": [],
                   "slots": {
                     "age": 36,
                     "time_trying": "2 years",
+                    "partner_status": "partnered",
                     "diagnoses": [
                       "unexplained"
                     ],
-                    "partner_status": "partnered",
                     "pregnancy_priority": "high"
                   },
                   "flags": {
@@ -3424,21 +3455,26 @@
               },
               "tag": 86596410,
               "qualified": true,
+              "tags": [
+                "qualified"
+              ],
               "paused_now": "qualified_link_sent"
             },
             {
               "lead": "do i really need my husband there?",
               "reply": "Do you make these decisions independently, or would you and your husband be deciding together?",
-              "note": "path direct_answer | intent new_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"attendance\": \"pushback\", \"pregnancy_priority\": \"high\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent",
+              "note": "path qualification | intent warm_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"attendance\": \"pushback\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent",
               "action": "AFTER_LINK",
               "trace": {
                 "read": {
-                  "path": "direct_answer",
-                  "intent": "new_prospect",
+                  "path": "qualification",
+                  "intent": "warm_prospect",
                   "language": "en",
                   "explicit_question": "do i really need my husband there?",
                   "price_ask": null,
-                  "explained": [],
+                  "explained": [
+                    "the free call with the team"
+                  ],
                   "slots": {
                     "age": 36,
                     "time_trying": "2 years",
@@ -3446,8 +3482,8 @@
                       "unexplained"
                     ],
                     "partner_status": "partnered",
-                    "attendance": "pushback",
-                    "pregnancy_priority": "high"
+                    "pregnancy_priority": "high",
+                    "attendance": "pushback"
                   },
                   "flags": {}
                 },
@@ -3479,19 +3515,17 @@
             },
             {
               "lead": "honestly i make these decisions myself",
-              "reply": "Okay, we'll make an exception and see you on your own. Please mention that we agreed this when you speak with my team.",
-              "note": "path direct_answer | intent new_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"attendance\": \"decides_alone\", \"pregnancy_priority\": \"high\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent",
+              "reply": "Okay, we’ll make an exception and see you on your own. Please mention that we agreed this when you speak with my team.",
+              "note": "path qualification | intent warm_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"attendance\": \"decides_alone\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent | labels attendance_exception",
               "action": "AFTER_LINK",
               "trace": {
                 "read": {
-                  "path": "direct_answer",
-                  "intent": "new_prospect",
+                  "path": "qualification",
+                  "intent": "warm_prospect",
                   "language": "en",
-                  "explicit_question": "do i really need my husband there?",
+                  "explicit_question": null,
                   "price_ask": null,
-                  "explained": [
-                    "the free call and its purpose"
-                  ],
+                  "explained": [],
                   "slots": {
                     "age": 36,
                     "time_trying": "2 years",
@@ -3499,8 +3533,8 @@
                       "unexplained"
                     ],
                     "partner_status": "partnered",
-                    "attendance": "decides_alone",
-                    "pregnancy_priority": "high"
+                    "pregnancy_priority": "high",
+                    "attendance": "decides_alone"
                   },
                   "flags": {}
                 },
@@ -3528,12 +3562,15 @@
                   "qualification_ready",
                   "terminal"
                 ]
-              }
+              },
+              "tags": [
+                "attendance_exception"
+              ]
             },
             {
               "lead": "booked! sam.k@gmail.com",
-              "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nPlease mention to my team that we agreed you would come on your own.",
-              "note": "path qualification | intent warm_prospect | flags says_booked | slots {\"age\": 36, \"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"attendance\": \"decides_alone\", \"pregnancy_priority\": \"high\", \"email\": \"sam.k@gmail.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
+              "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nPlease mention to my team that we agreed you’d come on your own.",
+              "note": "path qualification | intent warm_prospect | flags says_booked | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"attendance\": \"decides_alone\", \"pregnancy_priority\": \"high\", \"email\": \"sam.k@gmail.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
               "action": "AFTER_LINK",
               "trace": {
                 "read": {
@@ -3542,10 +3579,15 @@
                   "language": "en",
                   "explicit_question": null,
                   "price_ask": null,
-                  "explained": [],
+                  "explained": [
+                    "the free call with Sonia’s team as the first step"
+                  ],
                   "slots": {
                     "age": 36,
                     "time_trying": "2 years",
+                    "diagnoses": [
+                      "unexplained"
+                    ],
                     "partner_status": "partnered",
                     "attendance": "decides_alone",
                     "pregnancy_priority": "high",
@@ -3585,7 +3627,7 @@
           "id": "e31_independent_decider",
           "title": "Decides independently",
           "verdict": "pass",
-          "comment": "Approved line, one attendance question, exception only after she says she decides herself, reminder to mention it after booking."
+          "comment": "Approved line, one attendance question, exception only after she says she decides herself (attendance_exception tag), reminder to mention it after booking."
         },
         {
           "turns": [
@@ -3642,7 +3684,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             },
             {
               "lead": "he works night shifts and genuinely can't make any of the times",
@@ -3809,7 +3854,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             },
             {
               "lead": "he's busy, does he have to come?",
@@ -4033,7 +4081,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             }
           ],
           "id": "e34_age_47",
@@ -4183,7 +4234,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "age_review"
+              "paused_now": "age_review",
+              "tags": [
+                "human_handover"
+              ]
             },
             {
               "lead": "thanks",
@@ -4288,7 +4342,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "age_review"
+              "paused_now": "age_review",
+              "tags": [
+                "human_handover"
+              ]
             }
           ],
           "id": "e36_age_50",
@@ -4400,7 +4457,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             }
           ],
           "id": "e37_tps_45_pregnant",
@@ -4446,7 +4506,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "asked_for_human"
+              "paused_now": "asked_for_human",
+              "tags": [
+                "human_handover"
+              ]
             },
             {
               "lead": "thanks",
@@ -4737,7 +4800,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "asked_for_human"
+              "paused_now": "asked_for_human",
+              "tags": [
+                "human_handover"
+              ]
             },
             {
               "lead": "thanks",
@@ -4970,7 +5036,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             },
             {
               "lead": "booked!",
@@ -5064,7 +5133,10 @@
                 }
               },
               "tag": 86596410,
-              "qualified": false
+              "qualified": false,
+              "tags": [
+                "human_handover"
+              ]
             },
             {
               "lead": "jen.w@mail.com",
@@ -5158,7 +5230,10 @@
                 }
               },
               "tag": 86596410,
-              "qualified": false
+              "qualified": false,
+              "tags": [
+                "human_handover"
+              ]
             }
           ],
           "id": "e42_booked_then_email",
@@ -5221,7 +5296,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             },
             {
               "lead": "booked for monday, my email is kate.r@outlook.com",
@@ -5315,7 +5393,10 @@
                 }
               },
               "tag": 86596410,
-              "qualified": false
+              "qualified": false,
+              "tags": [
+                "human_handover"
+              ]
             }
           ],
           "id": "e43_booked_with_email",
@@ -5416,7 +5497,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "crisis"
+              "paused_now": "crisis",
+              "tags": [
+                "human_handover"
+              ]
             }
           ],
           "id": "e45_crisis",
@@ -5458,7 +5542,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "is_existing_client"
+              "paused_now": "is_existing_client",
+              "tags": [
+                "human_handover"
+              ]
             }
           ],
           "id": "e46_existing_client",
@@ -5520,7 +5607,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             },
             {
               "lead": "the link won't load for me",
@@ -5558,7 +5648,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "technical_support"
+              "paused_now": "technical_support",
+              "tags": [
+                "human_handover"
+              ]
             }
           ],
           "id": "e47_technical_link",
@@ -5913,7 +6006,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "is_former_client"
+              "paused_now": "is_former_client",
+              "tags": [
+                "human_handover"
+              ]
             }
           ],
           "id": "e51_former_client",
@@ -6101,7 +6197,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "requested_medication"
+              "paused_now": "requested_medication",
+              "tags": [
+                "human_handover"
+              ]
             },
             {
               "lead": "just roughly?",
@@ -6209,7 +6308,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent"
+              "paused_now": "qualified_link_sent",
+              "tags": [
+                "qualified"
+              ]
             }
           ],
           "id": "e60_phone_number",

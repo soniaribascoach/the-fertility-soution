@@ -132,8 +132,16 @@
       <input type="text" name="qualified_tag_id" value="{{ cfg.qualified_tag_id or '' }}" placeholder="86596410" class="{{ input_cls }}">
     {% endcall %}
 
-    {% call field('Opted Out Tag ID', 'ManyChat tag applied when she asks to stop, so ManyChat flows skip her too.', 'mb-0') %}
+    {% call field('Opted Out Tag ID', 'ManyChat tag applied when she asks to stop, so ManyChat flows skip her too.') %}
       <input type="text" name="opted_out_tag_id" value="{{ cfg.opted_out_tag_id or '' }}" class="{{ input_cls }}">
+    {% endcall %}
+
+    {% call field('Attendance Exception Tag ID', 'ManyChat tag applied when she is told she can come to the call on her own.') %}
+      <input type="text" name="attendance_exception_tag_id" value="{{ cfg.attendance_exception_tag_id or '' }}" class="{{ input_cls }}">
+    {% endcall %}
+
+    {% call field('Pregnancy Transfer Tag ID', 'ManyChat tag applied, beside human_handover, when a current client is pregnant and her account moves to The Pregnancy Solution.', 'mb-0') %}
+      <input type="text" name="pregnancy_transfer_tag_id" value="{{ cfg.pregnancy_transfer_tag_id or '' }}" class="{{ input_cls }}">
     {% endcall %}
   </section>
 

@@ -45,7 +45,8 @@ CONFIG_KEYS = [
     "booking_link", "masterclass_link", "replay_link",
     "years_experience", "babies_welcomed",
     "price_first_reply",
-    "qualified_tag_id", "opted_out_tag_id",
+    "qualified_tag_id", "opted_out_tag_id", "attendance_exception_tag_id",
+    "pregnancy_transfer_tag_id",
     "handover_message_review", "handover_message_crisis", "handover_message_crisis_unrouted",
     "handover_message_urgent_medical", "handover_message_medication", "handover_message_procedure",
     "brain_model", "read_model", "brain_temperature",
@@ -171,10 +172,10 @@ async def chat_post(request: Request, db: AsyncSession = Depends(get_db)):
         "human_takeover": result.pause,
         "takeover_reason": result.pause_reason,
         "opt_out": result.opt_out,
-        # The ManyChat tag the worker would add on this turn, by name, so the sandbox can show it.
-        "tag": ("opted_out" if result.opt_out
-                else "qualified" if result.add_tag and result.qualified
-                else "human_handover" if result.add_tag else None),
+        # The ManyChat tags the worker would add on this turn, by name, so the sandbox can show them.
+        "tags": (["opted_out"] if result.opt_out
+                 else ["qualified"] if result.add_tag and result.qualified
+                 else ["human_handover"] if result.add_tag else []) + result.labels,
         "lead_state": result.lead_state,
         "phase": (result.lead_state or {}).get("phase"),
         "action": result.action,

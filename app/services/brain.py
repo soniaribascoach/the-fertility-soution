@@ -100,6 +100,7 @@ class TurnResult:
     opt_out: bool = False                 # record the opt out; nothing is ever sent again
     add_tag: bool = False                 # flag her in ManyChat
     qualified: bool = False               # tag as qualified rather than review
+    labels: list = field(default_factory=list)  # extra tags for the team, by name ("<name>_tag_id")
     action: Optional[str] = None          # short label for the log
     usage: dict = field(default_factory=dict)
     violations: list = field(default_factory=list)
@@ -483,13 +484,18 @@ async def run_turn(
     if gate.block_reason == "english_materials_undisclosed" and reply:
         state["flags"]["english_materials_told"] = True
 
+    # What the team should see on her contact, beside the handover or qualified tag.
+    labels = [gate.route] if gate.route else []
+    if attendance == "attendance_exception":
+        labels.append("attendance_exception")
+
     if state.get("phase") in (dossier.LINK_SENT, dossier.POST_BOOKING):
         # Still paused: the team has her. The preparation lines go once, with the email.
         if state["phase"] == dossier.LINK_SENT and (state.get("slots") or {}).get("email"):
             state["phase"] = dossier.POST_BOOKING
         return TurnResult(
             reply_text=reply or None, lead_state=state, pause=True,
-            pause_reason="qualified_link_sent", add_tag=False,
+            pause_reason="qualified_link_sent", add_tag=False, labels=labels,
             action="AFTER_LINK", usage=usage, trace=trace,
         )
 
@@ -497,7 +503,7 @@ async def run_turn(
         state["phase"] = dossier.LINK_SENT
         return TurnResult(
             reply_text=reply or None, lead_state=state, pause=True,
-            pause_reason="qualified_link_sent", add_tag=True, qualified=True,
+            pause_reason="qualified_link_sent", add_tag=True, qualified=True, labels=labels,
             action="BOOKING_SENT", usage=usage, trace=trace,
         )
 
@@ -505,8 +511,8 @@ async def run_turn(
         # She has her answer. What is left is her account, which only the team can change.
         return TurnResult(
             reply_text=reply or None, lead_state=state, pause=True, pause_reason=gate.route,
-            add_tag=True, handover=True, action=f"REPLY_THEN_HANDOVER:{gate.route}",
-            usage=usage, trace=trace,
+            add_tag=True, handover=True, labels=labels,
+            action=f"REPLY_THEN_HANDOVER:{gate.route}", usage=usage, trace=trace,
         )
 
     # A conversation that has reached the link keeps the phase it reached. Overwriting it here sent
@@ -519,6 +525,6 @@ async def run_turn(
             state["phase"] = dossier.EXPLORING
 
     return TurnResult(
-        reply_text=reply or None, lead_state=state,
+        reply_text=reply or None, lead_state=state, labels=labels,
         action=f"REPLY:{read['intent']}", usage=usage, trace=trace,
     )
