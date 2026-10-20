@@ -1,8 +1,7 @@
 {
-  "version": "v4.1",
-  "revision": "29c1997",
+  "version": "v4.2",
   "manual": "v4.1 (Oct 11, 2026)",
-  "run_at": "2026-10-20 08:29 UTC",
+  "run_at": "2026-10-20 15:14 UTC",
   "sections": [
     {
       "name": "Program basics",
@@ -1134,9 +1133,9 @@
             },
             {
               "lead": "thank you!! i'm in month 3 of your full program, what happens to the rest of my time now?",
-              "reply": "The time you have left moves into The Pregnancy Solution at your Full level, at no extra cost. Your 6 months don’t restart, so you’ll continue with the remaining time you already have.",
-              "note": "path direct_answer | intent pregnancy_announcement | flags in_my_program | gate no link: in_my_program | action REPLY:pregnancy_announcement",
-              "action": "REPLY:pregnancy_announcement",
+              "reply": "Congratulations again! The time you have left moves into The Pregnancy Solution at your Full level, at no extra cost. Your 6 months don’t restart, so you’ll continue with the time remaining.\n\nMy team will move you over and be in touch about your account.",
+              "note": "path direct_answer | intent pregnancy_announcement | flags in_my_program | gate no link: in_my_program; then handover: pregnancy_transfer | action REPLY_THEN_HANDOVER:pregnancy_transfer | pause pregnancy_transfer | tag 86596410 (review) | state: paused",
+              "action": "REPLY_THEN_HANDOVER:pregnancy_transfer",
               "trace": {
                 "read": {
                   "path": "direct_answer",
@@ -1157,7 +1156,8 @@
                   "handover_message": "",
                   "price": "",
                   "notes": [
-                    "no link: in_my_program"
+                    "no link: in_my_program",
+                    "then handover: pregnancy_transfer"
                   ]
                 },
                 "playbooks": [
@@ -1174,7 +1174,10 @@
                   "qualification_ready",
                   "terminal"
                 ]
-              }
+              },
+              "tag": 86596410,
+              "qualified": false,
+              "paused_now": "pregnancy_transfer"
             }
           ],
           "id": "e09_pregnancy_transfer",
