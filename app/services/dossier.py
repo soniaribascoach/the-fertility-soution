@@ -117,6 +117,7 @@ class Gate:
     after_link: str = ""              # after the link, what this reply is for
     opt_out: bool = False             # she asked to stop: record it, reply nothing, never again
     price: str = ""                   # "offer" (no figures) or "figures", "" when she didn't ask
+    route: str = ""                   # answer her, then hand her to the team for this reason
 
 
 def handover_message(reason: str) -> str:
@@ -527,8 +528,12 @@ def gate(state: dict, read: dict, before: dict | None = None) -> Gate:
             blocked_for = "age_review_pending"
 
     if blocked_for:
-        return Gate(blocks=blocks, price=price, notes=[f"no link: {blocked_for}"],
-                    block_reason=blocked_for)
+        # A client who is now pregnant is told how her remaining time moves over, then the team
+        # switches her account (Oct 16 email §3, e09).
+        route = ("pregnancy_transfer"
+                 if blocked_for == "in_my_program" and flags.get("currently_pregnant") else "")
+        return Gate(blocks=blocks, price=price, block_reason=blocked_for, route=route,
+                    notes=[f"no link: {blocked_for}"] + ([f"then handover: {route}"] if route else []))
 
     blocks |= {"booking", "attendance"}
     return Gate(allow_booking=True, blocks=blocks, price=price, notes=["link available"])

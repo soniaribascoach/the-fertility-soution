@@ -31,11 +31,13 @@
       <p class="ar-display mt-1 text-[26px] leading-tight text-slate-900">Acceptance Results</p>
       {% set all_convs = data.sections | sum(attribute="conversations", start=[]) %}
       {% set passed = all_convs | selectattr("verdict", "equalto", "pass") | list | length %}
+      {% set partial = all_convs | selectattr("verdict", "equalto", "partial") | list | length %}
       {% set failed = all_convs | selectattr("verdict", "equalto", "fail") | list | length %}
       <p class="mt-2 text-[13px] text-slate-600">{{ all_convs | length }} conversations</p>
-      {% if passed or failed %}
+      {% if passed or partial or failed %}
       <p class="mt-1.5 flex gap-2 text-[12px] font-medium">
         <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">{{ passed }} pass</span>
+        <span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100">{{ partial }} partial</span>
         <span class="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-100">{{ failed }} fail</span>
       </p>
       {% endif %}
@@ -47,7 +49,7 @@
       {% for c in s.conversations %}
       <button type="button" data-conv="{{ c.id }}"
         class="conv-tab flex items-start gap-2 text-left pl-6 pr-3 py-1.5 rounded-md text-[13px] leading-snug transition-colors">
-        {% if c.verdict %}<span class="mt-[5px] w-2 h-2 rounded-full flex-shrink-0 {{ 'bg-emerald-500' if c.verdict == 'pass' else 'bg-rose-500' }}" title="{{ c.verdict }}"></span>{% endif %}
+        {% if c.verdict %}<span class="mt-[5px] w-2 h-2 rounded-full flex-shrink-0 {{ {'pass': 'bg-emerald-500', 'partial': 'bg-amber-500'}.get(c.verdict, 'bg-rose-500') }}" title="{{ c.verdict }}"></span>{% endif %}
         <span><span class="ar-mono text-[11px] text-slate-400 mr-1">{{ c.id.split('_')[0] }}</span>{{ c.title }}</span></button>
       {% endfor %}
       {% endfor %}
@@ -76,8 +78,8 @@
         <div class="max-w-[720px] mx-auto px-4 sm:px-8 py-8 space-y-4">
 
         {% if c.verdict %}
-        <div class="rounded-xl border px-4 py-3 text-[14px] leading-relaxed {{ 'bg-emerald-50/60 border-emerald-100 text-emerald-900' if c.verdict == 'pass' else 'bg-rose-50/60 border-rose-100 text-rose-900' }}">
-          <span class="text-[11px] font-bold uppercase tracking-[0.16em] {{ 'text-emerald-700' if c.verdict == 'pass' else 'text-rose-700' }}">{{ c.verdict }}</span>
+        <div class="rounded-xl border px-4 py-3 text-[14px] leading-relaxed {{ {'pass': 'bg-emerald-50/60 border-emerald-100 text-emerald-900', 'partial': 'bg-amber-50/60 border-amber-100 text-amber-900'}.get(c.verdict, 'bg-rose-50/60 border-rose-100 text-rose-900') }}">
+          <span class="text-[11px] font-bold uppercase tracking-[0.16em] {{ {'pass': 'text-emerald-700', 'partial': 'text-amber-700'}.get(c.verdict, 'text-rose-700') }}">{{ c.verdict }}</span>
           {% if c.comment %}<p class="mt-1">{{ c.comment }}</p>{% endif %}
         </div>
         {% endif %}

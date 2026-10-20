@@ -165,6 +165,14 @@ async def _run_brain_turn(db, ig_user_id, manychat_contact_id, cfg, app_state,
     if result.opt_out:
         if await opt_out(db, ig_user_id):
             await log_event(db, ig_user_id, "opt_out")
+        # ManyChat keeps its own opt-out list and cannot see ours. The tag is how its flows learn
+        # she asked to stop, so they skip her too.
+        otag = (cfg.get("opted_out_tag_id") or "").strip()
+        if otag.isdigit():
+            await app_state.manychat_client.add_tag(manychat_contact_id, int(otag))
+        else:
+            logger.warning("No opted_out_tag_id set. ManyChat flows are not told %s opted out",
+                           ig_user_id)
 
     # The tag goes first, because on a handover the line she is sent depends on whether it went
     # through: a line that says the team knows is only sent when the team was told (v4.1 §R).

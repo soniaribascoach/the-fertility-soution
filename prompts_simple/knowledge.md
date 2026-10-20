@@ -102,15 +102,14 @@ seeking pregnancy support. There is no other form note.
 [[/BLOCK]]
 
 [[BLOCK:attendance]]
-Attendance line, approved wording, for when the link goes to someone who hasn't said she is doing
+Attendance line, approved wording, for when the link goes to anyone who hasn't said she is doing
 this alone: "I strongly encourage you to choose a time you and your partner can both attend if you
-make these decisions together. You can both ask questions and explore which support fits." Say
-husband, wife or partner as she does.
-If she pushes back on attendance, one question: "Do you make these decisions independently, or would
-you and your partner be deciding together?"
-Exception, approved wording, once she has said she decides independently or her partner genuinely
-can't attend: "Okay, we'll make an exception and see you on your own. Please mention that we agreed
-this when you speak with my team."
+make these decisions together. You can both ask questions and explore which support fits." Word for
+word, but husband or wife if that is her word.
+If she pushes back on attendance or says her partner can't make it, one question: "Do you make these
+decisions independently, or would you and your partner be deciding together?"
+Exception, approved wording, only once she has said she decides independently: "Okay, we'll make an
+exception and see you on your own. Please mention that we agreed this when you speak with my team."
 A donor never needs to attend.
 [[/BLOCK]]
 

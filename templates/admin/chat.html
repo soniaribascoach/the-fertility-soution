@@ -299,6 +299,8 @@
   const conversationHistory = [];
   let leadState = null;
   let paused    = null;   // the pause reason, as the worker would store it on UserState
+  let optedOut  = false;  // UserState.opted_out_at: the worker drops everything after it
+  let attending = '';     // the attendance line the dashboard shows the team, last one noted
   let turnNo    = 0;
   let costTotal = 0;
 
@@ -311,6 +313,7 @@
     medical_deflection: ['Human takeover triggered', 'Medical blocklist phrase detected; deflection sent.', 'warn'],
     qualified_link_sent: ['Qualified / booking link sent', 'Intentional handoff, not an error. She has the booking link and the AI has stepped back. If she gave an email, verify the appointment on the calendar.', 'ok'],
     not_ready_nurture:   ['Nurture close / masterclass sent', 'Intentional soft close, not an error. Team follows up when she is ready.', 'ok'],
+    pregnancy_transfer:  ['Pregnancy transfer / handed to the team', 'Intentional handoff, not an error. She was told her remaining time moves to The Pregnancy Solution. The team switches her account over.', 'ok'],
   };
 
   function updatePhaseChip(phase, action) {
@@ -531,6 +534,10 @@
     input.value = '';
     autoResize();
     updateSendBtn();
+    if (optedOut) {
+      appendNote('Opted out. No reply sent.');
+      return;
+    }
     // Same as the worker: a paused lead's message is kept but not answered, except after the
     // booking link, where the brain decides whether it is part of booking.
     if (paused && paused !== 'qualified_link_sent') {
@@ -557,8 +564,24 @@
         appendMessage('ai', data.reply, turn);
       }
       pushTrace(turn, data);
-      if (data.human_takeover) {
+      // Same wording as the dashboard, so the team sees here what they will see there.
+      const slots = (leadState || {}).slots || {};
+      const nowAttending = slots.attendance === 'decides_alone' ? 'Attendance exception agreed: decides alone'
+                         : slots.partner_status === 'single_by_choice' ? 'Attending alone: solo parent'
+                         : '';
+      if (nowAttending && nowAttending !== attending) appendNote(nowAttending);
+      attending = nowAttending;
+      if (data.tag) appendNote(`Tag applied: ${data.tag}`);
+      // An opt out is answered with silence on purpose, so no reply here is not an error.
+      if (data.opt_out) {
+        optedOut = true;
+        appendNote('Opted out. No reply sent, and nothing she sends is answered again.');
+      } else if (data.human_takeover) {
         if (paused !== data.takeover_reason) appendTakeoverBanner(data.takeover_reason);
+        // Silent on purpose too: the banner went up with the link, so without this nothing shows.
+        if (data.action === 'AFTER_LINK_SILENT') {
+          appendNote('No reply sent. She has the booking link and nothing new about booking or attendance, so this is left for the team.');
+        }
         setPaused(data.takeover_reason);
       } else if (!data.reply) {
         appendMessage('ai', 'Something went wrong. Please try again.');
@@ -578,6 +601,8 @@
     conversationHistory.length = 0;
     leadState = null;
     setPaused(null);
+    optedOut = false;
+    attending = '';
     turnNo = 0;
     costTotal = 0;
     updatePhaseChip(null);

@@ -151,7 +151,8 @@ def _attendance_note(state: dict, before: dict) -> str:
     """The attendance note for this turn, "" when what she said about it hasn't changed.
 
     2B.1 §12: pushback gets one question. Once she has answered it, pushing back again is not a
-    new question; she is encouraged to find a time they can both make.
+    new question; she is encouraged to find a time they can both make. Only deciding alone is an
+    exception: a partner's schedule is pushback (Oct 16 email §1).
     """
     attendance = (state.get("slots") or {}).get("attendance")
     if attendance == ((before.get("slots") or {}).get("attendance")):
@@ -163,7 +164,7 @@ def _attendance_note(state: dict, before: dict) -> str:
         return "attendance_pushback"
     if attendance == "together":
         return "attendance_together"
-    if attendance in ("decides_alone", "partner_cannot_attend"):
+    if attendance == "decides_alone":
         return "attendance_exception"
     return ""
 
@@ -181,7 +182,7 @@ def _after_link_notes(gate: dossier.Gate, state: dict, attendance: str) -> list[
         notes.append("after_link_prepare")
         if attendance:
             return notes
-        if slots.get("attendance") in ("decides_alone", "partner_cannot_attend"):
+        if slots.get("attendance") == "decides_alone":
             notes.append("after_link_remind_exception")
         elif (slots.get("partner_status") in ("partnered", "same_sex_partner")
               and slots.get("attendance") != "together"):
@@ -260,6 +261,8 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str],
         add("early")
     if gate.block_reason:
         add(f"reason_{gate.block_reason}")
+    if gate.route:
+        add(f"route_{gate.route}")
 
     # The education spiral, counted in `dossier` rather than left to the writer to notice. Only
     # where she is being taught: a woman working through a boundary asks the same shape of
@@ -496,6 +499,14 @@ async def run_turn(
             reply_text=reply or None, lead_state=state, pause=True,
             pause_reason="qualified_link_sent", add_tag=True, qualified=True,
             action="BOOKING_SENT", usage=usage, trace=trace,
+        )
+
+    if gate.route:
+        # She has her answer. What is left is her account, which only the team can change.
+        return TurnResult(
+            reply_text=reply or None, lead_state=state, pause=True, pause_reason=gate.route,
+            add_tag=True, handover=True, action=f"REPLY_THEN_HANDOVER:{gate.route}",
+            usage=usage, trace=trace,
         )
 
     # A conversation that has reached the link keeps the phase it reached. Overwriting it here sent

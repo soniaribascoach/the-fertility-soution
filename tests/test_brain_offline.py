@@ -1029,7 +1029,7 @@ def test_attendance_pushback_gets_one_question_then_never_again():
 
 
 def test_an_agreed_exception_is_given_and_remembered_after_booking():
-    before = _after_link({"attendance": "partner_cannot_attend", "partner_status": "partnered"})
+    before = _after_link({"attendance": "decides_alone", "partner_status": "partnered"})
     read = {"intent": "new_prospect", "flags": {"says_booked": True}, "slots": {"email": "a@b.co"}}
     state = dossier.merge(before, read)
     gate = dossier.gate(state, read, before)

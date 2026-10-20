@@ -131,6 +131,7 @@
         "requested_medication": ("Medication decision · clinician line sent", "warn"),
         "requested_surgery_advice": ("Procedure decision · clinician line sent", "warn"),
         "crisis": ("Crisis · helpline sent", "warn"),
+        "pregnancy_transfer": ("Client pregnant · move to The Pregnancy Solution", "ok"),
       } %}
       {% for lead in paused_leads %}
       {% if lead.opted_out_at %}
@@ -149,8 +150,10 @@
           <div class="mt-1 text-xs text-slate-500">Booking not approved. Resume alone keeps the link shut.</div>
           {% endif %}
           {% set attendance = ((lead.qualification or {}).get('slots') or {}).get('attendance') %}
-          {% if attendance in ('decides_alone', 'partner_cannot_attend') %}
-          <div class="mt-1 text-xs text-slate-500">Attendance exception agreed: {{ 'decides alone' if attendance == 'decides_alone' else 'partner cannot attend' }}</div>
+          {% if attendance == 'decides_alone' %}
+          <div class="mt-1 text-xs text-slate-500">Attendance exception agreed: decides alone</div>
+          {% elif ((lead.qualification or {}).get('slots') or {}).get('partner_status') == 'single_by_choice' %}
+          <div class="mt-1 text-xs text-slate-500">Attending alone: solo parent</div>
           {% endif %}
         </td>
         <td class="px-4 py-3.5 text-xs text-slate-500">{{ lead.phase or "-" }}</td>
