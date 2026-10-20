@@ -1179,8 +1179,8 @@
           ],
           "id": "e09_pregnancy_transfer",
           "title": "TFS client announces pregnancy",
-          "verdict": "partial",
-          "comment": "Celebrates, then explains the remaining time moves to TPS at her level at no extra cost, without a restart. Missing: account-specific handling is not routed to the team."
+          "verdict": "pass",
+          "comment": "Celebrates, explains the remaining time moves to TPS at her level at no extra cost without a restart, then hands her to the team to move her account over."
         }
       ]
     },
