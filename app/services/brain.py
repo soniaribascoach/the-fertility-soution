@@ -151,23 +151,14 @@ def _usage(read_model: str, write_model: str, read_usage: dict, response) -> dic
 def _attendance_note(state: dict, before: dict) -> str:
     """The attendance note for this turn, "" when what she said about it hasn't changed.
 
-    2B.1 §12: pushback gets one question. Once she has answered it, pushing back again is not a
-    new question; she is encouraged to find a time they can both make. Only deciding alone is an
-    exception: a partner's schedule is pushback (Oct 16 email §1).
+    2B.1 §12 (v4.3): the attendance line with the link is the one encouragement. When she confirms
+    after it that her partner can't come, she gets the exception, even if they decide together.
     """
     attendance = (state.get("slots") or {}).get("attendance")
     if attendance == ((before.get("slots") or {}).get("attendance")):
         return ""
-    if attendance == "pushback":
-        if (state.get("flags") or {}).get("attendance_asked"):
-            return "attendance_together"
-        state["flags"]["attendance_asked"] = True
-        return "attendance_pushback"
-    if attendance == "together":
-        return "attendance_together"
-    if attendance == "decides_alone":
-        return "attendance_exception"
-    return ""
+    return {"confirmed_cannot_attend": "attendance_exception",
+            "decides_alone": "attendance_alone"}.get(attendance, "")
 
 
 def _after_link_notes(gate: dossier.Gate, state: dict, attendance: str) -> list[str]:
@@ -183,7 +174,7 @@ def _after_link_notes(gate: dossier.Gate, state: dict, attendance: str) -> list[
         notes.append("after_link_prepare")
         if attendance:
             return notes
-        if slots.get("attendance") == "decides_alone":
+        if slots.get("attendance") in dossier.ATTENDING_ALONE:
             notes.append("after_link_remind_exception")
         elif (slots.get("partner_status") in ("partnered", "same_sex_partner")
               and slots.get("attendance") != "together"):
@@ -250,7 +241,9 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str],
         add("booking_open")
         if not dossier._stated(slots.get("age")) and not dossier._pregnancy_prospect(state):
             add("age_unknown")
-        add("partner_solo" if slots.get("partner_status") == "single_by_choice" else "partner_invite")
+        alone = (slots.get("partner_status") == "single_by_choice"
+                 or slots.get("attendance") in dossier.ATTENDING_ALONE)
+        add("partner_solo" if alone else "partner_invite")
     elif gate.price != "offer":
         # The approved first price reply offers the free call itself (v4.1 §5.3), so on that turn
         # the note that forbids mentioning a call would contradict it.
@@ -486,7 +479,7 @@ async def run_turn(
 
     # What the team should see on her contact, beside the handover or qualified tag.
     labels = [gate.route] if gate.route else []
-    if attendance == "attendance_exception":
+    if attendance:
         labels.append("attendance_exception")
 
     if state.get("phase") in (dossier.LINK_SENT, dossier.POST_BOOKING):

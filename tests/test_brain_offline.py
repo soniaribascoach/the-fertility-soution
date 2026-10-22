@@ -1015,21 +1015,24 @@ def test_a_crisis_after_the_link_still_hands_over():
     assert gate.escalate and gate.handover_message == "handover_message_crisis"
 
 
-def test_attendance_pushback_gets_one_question_then_never_again():
-    """2B.1 §12: one question on pushback; once answered, it can't repeat."""
-    before = _after_link()
-    push = {"slots": {"attendance": "pushback"}, "flags": {}}
-    state = dossier.merge(before, push)
-    assert brain._attendance_note(state, before) == "attendance_pushback"
+def test_a_confirmed_cannot_attend_gets_the_exception_once():
+    """2B.1 §12 (v4.3): the exception follows her confirmation, even if they decide together."""
+    before = _after_link({"partner_status": "partnered"})
+    state = dossier.merge(before, {"slots": {"attendance": "confirmed_cannot_attend"}, "flags": {}})
+    assert brain._attendance_note(state, before) == "attendance_exception"
+    assert brain._attendance_note(dossier.merge(state, {"slots": {}, "flags": {}}), state) == ""
 
-    answered = dossier.merge(state, {"slots": {"attendance": "together"}, "flags": {}})
-    again_before = answered
-    again = dossier.merge(answered, push)
-    assert brain._attendance_note(again, again_before) == "attendance_together"
+
+def test_cannot_attend_before_the_link_waits_for_the_attendance_line():
+    before = _state({**QUALIFIED, "partner_status": "partnered"})
+    state = dossier.merge(before, {"slots": {"attendance": "cannot_attend"}, "flags": {}})
+    assert brain._attendance_note(state, before) == ""
+    gate = dossier.gate(state, {"intent": "warm_prospect"})
+    assert "attendance line" in brain._brief(gate, {"intent": "warm_prospect"}, state, [])
 
 
 def test_an_agreed_exception_is_given_and_remembered_after_booking():
-    before = _after_link({"attendance": "decides_alone", "partner_status": "partnered"})
+    before = _after_link({"attendance": "confirmed_cannot_attend", "partner_status": "partnered"})
     read = {"intent": "new_prospect", "flags": {"says_booked": True}, "slots": {"email": "a@b.co"}}
     state = dossier.merge(before, read)
     gate = dossier.gate(state, read, before)

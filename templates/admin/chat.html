@@ -567,6 +567,7 @@
       // Same wording as the dashboard, so the team sees here what they will see there.
       const slots = (leadState || {}).slots || {};
       const nowAttending = slots.attendance === 'decides_alone' ? 'Attendance exception agreed: decides alone'
+                         : slots.attendance === 'confirmed_cannot_attend' ? "Attendance exception agreed: partner can't attend"
                          : slots.partner_status === 'single_by_choice' ? 'Attending alone: solo parent'
                          : '';
       if (nowAttending && nowAttending !== attending) appendNote(nowAttending);

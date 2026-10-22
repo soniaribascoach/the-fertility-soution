@@ -71,13 +71,14 @@ on its own does not mean she is pregnant.
   - A wife or girlfriend is `same_sex_partner`. Doing this on her own is `single_by_choice`.
   - Donor sperm says nothing about a partner. A couple can use a donor.
 - `donor_sperm`: true when she is using or planning to use donor sperm.
-- `attendance`: who decides, from what she said once the call came up. `together` |
-  `decides_alone` | `pushback`.
-  - `pushback`: she resists her partner attending, asks to come alone, or says her partner can't
-    make it (away, shifts, busy), without saying who decides.
-  - `decides_alone`: she says she makes these decisions independently.
-  - `together`: they decide together, or he or she will be on the call. Still `together` when she
-    adds that her partner can't make it.
+- `attendance`: whether her partner will be on the call, from what she said once the call came up.
+  `together` | `cannot_attend` | `confirmed_cannot_attend` | `decides_alone`.
+  - `together`: her partner will be on the call.
+  - `cannot_attend`: her partner can't make it (away, shifts, busy), or she asks to come alone.
+    Who decides doesn't change this.
+  - `confirmed_cannot_attend`: Sonia has already asked her to choose a time they can both attend,
+    and she says her partner still can't.
+  - `decides_alone`: she says she makes these decisions on her own.
   - The latest thing she said wins.
 - `pregnancy_priority`: `high` | `unclear` | `low`.
   - `high` if a cycle is booked or done, a treatment is decided, she has tried 2 or more years, or

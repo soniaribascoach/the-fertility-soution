@@ -150,8 +150,8 @@
           <div class="mt-1 text-xs text-slate-500">Booking not approved. Resume alone keeps the link shut.</div>
           {% endif %}
           {% set attendance = ((lead.qualification or {}).get('slots') or {}).get('attendance') %}
-          {% if attendance == 'decides_alone' %}
-          <div class="mt-1 text-xs text-slate-500">Attendance exception agreed: decides alone</div>
+          {% if attendance in ('confirmed_cannot_attend', 'decides_alone') %}
+          <div class="mt-1 text-xs text-slate-500">Attendance exception agreed: {{ 'decides alone' if attendance == 'decides_alone' else "partner can't attend" }}</div>
           {% elif ((lead.qualification or {}).get('slots') or {}).get('partner_status') == 'single_by_choice' %}
           <div class="mt-1 text-xs text-slate-500">Attending alone: solo parent</div>
           {% endif %}

@@ -80,6 +80,9 @@ UNROUTED_MESSAGES = {
 # Never a rejection, and never applied to a pregnant woman asking about The Pregnancy Solution.
 AGE_REVIEW = 48
 
+# What she said about her partner that means she comes to the call on her own (2B.1 §12).
+ATTENDING_ALONE = ("confirmed_cannot_attend", "decides_alone")
+
 # Structural findings that close off a booking entirely (2B.1 §6, §9).
 BLOCKING_STRUCTURAL = ("no_uterus", "menopause")
 

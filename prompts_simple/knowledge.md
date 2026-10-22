@@ -103,13 +103,12 @@ seeking pregnancy support. There is no other form note.
 
 [[BLOCK:attendance]]
 Attendance line, approved wording, for when the link goes to anyone who hasn't said she is doing
-this alone: "I strongly encourage you to choose a time you and your partner can both attend if you
-make these decisions together. You can both ask questions and explore which support fits." Word for
-word, but husband or wife if that is her word.
-If she pushes back on attendance or says her partner can't make it, one question: "Do you make these
-decisions independently, or would you and your partner be deciding together?"
-Exception, approved wording, only once she has said she decides independently: "Okay, we'll make an
-exception and see you on your own. Please mention that we agreed this when you speak with my team."
+this alone: "We really prefer it when both partners join the call. It makes for a much more powerful
+conversation when you can both ask questions and explore important decisions for your family
+together. Could you choose a time you can both attend?" Word for word.
+Exception, approved wording, once she confirms her partner truly can't attend, even if they decide
+together: "I understand. If your partner truly cannot attend with you, we'll make an exception and
+see you on your own. Please mention to my team that we agreed this."
 A donor never needs to attend.
 [[/BLOCK]]
 

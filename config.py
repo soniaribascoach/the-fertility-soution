@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings
 
 # Product version shown in the admin UI. It follows the Operating Manual it implements, so the
 # sidebar and the manual use the same number.
-APP_VERSION = "v4.2"
+APP_VERSION = "v4.3"
 
 # Name of the brain generation, so the sidebar says which one is live, not only a number.
 APP_BRAIN = "brain v3"

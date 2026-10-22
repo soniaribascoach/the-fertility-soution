@@ -1,7 +1,7 @@
 {
-  "version": "v4.2",
-  "manual": "v4.1 (Oct 11, 2026)",
-  "run_at": "2026-10-20 15:30 UTC",
+  "version": "v4.3",
+  "manual": "v4.3 (Oct 20, 2026)",
+  "run_at": "2026-10-22 06:56 UTC",
   "sections": [
     {
       "name": "Program basics",
@@ -10,7 +10,7 @@
           "turns": [
             {
               "lead": "how long is the fertility solution and what's included?",
-              "reply": "The Fertility Solution runs for 6 months and includes 16 modules with videos, worksheets and trackers, covering areas like food, sleep, stress, movement and your environment.\n\nWhat’s included beyond the modules depends on the level of support you choose.",
+              "reply": "The Fertility Solution runs for 6 months and has 16 modules with videos, worksheets and trackers, covering areas like food, movement, stress, sleep, your environment and relationships.\n\nThere are 3 levels of support: Self paced includes the modules and resources, Group adds live sessions twice a week, recordings and the private community, and Full adds private sessions and texting with me.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -52,7 +52,7 @@
             },
             {
               "lead": "how many modules are there and what are they called?",
-              "reply": "There are 16 modules:\n\nWelcome and Prepare, Eat Well, Hydrate, Supplement, Move, Optimize Body Weight, Manage Stress, Sleep Well, Clean Your Environment, Think Better, Feel More Joy, Empower Yourself, Improve Your Relationships, Find Your Groove, Attract, and Male Factor.",
+              "reply": "There are 16 modules: Welcome and Prepare, Eat Well, Hydrate, Supplement, Move, Optimize Body Weight, Manage Stress, Sleep Well, Clean Your Environment, Think Better, Feel More Joy, Empower Yourself, Improve Your Relationships, Find Your Groove, Attract, and Male Factor.",
               "note": "path direct_answer | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -63,7 +63,7 @@
                   "explicit_question": "how many modules are there and what are they called?",
                   "price_ask": null,
                   "explained": [
-                    "6-month program with 16 modules, videos, worksheets and trackers covering food, sleep, stress, movement and environment"
+                    "the 3 levels and what each includes"
                   ],
                   "slots": {},
                   "flags": {}
@@ -96,19 +96,20 @@
             },
             {
               "lead": "how many group sessions a week?",
-              "reply": "The Fertility Solution has 2 live group sessions each week.",
-              "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
+              "reply": "The Fertility Solution has 2 live group sessions a week.",
+              "note": "path direct_answer | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
-                  "path": "qualification",
+                  "path": "direct_answer",
                   "intent": "new_prospect",
                   "language": "en",
                   "explicit_question": "how many group sessions a week?",
                   "price_ask": null,
                   "explained": [
-                    "The Fertility Solution lasts 6 months and includes 16 modules with videos, worksheets and trackers",
-                    "the names of the 16 modules"
+                    "The Fertility Solution is 6 months with 16 modules",
+                    "the 3 levels and what each includes",
+                    "the 16 module names"
                   ],
                   "slots": {},
                   "flags": {}
@@ -141,20 +142,21 @@
             },
             {
               "lead": "is it shorter if i do self paced?",
-              "reply": "No, Self paced is still 6 months. You get the modules and resources to work through on your own.",
-              "note": "path direct_answer | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
+              "reply": "No, Self paced is still 6 months. The length is the same at every level.",
+              "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
-                  "path": "direct_answer",
+                  "path": "qualification",
                   "intent": "new_prospect",
                   "language": "en",
                   "explicit_question": "is it shorter if i do self paced?",
                   "price_ask": null,
                   "explained": [
-                    "the 6-month program and 16 modules",
-                    "the 16 module names",
-                    "2 live group sessions each week"
+                    "the 3 levels and what each includes",
+                    "the 16 modules and their names",
+                    "the program is 6 months long",
+                    "there are 2 live group sessions a week"
                   ],
                   "slots": {},
                   "flags": {}
@@ -195,7 +197,7 @@
           "turns": [
             {
               "lead": "i'm 14 weeks pregnant. what's in your pregnancy program?",
-              "reply": "Congratulations on 14 weeks! The Pregnancy Solution is my 6-month program for women who are already pregnant, with 18 modules adapted to each pregnancy. It uses my DETOX, NOURISH and FLOW method: looking at everyday factors that may be getting in your way, what you and your baby need, and routines that fit your life.\n\nWhat’s included depends on the level. Full has private sessions and texting with me, Group includes weekly live sessions and the community, and Self paced is the modules and resources to work through on your own.",
+              "reply": "Congratulations on 14 weeks! The Pregnancy Solution is my 6-month program for women who are already pregnant, with 18 modules adapted to each pregnancy. It covers areas like food, rest, movement, stress, your environment and relationships, then birth preparation and baby essentials.\n\nThere are 3 levels of support: Self paced includes the modules and resources; Group adds weekly live sessions, recordings and a private community; Full also includes private sessions with me and unlimited texting.",
               "note": "path qualification | intent pregnancy_announcement | flags wants_pregnancy_support | gate no link: first_exchange | action REPLY:pregnancy_announcement",
               "action": "REPLY:pregnancy_announcement",
               "trace": {
@@ -239,7 +241,7 @@
             },
             {
               "lead": "how many modules and how long does it run?",
-              "reply": "The Pregnancy Solution has 18 modules and runs for 6 months.",
+              "reply": "The Pregnancy Solution has 18 modules and runs for 6 months at every level.",
               "note": "path direct_answer | intent pregnancy_announcement | flags wants_pregnancy_support | gate link available | action REPLY:pregnancy_announcement",
               "action": "REPLY:pregnancy_announcement",
               "trace": {
@@ -250,8 +252,8 @@
                   "explicit_question": "how many modules and how long does it run?",
                   "price_ask": null,
                   "explained": [
-                    "The Pregnancy Solution is a 6-month program with 18 modules",
-                    "DETOX, NOURISH and FLOW",
+                    "The Pregnancy Solution is a 6-month program with 18 modules adapted to each pregnancy",
+                    "the program covers food, rest, movement, stress, environment, relationships, birth preparation and baby essentials",
                     "the 3 levels and what each includes"
                   ],
                   "slots": {},
@@ -288,18 +290,16 @@
             {
               "lead": "how often are the group calls?",
               "reply": "The Pregnancy Solution group calls are once a week.",
-              "note": "path qualification | intent new_prospect | flags wants_pregnancy_support | gate link available | action REPLY:new_prospect",
-              "action": "REPLY:new_prospect",
+              "note": "path qualification | intent pregnancy_announcement | flags wants_pregnancy_support | gate link available | action REPLY:pregnancy_announcement",
+              "action": "REPLY:pregnancy_announcement",
               "trace": {
                 "read": {
                   "path": "qualification",
-                  "intent": "new_prospect",
+                  "intent": "pregnancy_announcement",
                   "language": "en",
                   "explicit_question": "how often are the group calls?",
                   "price_ask": null,
                   "explained": [
-                    "The Pregnancy Solution is a 6-month program with 18 modules",
-                    "DETOX, NOURISH and FLOW",
                     "the 3 levels and what each includes"
                   ],
                   "slots": {},
@@ -335,26 +335,23 @@
             },
             {
               "lead": "is there a male factor module in it?",
-              "reply": "No, The Pregnancy Solution doesn’t have a Male Factor module. Its 18 modules focus on pregnancy, including birth preparation and baby essentials.",
-              "note": "path qualification | intent pregnancy_announcement | flags wants_pregnancy_support | gate link available | action REPLY:pregnancy_announcement",
+              "reply": "No, The Pregnancy Solution doesn’t have a Male Factor module. Its 18 modules are focused on pregnancy, birth preparation and baby essentials.",
+              "note": "path direct_answer | intent pregnancy_announcement | flags - | gate link available | action REPLY:pregnancy_announcement",
               "action": "REPLY:pregnancy_announcement",
               "trace": {
                 "read": {
-                  "path": "qualification",
+                  "path": "direct_answer",
                   "intent": "pregnancy_announcement",
                   "language": "en",
                   "explicit_question": "is there a male factor module in it?",
                   "price_ask": null,
                   "explained": [
-                    "The Pregnancy Solution is a 6-month program with 18 modules for women who are pregnant",
-                    "DETOX, NOURISH and FLOW",
-                    "the 3 levels and what each includes",
-                    "group calls are once a week"
+                    "The Pregnancy Solution is a 6-month program with 18 modules and covers food, rest, movement, stress, environment, relationships, birth preparation and baby essentials",
+                    "The three support levels: Self paced, Group and Full, and what each includes",
+                    "Group calls are once a week"
                   ],
                   "slots": {},
-                  "flags": {
-                    "wants_pregnancy_support": true
-                  }
+                  "flags": {}
                 },
                 "gate": {
                   "allow_booking": true,
@@ -397,7 +394,7 @@
           "turns": [
             {
               "lead": "if i did self paced would i get the group recordings?",
-              "reply": "No. Self paced includes the modules and resources only. The group recordings are included with the Group and Full levels.",
+              "reply": "No, Self paced includes the modules and resources only. Group recordings are included in the Group and Full levels.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -439,12 +436,12 @@
             },
             {
               "lead": "could i join the facebook group on self paced?",
-              "reply": "No, the private Facebook community isn’t included with Self paced. It’s included with Group and Full.",
-              "note": "path direct_answer | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
+              "reply": "No, the private Facebook community isn’t included with Self paced. It comes with Group and Full.",
+              "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
-                  "path": "direct_answer",
+                  "path": "qualification",
                   "intent": "new_prospect",
                   "language": "en",
                   "explicit_question": "could i join the facebook group on self paced?",
@@ -483,7 +480,7 @@
             },
             {
               "lead": "and could i text you with questions?",
-              "reply": "No, texting with me is part of Full. Self paced includes the modules and resources, without coaching or messaging support.",
+              "reply": "No, texting with me is included in Full, not Self paced. On Self paced, you’d work through the modules and resources on your own.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -528,7 +525,7 @@
             },
             {
               "lead": "what if i just needed private advice now and then?",
-              "reply": "Private advice by text or in sessions with me is part of Full, which includes up to 2 private 20-minute sessions a month and unlimited texting between sessions. Self paced doesn’t include private coaching. Is occasional private support what matters most to you, or would you rather work through the material on your own?",
+              "reply": "If you mean occasional private support from me, that’s part of the Full program, which includes up to 2 private sessions with me each month and unlimited texting between sessions. Self paced doesn’t include private coaching.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -539,7 +536,7 @@
                   "explicit_question": "what if i just needed private advice now and then?",
                   "price_ask": null,
                   "explained": [
-                    "what Self paced includes and excludes"
+                    "what each level includes"
                   ],
                   "slots": {},
                   "flags": {}
@@ -580,7 +577,7 @@
           "turns": [
             {
               "lead": "on the group level do i get a personalized meal plan?",
-              "reply": "No, the personalized meal plan is part of Full. Group includes the Eat Well module with hundreds of recipes, plus live group sessions twice a week where you can bring your questions.",
+              "reply": "No, a personalized meal plan is included in Full, not Group. Group includes the Eat Well module with hundreds of recipes, plus live sessions twice a week where you can bring your questions.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -622,7 +619,7 @@
             },
             {
               "lead": "would you monitor my hormones daily on group?",
-              "reply": "No, daily review of the fertility tracker hormone information is included in Full, not Group. On Group, you get the modules and resources, live sessions twice a week, recordings and the private community.",
+              "reply": "No, daily hormone tracker reviews are part of Full, not Group. In Group, you have the live sessions twice a week to bring questions about your tracker.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -633,7 +630,7 @@
                   "explicit_question": "would you monitor my hormones daily on group?",
                   "price_ask": null,
                   "explained": [
-                    "personalized meal plan is part of Full; Group includes the Eat Well module with recipes and live group sessions"
+                    "what Full and Group include"
                   ],
                   "slots": {},
                   "flags": {}
@@ -666,7 +663,7 @@
             },
             {
               "lead": "on full how many private sessions do i get and how long are they?",
-              "reply": "Full includes up to 2 private sessions with me each month, and each session is 20 minutes.",
+              "reply": "On Full, you get up to 2 private sessions with me each month, and they’re 20 minutes each.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -677,7 +674,7 @@
                   "explicit_question": "on full how many private sessions do i get and how long are they?",
                   "price_ask": null,
                   "explained": [
-                    "Full vs Group inclusions"
+                    "what Full and Group include"
                   ],
                   "slots": {},
                   "flags": {}
@@ -807,7 +804,7 @@
             },
             {
               "lead": "can you give me all 3 levels for both?",
-              "reply": "Both programs have the same 3 levels and prices for 6 months:\n\nThe Fertility Solution: Full is $7,200, Group is $3,800, and Self paced is $1,500.\n\nThe Pregnancy Solution: Full is $7,200, Group is $3,800, and Self paced is $1,500.",
+              "reply": "Both programs are 6 months. The prices are the same for each:\n\nThe Fertility Solution: Full $7,200, Group $3,800, Self paced $1,500.\n\nThe Pregnancy Solution: Full $7,200, Group $3,800, Self paced $1,500.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -859,7 +856,7 @@
           "turns": [
             {
               "lead": "can i pay in installments?",
-              "reply": "Yes. You can pay half upfront and the other half in 30 days at no extra cost. A longer payment plan may be possible, but it usually costs more overall, and my team would need to confirm the details.",
+              "reply": "Yes. You can pay in full, or split the cost into 2 payments: half upfront and half in 30 days, with no extra cost. Longer payment plans may be possible, but they usually cost more overall and my team would need to confirm the terms.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -901,7 +898,7 @@
             },
             {
               "lead": "so for full what would i pay now and later?",
-              "reply": "For Full, you’d pay $3,600 now and $3,600 in 30 days, for a total of $7,200.",
+              "reply": "For Full, you’d pay $3,600 upfront and $3,600 in 30 days, with no extra cost.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -912,7 +909,7 @@
                   "explicit_question": "so for full what would i pay now and later?",
                   "price_ask": "specific",
                   "explained": [
-                    "the installment payment options"
+                    "payment options: half upfront and half in 30 days, or longer plans that may cost more"
                   ],
                   "slots": {},
                   "flags": {}
@@ -945,21 +942,23 @@
             },
             {
               "lead": "could i spread it over 6 months instead?",
-              "reply": "A 6 month payment plan would need to be confirmed by my team, and a longer plan usually costs more overall. I don’t have the exact monthly amounts.",
-              "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
-              "action": "REPLY:new_prospect",
+              "reply": "A 6 month payment plan would need to be confirmed by my team, and it may cost more overall.",
+              "note": "path qualification | intent warm_prospect | flags wants_to_buy | gate no link: not_enough_context | action REPLY:warm_prospect",
+              "action": "REPLY:warm_prospect",
               "trace": {
                 "read": {
                   "path": "qualification",
-                  "intent": "new_prospect",
+                  "intent": "warm_prospect",
                   "language": "en",
                   "explicit_question": "could i spread it over 6 months instead?",
                   "price_ask": "specific",
                   "explained": [
-                    "Full price and payment split"
+                    "the price range"
                   ],
                   "slots": {},
-                  "flags": {}
+                  "flags": {
+                    "wants_to_buy": true
+                  }
                 },
                 "gate": {
                   "allow_booking": false,
@@ -989,7 +988,7 @@
             },
             {
               "lead": "how much extra would that cost exactly?",
-              "reply": "I don’t have the exact cost for a 6 month plan. My team would need to confirm the total with you.",
+              "reply": "I don’t have the exact amount for a 6 month plan. My team would need to confirm the total and payment schedule.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1000,8 +999,7 @@
                   "explicit_question": "how much extra would that cost exactly?",
                   "price_ask": "specific",
                   "explained": [
-                    "installment payment options",
-                    "Full price"
+                    "the Full price and payment terms"
                   ],
                   "slots": {},
                   "flags": {}
@@ -1034,7 +1032,7 @@
             },
             {
               "lead": "is there a max of 10000 or something on plans?",
-              "reply": "I don’t have a confirmed maximum for longer payment plans, so I can’t say whether there’s a $10,000 cap. My team can confirm the exact terms.",
+              "reply": "I don’t have a set maximum for longer payment plans. They can cost more overall, and my team would need to confirm the exact total and terms.",
               "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1045,7 +1043,8 @@
                   "explicit_question": "is there a max of 10000 or something on plans?",
                   "price_ask": "specific",
                   "explained": [
-                    "Full costs $7,200, split into $3,600 upfront and $3,600 in 30 days"
+                    "Full costs $3,600 upfront and $3,600 in 30 days",
+                    "payment options, including that longer plans may cost more and need team confirmation"
                   ],
                   "slots": {},
                   "flags": {}
@@ -1133,12 +1132,12 @@
             },
             {
               "lead": "thank you!! i'm in month 3 of your full program, what happens to the rest of my time now?",
-              "reply": "Congratulations again! The time you have left moves into The Pregnancy Solution at your Full level, at no extra cost. It doesn’t restart the 6 months, so you’ll continue with the remaining time you already have.\n\nMy team will move you over and be in touch about your account.",
-              "note": "path direct_answer | intent pregnancy_announcement | flags in_my_program | gate no link: in_my_program; then handover: pregnancy_transfer | action REPLY_THEN_HANDOVER:pregnancy_transfer | pause pregnancy_transfer | tag 86596410 (review) | labels pregnancy_transfer | state: paused",
+              "reply": "Congratulations again! Your remaining time moves into The Pregnancy Solution at your current Full level, at no extra cost. Your 6 months don’t restart, so you’ll continue with the time you have left.\n\nMy team will move you over and be in touch about your account.",
+              "note": "path qualification | intent pregnancy_announcement | flags in_my_program | gate no link: in_my_program; then handover: pregnancy_transfer | action REPLY_THEN_HANDOVER:pregnancy_transfer | pause pregnancy_transfer | tag 86596410 (review) | labels pregnancy_transfer | state: paused",
               "action": "REPLY_THEN_HANDOVER:pregnancy_transfer",
               "trace": {
                 "read": {
-                  "path": "direct_answer",
+                  "path": "qualification",
                   "intent": "pregnancy_announcement",
                   "language": "en",
                   "explicit_question": "what happens to the rest of my time now?",
@@ -1198,7 +1197,7 @@
           "turns": [
             {
               "lead": "what does your program actually do?",
-              "reply": "My method is DETOX, NOURISH and FLOW: we look at everyday factors that may be getting in the way, work out what your body needs, and build routines that support your fertility and fit your real life. The Fertility Solution has 16 modules over 6 months, with different levels of support depending on how closely you want to work with me.",
+              "reply": "My method is DETOX, NOURISH and FLOW: we look at everyday lifestyle factors that may be getting in your way, what your body needs, and how to build supportive routines that fit your real life. The Fertility Solution takes you through 16 modules over 6 months, with different levels of support depending on how closely you want to work with me.",
               "note": "path qualification | intent new_prospect | flags doubts_value | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1242,7 +1241,7 @@
             },
             {
               "lead": "that sounds a bit vague tbh. what would you actually do with me?",
-              "reply": "Fair. In my Full program, you send me your fertility tracker information and I review it daily, your meal plan is built around your needs, and you can text me between private sessions so I can help you apply the work to what’s happening day to day. In Group, you bring your questions to live sessions twice a week.",
+              "reply": "Fair point. In my Full program, you send me your fertility tracker information and I review it daily, your meal plan is built around your needs, and you can text me what’s happening so I help you apply the work between our private sessions. In Group, you bring your questions to the live sessions twice a week.",
               "note": "path qualification | intent new_prospect | flags doubts_value | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1288,7 +1287,7 @@
             },
             {
               "lead": "i'm 36, pcos, trying 18 months naturally",
-              "reply": "With PCOS, we’d look at everyday factors that may affect blood sugar and cycles, what your body needs, and how to make supportive routines work in your real life. After 18 months of trying, the focus would be on bringing those pieces together rather than handing you another generic PCOS checklist.",
+              "reply": "With PCOS, we’d look at what in your routines may be affecting blood sugar and cycles, what your body needs, and how to make changes manageable in your everyday life. Since you’re trying naturally, we’d keep the focus on supporting your overall fertility rather than handing you another generic PCOS checklist.",
               "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"18 months\", \"conceiving_mode\": \"natural\", \"diagnoses\": [\"PCOS\"]} | gate link available | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1340,19 +1339,19 @@
             },
             {
               "lead": "still not sure how that's different from reading stuff online",
-              "reply": "Online advice is general. The difference is applying it to your PCOS and your actual routines, then seeing what’s working. In Full, you send me your tracker information and I review it daily, and you can text me between private sessions so I can help you adjust as you go.",
-              "note": "path direct_answer | intent new_prospect | flags doubts_value | slots {\"age\": 36, \"time_trying\": \"18 months\", \"conceiving_mode\": \"natural\", \"diagnoses\": [\"PCOS\"], \"pregnancy_priority\": \"high\"} | gate no link: value_question | action REPLY:new_prospect",
+              "reply": "Online advice can’t show you which changes are relevant to your PCOS or whether they’re working for you. In my Full program, you send me your tracker information and what’s happening day to day, and I review it and help you apply the work to your routines. With Group, you can bring your questions to the live sessions twice a week.",
+              "note": "path qualification | intent new_prospect | flags doubts_value | slots {\"age\": 36, \"time_trying\": \"18 months\", \"conceiving_mode\": \"natural\", \"diagnoses\": [\"PCOS\"]} | gate no link: value_question | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
-                  "path": "direct_answer",
+                  "path": "qualification",
                   "intent": "new_prospect",
                   "language": "en",
                   "explicit_question": "still not sure how that's different from reading stuff online",
                   "price_ask": null,
                   "explained": [
                     "DETOX, NOURISH and FLOW",
-                    "16 modules over 6 months, with different levels of support"
+                    "the 3 levels and what each includes"
                   ],
                   "slots": {
                     "age": 36,
@@ -1360,8 +1359,7 @@
                     "conceiving_mode": "natural",
                     "diagnoses": [
                       "PCOS"
-                    ],
-                    "pregnancy_priority": "high"
+                    ]
                   },
                   "flags": {
                     "doubts_value": true
@@ -1403,8 +1401,8 @@
           "turns": [
             {
               "lead": "hi, 37, trying 18 months, pcos. what does working with you look like?",
-              "reply": "I use my method, DETOX, NOURISH and FLOW: we look at lifestyle factors that may be affecting your PCOS, what your body needs, and how to make supportive changes fit your real life. The Fertility Solution takes you through 16 modules over 6 months, with different levels of support depending on how closely you want to work with me.",
-              "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 37, \"time_trying\": \"18 months\", \"diagnoses\": [\"pcos\"]} | gate no link: first_exchange | action REPLY:new_prospect",
+              "reply": "I use my method DETOX, NOURISH and FLOW: we look at everyday factors that may be getting in the way with PCOS, what your body needs, and how to make supportive changes fit your real life. The Fertility Solution takes you through 16 modules over 6 months, with different levels of support depending on how closely you want to work with me.",
+              "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 37, \"time_trying\": \"18 months\", \"diagnoses\": [\"pcos\"], \"pregnancy_priority\": \"high\"} | gate no link: first_exchange | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -1419,7 +1417,8 @@
                     "time_trying": "18 months",
                     "diagnoses": [
                       "pcos"
-                    ]
+                    ],
+                    "pregnancy_priority": "high"
                   },
                   "flags": {}
                 },
@@ -1452,7 +1451,7 @@
             {
               "lead": "how much is it?",
               "reply": "We have a few different options depending on how much support you’d like. The best way to work out which fits your needs is a free call with my team, where we can talk through the options and pricing together. Would you like the booking link?",
-              "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 37, \"time_trying\": \"18 months\", \"diagnoses\": [\"pcos\"]} | gate link available | action REPLY:new_prospect",
+              "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 37, \"time_trying\": \"18 months\", \"diagnoses\": [\"PCOS\"]} | gate link available | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -1462,14 +1461,13 @@
                   "explicit_question": "how much is it?",
                   "price_ask": "general",
                   "explained": [
-                    "DETOX, NOURISH and FLOW",
-                    "The Fertility Solution has 16 modules over 6 months, with different levels of support"
+                    "DETOX, NOURISH and FLOW"
                   ],
                   "slots": {
                     "age": 37,
                     "time_trying": "18 months",
                     "diagnoses": [
-                      "pcos"
+                      "PCOS"
                     ]
                   },
                   "flags": {}
@@ -1502,8 +1500,8 @@
             },
             {
               "lead": "that's a lot of money. how do i know it's worth it?",
-              "reply": "It’s fair to want to know what you’d be getting for that investment. With PCOS, the value is in applying the work to your actual routines rather than trying another generic list: in Full, you send me your tracker information and I review it daily, your meal plan is built around your needs, and you can text me what’s happening so I can help you adjust between private sessions. Would that level of day-to-day support be what you’re looking for?",
-              "note": "path qualification | intent new_prospect | flags doubts_value | slots {\"age\": 37, \"time_trying\": \"18 months\", \"diagnoses\": [\"PCOS\"]} | gate no link: value_question | action REPLY:new_prospect",
+              "reply": "That’s a fair question, especially when you’ve already been trying for 18 months. Worth it comes down to whether the support helps you apply the work to your PCOS, rather than leaving you with more information to sort through alone.\n\nIn Full, you send me your tracker information and I review it daily, your meal plan is built around your needs, and you can text me between private sessions about what’s happening so I can help you adjust. Which level of support were you considering?",
+              "note": "path qualification | intent new_prospect | flags doubts_value | slots {\"age\": 37, \"time_trying\": \"18 months\", \"diagnoses\": [\"PCOS\"], \"pregnancy_priority\": \"high\"} | gate no link: value_question | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -1514,14 +1512,15 @@
                   "price_ask": null,
                   "explained": [
                     "DETOX, NOURISH and FLOW",
-                    "The Fertility Solution has 16 modules over 6 months, with different levels of support"
+                    "the 3 levels and what each includes"
                   ],
                   "slots": {
                     "age": 37,
                     "time_trying": "18 months",
                     "diagnoses": [
                       "PCOS"
-                    ]
+                    ],
+                    "pregnancy_priority": "high"
                   },
                   "flags": {
                     "doubts_value": true
@@ -1555,7 +1554,7 @@
             },
             {
               "lead": "ok and what's the difference between the levels?",
-              "reply": "Full includes the modules and resources, live group sessions and recordings, the private Facebook community, up to 2 private 20-minute sessions with me each month, and unlimited texting with me between sessions. In The Fertility Solution, Full also includes a meal plan built around your needs, personalized daily messages, and my daily review of the tracker information you send me.\n\nGroup includes the modules and resources, live sessions twice a week, recordings, and the community. Self paced includes the modules and resources only. The program is 6 months at every level.",
+              "reply": "The modules are the same at every level. Self paced gives you the modules and resources to work through on your own. Group adds live sessions twice a week, recordings and the private community. Full includes those, plus up to 2 private 20 minute sessions with me each month and unlimited texting between sessions. In The Fertility Solution, Full also includes the meal plan built around you, personalized daily messages and my daily review of the tracker information you send me.",
               "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 37, \"time_trying\": \"18 months\", \"diagnoses\": [\"PCOS\"]} | gate link available | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1563,11 +1562,12 @@
                   "path": "qualification",
                   "intent": "new_prospect",
                   "language": "en",
-                  "explicit_question": "ok and what's the difference between the levels?",
+                  "explicit_question": "what's the difference between the levels?",
                   "price_ask": null,
                   "explained": [
                     "DETOX, NOURISH and FLOW",
-                    "The Fertility Solution has 16 modules over 6 months, with different levels of support"
+                    "The Fertility Solution has 16 modules over 6 months, with different levels of support",
+                    "Full includes daily tracker review, a tailored meal plan, and texting between private sessions"
                   ],
                   "slots": {
                     "age": 37,
@@ -1606,7 +1606,7 @@
             },
             {
               "lead": "which one should i do?",
-              "reply": "That depends on how much support you want. Would you rather work through the program independently, with the group around you, or have me working with you directly between sessions?",
+              "reply": "Since pregnancy is a high priority for you and you’ve been trying for 18 months with PCOS, I’d suggest Full if you want close, day-to-day support applying the work. If you’d rather have guidance in the group without private contact, Group may fit better.",
               "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 37, \"time_trying\": \"18 months\", \"diagnoses\": [\"pcos\"]} | gate link available | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1658,8 +1658,8 @@
           ],
           "id": "e08_value_objection",
           "title": "\"How do I know it's worth it?\"",
-          "verdict": "pass",
-          "comment": "Approved first price reply; \"worth it\" names Full and what it includes, no price; levels on request; \"which one\" gets 1 question. The \"not every level\" line is gone."
+          "verdict": "partial",
+          "comment": "Approved first price reply; \"worth it\" names Full; levels on request. \"Which one\" recommends Full \"since pregnancy is a high priority for you\", which she never said."
         }
       ]
     },
@@ -1670,7 +1670,7 @@
           "turns": [
             {
               "lead": "I'm scared my low AMH means I've missed my chance.",
-              "reply": "That fear makes sense when you’re faced with a low number. AMH gives information about ovarian reserve and how you may respond to stimulation, but it doesn’t measure egg quality or tell your whole fertility story.",
+              "reply": "That fear can feel enormous when you’re looking at a low number. AMH gives information about ovarian reserve and how you may respond to stimulation, but it doesn’t measure egg quality or tell your whole fertility story.",
               "note": "path nurturing | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1712,7 +1712,7 @@
             },
             {
               "lead": "it was 0.5, i'm 39",
-              "reply": "At 39, seeing 0.5 can feel frightening, but that number alone can’t tell you whether you’ve missed your chance. It’s one piece of information, not your whole fertility story. Are you preparing for treatment, or still deciding what to do next?",
+              "reply": "At 39, seeing an AMH of 0.5 can feel especially frightening. It’s information about your reserve and possible response to stimulation, not a verdict on whether you can get pregnant. I wouldn’t want to guess what it means for your chances from that number alone.",
               "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 39, \"testing_done\": [\"AMH 0.5\"]} | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1761,7 +1761,7 @@
             },
             {
               "lead": "so is there any point even trying?",
-              "reply": "Yes, there can still be a point in trying. Your AMH is information about ovarian reserve and response to stimulation, not a verdict on whether you can get pregnant. Are you asking about trying naturally or with treatment?",
+              "reply": "Yes, there can still be a point in trying. An AMH of 0.5 doesn’t by itself tell us whether you can get pregnant, and it isn’t your whole fertility story.",
               "note": "path direct_answer | intent new_prospect | flags - | slots {\"age\": 39, \"testing_done\": [\"AMH 0.5\"]} | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1769,7 +1769,7 @@
                   "path": "direct_answer",
                   "intent": "new_prospect",
                   "language": "en",
-                  "explicit_question": "is there any point even trying?",
+                  "explicit_question": "so is there any point even trying?",
                   "price_ask": null,
                   "explained": [
                     "what AMH measures and doesn't"
@@ -1818,7 +1818,7 @@
           "turns": [
             {
               "lead": "my amh is 0.4 and fsh is 15, i'm 41. what are my chances of getting pregnant naturally?",
-              "reply": "I can’t give you a meaningful percentage from those results, and I don’t want to guess about your chances. AMH and FSH don’t tell the whole story or determine on their own whether natural pregnancy is possible.",
+              "reply": "I can’t give you a reliable percentage from those results, and I don’t interpret individual lab results over DM. AMH and FSH can inform ovarian reserve and response to stimulation, but they don’t tell the whole story or determine on their own whether natural pregnancy is possible.",
               "note": "path direct_answer | intent new_prospect | flags requested_lab_interpretation | slots {\"age\": 41, \"testing_done\": [\"AMH 0.4\", \"FSH 15\"]} | gate no link: lab_request | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1868,7 +1868,7 @@
             },
             {
               "lead": "but roughly? like is it under 5%?",
-              "reply": "I can’t honestly put a percentage on it, even roughly. Those results alone aren’t enough to estimate your chance of natural pregnancy, and I don’t want to give you a number that could mislead you.",
+              "reply": "I can’t honestly put a percentage on it or tell you whether it’s under 5% from those results. That would be guessing about your individual chances.",
               "note": "path direct_answer | intent new_prospect | flags requested_lab_interpretation | slots {\"age\": 41, \"testing_done\": [\"AMH 0.4\", \"FSH 15\"]} | gate no link: lab_request | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1879,7 +1879,7 @@
                   "explicit_question": "but roughly? like is it under 5%?",
                   "price_ask": null,
                   "explained": [
-                    "what AMH and FSH do and don't tell"
+                    "what AMH and FSH can and can't tell you"
                   ],
                   "slots": {
                     "age": 41,
@@ -1933,7 +1933,7 @@
           "turns": [
             {
               "lead": "I take metformin and I'm overwhelmed by all the food and supplement advice.",
-              "reply": "No wonder it feels overwhelming when every source seems to have a different rule. Food is something we can make manageable around your actual days. Which part feels hardest right now?",
+              "reply": "No wonder it feels overwhelming when every source gives you a different rule. Food is something we can make manageable around your actual day. Which part feels hardest right now?",
               "note": "path nurturing | intent new_prospect | flags - | slots {\"already_tried\": [\"metformin\"]} | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -1979,8 +1979,8 @@
             },
             {
               "lead": "breakfast mostly, i never know what to eat",
-              "reply": "Breakfast can feel especially hard when you’re already trying to make sense of so much advice. We can make food feel more manageable by finding options that fit your real routine, rather than adding another set of rules.",
-              "note": "path nurturing | intent new_prospect | flags - | slots {\"already_tried\": [\"metformin\"]} | gate no link: not_enough_context | action REPLY:new_prospect",
+              "reply": "Breakfast can feel like one more decision when you’re already getting so much advice. We can make it simpler and find options that fit your routine, without adding another set of rules. Is it the lack of time in the morning that makes it hardest?",
+              "note": "path nurturing | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -1990,11 +1990,7 @@
                   "explicit_question": null,
                   "price_ask": null,
                   "explained": [],
-                  "slots": {
-                    "already_tried": [
-                      "metformin"
-                    ]
-                  },
+                  "slots": {},
                   "flags": {}
                 },
                 "gate": {
@@ -2025,12 +2021,12 @@
             },
             {
               "lead": "is that the kind of thing you help with?",
-              "reply": "Yes, helping you make food feel manageable in your day is part of what I do. Through NOURISH, we look at what fits your needs and routine, rather than following generic food rules.",
-              "note": "path qualification | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
+              "reply": "Yes, this is the kind of day-to-day food support I help with. My method is NOURISH: understanding what works for your needs and routine, rather than giving you another generic list of rules.",
+              "note": "path direct_answer | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
-                  "path": "qualification",
+                  "path": "direct_answer",
                   "intent": "new_prospect",
                   "language": "en",
                   "explicit_question": "is that the kind of thing you help with?",
@@ -2104,10 +2100,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "requested_medication",
               "tags": [
                 "human_handover"
-              ]
+              ],
+              "paused_now": "requested_medication"
             },
             {
               "lead": "thanks",
@@ -2172,7 +2168,7 @@
             },
             {
               "lead": "about a year",
-              "reply": "A year of trying without the answer you want can be exhausting. What’s been looked at so far, just your side or both of you?",
+              "reply": "A year of trying without the result you’re hoping for can feel like a long time. What have you had checked so far?",
               "note": "path nurturing | intent new_prospect | flags - | slots {\"time_trying\": \"about a year\"} | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -2266,7 +2262,7 @@
             },
             {
               "lead": "ok",
-              "reply": "I’m here when you’re ready to share what’s going on.",
+              "reply": "Whenever you’re ready, tell me what’s been going on and what kind of support you’re looking for.",
               "note": "path nurturing | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -2310,7 +2306,7 @@
           "id": "e17_i_want_support",
           "title": "\"I want support\"",
           "verdict": "pass",
-          "comment": "No invented context. Minor: \"ok\" gets a passive \"I'm here when you're ready\" instead of the choice asked again."
+          "comment": "No invented context. Minor: \"ok\" gets a passive \"whenever you're ready\" instead of the choice asked again."
         }
       ]
     },
@@ -2321,7 +2317,7 @@
           "turns": [
             {
               "lead": "hola, ¿las sesiones grupales son en español?",
-              "reply": "Las sesiones grupales son en inglés. Las sesiones privadas conmigo pueden ser en español, pero los materiales y vídeos del programa también están en inglés. ¿Te sentirías cómoda con eso?",
+              "reply": "Las sesiones grupales son en inglés. Las sesiones privadas conmigo pueden ser en español, pero los materiales y vídeos también están en inglés. ¿Te sentirías cómoda con eso?",
               "note": "path qualification | intent new_prospect | flags - | gate no link: english_materials_undisclosed | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -2451,7 +2447,7 @@
             },
             {
               "lead": "sí, me sirve. tengo 35, llevo 2 años intentándolo con mi pareja. ¿cómo empiezo?",
-              "reply": "El primer paso es una llamada gratuita con mi equipo para ver qué necesitas y qué nivel de apoyo te encaja. Aquí tienes el enlace:\n\nhttps://www.thefertilitysolution.com/free-call\n\nTe animo a elegir un horario al que podáis asistir tu pareja y tú, si tomáis estas decisiones juntos. Así podéis hacer preguntas los dos y ver qué apoyo os encaja.",
+              "reply": "El primer paso es una llamada gratuita con mi equipo para ver qué necesitas y qué nivel de apoyo te encaja. Aquí tienes el enlace:\n\nhttps://www.thefertilitysolution.com/free-call\n\nPreferimos de verdad que los dos asistáis a la llamada. La conversación es mucho más valiosa cuando podéis hacer preguntas juntos y explorar decisiones importantes para vuestra familia. ¿Podéis elegir un horario en el que podáis asistir los dos?",
               "note": "path qualification | intent warm_prospect | flags accepts_english_materials, wants_to_buy | slots {\"age\": 35, \"time_trying\": \"2 años\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
@@ -2502,22 +2498,22 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent",
               "tags": [
                 "qualified"
-              ]
+              ],
+              "paused_now": "qualified_link_sent"
             }
           ],
           "id": "e18_spanish_group",
           "title": "Spanish, The Fertility Solution",
           "verdict": "pass",
-          "comment": "English groups, materials and videos; Spanish private sessions; suitability asked once; attendance line conditional in Spanish (\"si tomáis estas decisiones juntos\")."
+          "comment": "English groups, materials and videos; Spanish private sessions; suitability asked once; v4.3 attendance line in Spanish with the link."
         },
         {
           "turns": [
             {
               "lead": "estoy embarazada de 10 semanas, ¿el programa de embarazo está en español?",
-              "reply": "¡Enhorabuena por esas 10 semanas! Sí, puedo acompañarte durante el embarazo con The Pregnancy Solution, mi programa de 6 meses con 18 módulos, adaptado a cada embarazo.\n\nLas sesiones privadas conmigo pueden ser en español. Las sesiones grupales, los materiales y los vídeos están en inglés. ¿Te sentirías cómoda con eso?",
+              "reply": "¡Felicidades por tu embarazo! Sí, puedo acompañarte con The Pregnancy Solution, mi programa para mujeres embarazadas, adaptado a cada embarazo.\n\nLas sesiones privadas conmigo pueden ser en español. Las sesiones grupales, los materiales y los vídeos están en inglés. ¿Te sentirías cómoda con eso?",
               "note": "path qualification | intent pregnancy_announcement | flags wants_pregnancy_support | gate no link: english_materials_undisclosed | action REPLY:pregnancy_announcement",
               "action": "REPLY:pregnancy_announcement",
               "trace": {
@@ -2562,11 +2558,11 @@
             {
               "lead": "¿y las sesiones grupales?",
               "reply": "Las sesiones grupales son en inglés.",
-              "note": "path qualification | intent pregnancy_announcement | flags wants_pregnancy_support | gate no link: english_materials_awaiting | action REPLY:pregnancy_announcement",
+              "note": "path direct_answer | intent pregnancy_announcement | flags wants_pregnancy_support | gate no link: english_materials_awaiting | action REPLY:pregnancy_announcement",
               "action": "REPLY:pregnancy_announcement",
               "trace": {
                 "read": {
-                  "path": "qualification",
+                  "path": "direct_answer",
                   "intent": "pregnancy_announcement",
                   "language": "es",
                   "explicit_question": "¿y las sesiones grupales?",
@@ -2618,8 +2614,7 @@
                   "explicit_question": "¿y los vídeos?",
                   "price_ask": null,
                   "explained": [
-                    "The Pregnancy Solution is a 6-month program with 18 modules, adapted to each pregnancy",
-                    "private sessions can be in Spanish; group sessions, materials and videos are in English"
+                    "private coaching can be in Spanish, groups and materials are in English"
                   ],
                   "slots": {},
                   "flags": {
@@ -2726,7 +2721,7 @@
             },
             {
               "lead": "39, amh 0.7, trying 1 year",
-              "reply": "That’s a worrying number to sit with, especially after a year of trying. AMH gives information about ovarian reserve and how you may respond to stimulation. It doesn’t measure egg quality or, on its own, tell you whether you can get pregnant. Are you asking what the result means, or what you can do next?",
+              "reply": "At 39, with 1 year of trying, I can see why an AMH of 0.7 would feel worrying. AMH gives information about ovarian reserve and how you may respond to stimulation, but it doesn’t measure egg quality or tell your whole fertility story. What would you most like to understand about it?",
               "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 39, \"time_trying\": \"1 year\", \"testing_done\": [\"AMH 0.7\"]} | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -2775,21 +2770,21 @@
           ],
           "id": "e20_kw_amh",
           "title": "AMH",
-          "verdict": "pass",
-          "comment": "Opener acknowledges AMH; turn 2 validates and educates on her numbers with 1 question."
+          "verdict": "partial",
+          "comment": "Opener acknowledges AMH; turn 2 validates and educates on her numbers, but ends with \"what would you most like to understand\" again after she gave age, AMH and duration."
         },
         {
           "turns": [
             {
               "lead": "FERTILITY",
-              "reply": "I'm happy to talk about fertility ♡ What would you like help with?",
+              "reply": "I'm happy to talk about fertility ♡ What would you most like help with?",
               "note": "path None | intent None | flags - | action OPENER:reply",
               "action": "OPENER:reply",
               "trace": {
                 "opener": "FERTILITY",
                 "decision": {
                   "action": "reply",
-                  "reply": "I'm happy to talk about fertility ♡ What would you like help with?"
+                  "reply": "I'm happy to talk about fertility ♡ What would you most like help with?"
                 }
               }
             }
@@ -2941,10 +2936,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "asked_for_human",
               "tags": [
                 "human_handover"
-              ]
+              ],
+              "paused_now": "asked_for_human"
             }
           ],
           "id": "k03_kw_human",
@@ -3040,12 +3035,12 @@
           "turns": [
             {
               "lead": "hi, 34, pcos, trying 2 years with my husband. can you help with pcos?",
-              "reply": "Yes, PCOS is something I work with. After 2 years of trying, we can look at what may be getting in your way, what your body needs, and changes that fit your real life.\n\nWhat feels most important to get help with right now?",
-              "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 34, \"time_trying\": \"2 years\", \"diagnoses\": [\"pcos\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate no link: first_exchange | action REPLY:new_prospect",
+              "reply": "Yes, PCOS is something I work with. Since you’ve been trying for 2 years, I’d look at more than diet alone: what in your everyday routine may be affecting things, what your body needs, and changes that fit your real life.\n\nWhat feels like the biggest challenge with your PCOS right now?",
+              "note": "path direct_answer | intent new_prospect | flags - | slots {\"age\": 34, \"time_trying\": \"2 years\", \"diagnoses\": [\"pcos\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate no link: first_exchange | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
-                  "path": "qualification",
+                  "path": "direct_answer",
                   "intent": "new_prospect",
                   "language": "en",
                   "explicit_question": "can you help with pcos?",
@@ -3090,7 +3085,7 @@
             },
             {
               "lead": "yes",
-              "reply": "What would you most like help with around your PCOS right now: understanding your cycles, preparing for treatment, or something else?",
+              "reply": "What feels like the biggest challenge with your PCOS right now?",
               "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 34, \"time_trying\": \"2 years\", \"diagnoses\": [\"PCOS\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -3100,7 +3095,9 @@
                   "language": "en",
                   "explicit_question": null,
                   "price_ask": null,
-                  "explained": [],
+                  "explained": [
+                    "looking beyond diet at routine, body needs and realistic changes"
+                  ],
                   "slots": {
                     "age": 34,
                     "time_trying": "2 years",
@@ -3141,8 +3138,8 @@
           ],
           "id": "e26_yes_mid_conversation",
           "title": "\"yes\" mid conversation",
-          "verdict": "pass",
-          "comment": "Ambiguous \"yes\" gets a clarifying either or, nothing assumed."
+          "verdict": "fail",
+          "comment": "Ambiguous \"yes\" gets the previous question repeated word for word instead of a clarification."
         }
       ]
     },
@@ -3153,7 +3150,7 @@
           "turns": [
             {
               "lead": "i'm 35, trying 2 years, unexplained infertility, i'm ready, how do i book?",
-              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your partner can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
+              "reply": "The first step is a free call with my team to talk through what support would fit. Here’s the booking link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
               "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 35, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained infertility\"], \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
@@ -3203,36 +3200,101 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent",
               "tags": [
                 "qualified"
-              ]
+              ],
+              "paused_now": "qualified_link_sent"
             }
           ],
           "id": "e27_partner_unmentioned",
           "title": "Partner never mentioned",
           "verdict": "pass",
-          "comment": "Link with the approved attendance line."
+          "comment": "Link with the v4.3 attendance line."
         },
         {
           "turns": [
             {
               "lead": "i'm 38 and doing this on my own with donor sperm. 1 failed iui so far. i'm ready, how do i book a call?",
-              "reply": "The first step is a free call with my team to talk through what support might fit. Here’s the link to book:\n\nhttps://www.thefertilitysolution.com/free-call\n\nYou can attend on your own.",
-              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 38, \"iui_history\": \"1 failed IUI\", \"partner_status\": \"single_by_choice\", \"donor_sperm\": true, \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
+              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. Since you’ll be joining on your own, here’s the booking link:\n\nhttps://www.thefertilitysolution.com/free-call",
+              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 38, \"conceiving_mode\": \"undecided\", \"iui_history\": \"1 failed IUI\", \"partner_status\": \"single_by_choice\", \"donor_sperm\": true} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
                 "read": {
                   "path": "qualification",
                   "intent": "warm_prospect",
                   "language": "en",
-                  "explicit_question": "i'm ready, how do i book a call?",
+                  "explicit_question": "how do i book a call?",
                   "price_ask": null,
                   "explained": [],
                   "slots": {
                     "age": 38,
+                    "conceiving_mode": "undecided",
                     "iui_history": "1 failed IUI",
                     "partner_status": "single_by_choice",
+                    "donor_sperm": true
+                  },
+                  "flags": {
+                    "wants_to_buy": true,
+                    "open_to_ivf": false
+                  }
+                },
+                "gate": {
+                  "allow_booking": true,
+                  "escalate": false,
+                  "reason": "",
+                  "handover_message": "",
+                  "price": "",
+                  "notes": [
+                    "link available"
+                  ]
+                },
+                "playbooks": [
+                  "direct_answer",
+                  "direct_answer_levels",
+                  "direct_answer_pregnancy",
+                  "nurturing",
+                  "nurturing_endo_male_factor",
+                  "nurturing_pcos",
+                  "qualification",
+                  "qualification_age_review",
+                  "qualification_listening",
+                  "qualification_money",
+                  "qualification_ready",
+                  "terminal"
+                ]
+              },
+              "tag": 86596410,
+              "qualified": true,
+              "tags": [
+                "qualified"
+              ],
+              "paused_now": "qualified_link_sent"
+            }
+          ],
+          "id": "e28_solo_parent",
+          "title": "Solo parent, donor sperm",
+          "verdict": "pass",
+          "comment": "Invited alone, no partner line."
+        },
+        {
+          "turns": [
+            {
+              "lead": "my wife and i are using donor sperm. i'm 34, 2 failed iuis. how do we book a call?",
+              "reply": "The first step is a free call with my team to talk through what you need and which level of support may fit. You can book here:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
+              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 34, \"iui_history\": \"2 failed iuis\", \"partner_status\": \"same_sex_partner\", \"donor_sperm\": true, \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
+              "action": "BOOKING_SENT",
+              "trace": {
+                "read": {
+                  "path": "qualification",
+                  "intent": "warm_prospect",
+                  "language": "en",
+                  "explicit_question": "how do we book a call?",
+                  "price_ask": null,
+                  "explained": [],
+                  "slots": {
+                    "age": 34,
+                    "iui_history": "2 failed iuis",
+                    "partner_status": "same_sex_partner",
                     "donor_sperm": true,
                     "pregnancy_priority": "high"
                   },
@@ -3267,85 +3329,23 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent",
               "tags": [
                 "qualified"
-              ]
-            }
-          ],
-          "id": "e28_solo_parent",
-          "title": "Solo parent, donor sperm",
-          "verdict": "pass",
-          "comment": "Invited alone, no partner line."
-        },
-        {
-          "turns": [
-            {
-              "lead": "my wife and i are using donor sperm. i'm 34, 2 failed iuis. how do we book a call?",
-              "reply": "The first step is a free call with my team to talk through what support might fit. You can book here:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your wife can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
-              "note": "path qualification | intent warm_prospect | flags - | slots {\"age\": 34, \"iui_history\": \"2 failed IUIs\", \"partner_status\": \"same_sex_partner\", \"donor_sperm\": true, \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
-              "action": "BOOKING_SENT",
-              "trace": {
-                "read": {
-                  "path": "qualification",
-                  "intent": "warm_prospect",
-                  "language": "en",
-                  "explicit_question": "how do we book a call?",
-                  "price_ask": null,
-                  "explained": [],
-                  "slots": {
-                    "age": 34,
-                    "iui_history": "2 failed IUIs",
-                    "partner_status": "same_sex_partner",
-                    "donor_sperm": true,
-                    "pregnancy_priority": "high"
-                  },
-                  "flags": {}
-                },
-                "gate": {
-                  "allow_booking": true,
-                  "escalate": false,
-                  "reason": "",
-                  "handover_message": "",
-                  "price": "",
-                  "notes": [
-                    "link available"
-                  ]
-                },
-                "playbooks": [
-                  "direct_answer",
-                  "direct_answer_levels",
-                  "direct_answer_pregnancy",
-                  "nurturing",
-                  "nurturing_endo_male_factor",
-                  "nurturing_pcos",
-                  "qualification",
-                  "qualification_age_review",
-                  "qualification_listening",
-                  "qualification_money",
-                  "qualification_ready",
-                  "terminal"
-                ]
-              },
-              "tag": 86596410,
-              "qualified": true,
-              "paused_now": "qualified_link_sent",
-              "tags": [
-                "qualified"
-              ]
+              ],
+              "paused_now": "qualified_link_sent"
             }
           ],
           "id": "e29_partnered_donor",
           "title": "Wife, donor sperm",
           "verdict": "pass",
-          "comment": "Wife named in the approved attendance line; donor not asked to attend."
+          "comment": "v4.3 attendance line for her and her wife; donor not asked to attend."
         },
         {
           "turns": [
             {
               "lead": "me and my girlfriend have been trying for a year, i'm 33 and carrying. we want to work with you, next step?",
-              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you and your girlfriend to choose a time you can both attend, so you can ask questions together and explore which support fits.",
-              "note": "path qualification | intent warm_prospect | flags - | slots {\"age\": 33, \"time_trying\": \"a year\", \"partner_status\": \"same_sex_partner\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
+              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
+              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 33, \"time_trying\": \"a year\", \"partner_status\": \"same_sex_partner\", \"goal_stated\": \"work with you\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
                 "read": {
@@ -3358,9 +3358,12 @@
                   "slots": {
                     "age": 33,
                     "time_trying": "a year",
-                    "partner_status": "same_sex_partner"
+                    "partner_status": "same_sex_partner",
+                    "goal_stated": "work with you"
                   },
-                  "flags": {}
+                  "flags": {
+                    "wants_to_buy": true
+                  }
                 },
                 "gate": {
                   "allow_booking": true,
@@ -3389,22 +3392,246 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent",
               "tags": [
                 "qualified"
-              ]
+              ],
+              "paused_now": "qualified_link_sent"
             }
           ],
           "id": "e30_same_sex_couple",
           "title": "Same sex couple",
           "verdict": "pass",
-          "comment": "Girlfriend named in the attendance line."
+          "comment": "v4.3 attendance line for her and her girlfriend."
         },
         {
           "turns": [
             {
               "lead": "i'm 36, trying 2 years with my husband, unexplained. i'm ready to work with you, how do i book?",
-              "reply": "The first step is a free call with my team to talk through what support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your husband can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
+              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
+              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
+              "action": "BOOKING_SENT",
+              "trace": {
+                "read": {
+                  "path": "qualification",
+                  "intent": "warm_prospect",
+                  "language": "en",
+                  "explicit_question": "how do i book?",
+                  "price_ask": null,
+                  "explained": [],
+                  "slots": {
+                    "age": 36,
+                    "time_trying": "2 years",
+                    "diagnoses": [
+                      "unexplained"
+                    ],
+                    "partner_status": "partnered",
+                    "pregnancy_priority": "high"
+                  },
+                  "flags": {
+                    "wants_to_buy": true
+                  }
+                },
+                "gate": {
+                  "allow_booking": true,
+                  "escalate": false,
+                  "reason": "",
+                  "handover_message": "",
+                  "price": "",
+                  "notes": [
+                    "link available"
+                  ]
+                },
+                "playbooks": [
+                  "direct_answer",
+                  "direct_answer_levels",
+                  "direct_answer_pregnancy",
+                  "nurturing",
+                  "nurturing_endo_male_factor",
+                  "nurturing_pcos",
+                  "qualification",
+                  "qualification_age_review",
+                  "qualification_listening",
+                  "qualification_money",
+                  "qualification_ready",
+                  "terminal"
+                ]
+              },
+              "tag": 86596410,
+              "qualified": true,
+              "tags": [
+                "qualified"
+              ],
+              "paused_now": "qualified_link_sent"
+            },
+            {
+              "lead": "do i really need my husband there?",
+              "reply": "We really prefer you both to join, so you can ask questions and talk through decisions together. Could you choose a time you can both attend?",
+              "note": "path direct_answer | intent warm_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate after the link: question | action AFTER_LINK | pause qualified_link_sent",
+              "action": "AFTER_LINK",
+              "trace": {
+                "read": {
+                  "path": "direct_answer",
+                  "intent": "warm_prospect",
+                  "language": "en",
+                  "explicit_question": "do i really need my husband there?",
+                  "price_ask": null,
+                  "explained": [],
+                  "slots": {
+                    "age": 36,
+                    "time_trying": "2 years",
+                    "diagnoses": [
+                      "unexplained"
+                    ],
+                    "partner_status": "partnered",
+                    "pregnancy_priority": "high"
+                  },
+                  "flags": {}
+                },
+                "gate": {
+                  "allow_booking": false,
+                  "escalate": false,
+                  "reason": "",
+                  "handover_message": "",
+                  "price": "",
+                  "notes": [
+                    "after the link: question"
+                  ]
+                },
+                "playbooks": [
+                  "direct_answer",
+                  "direct_answer_levels",
+                  "direct_answer_pregnancy",
+                  "nurturing",
+                  "nurturing_endo_male_factor",
+                  "nurturing_pcos",
+                  "qualification",
+                  "qualification_age_review",
+                  "qualification_listening",
+                  "qualification_money",
+                  "qualification_ready",
+                  "terminal"
+                ]
+              }
+            },
+            {
+              "lead": "honestly i make these decisions myself",
+              "reply": "That’s completely fine. You can come on your own. Please mention to my team that we agreed this.",
+              "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"diagnoses\": [\"unexplained\"], \"attendance\": \"decides_alone\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent | labels attendance_exception",
+              "action": "AFTER_LINK",
+              "trace": {
+                "read": {
+                  "path": "qualification",
+                  "intent": "new_prospect",
+                  "language": "en",
+                  "explicit_question": null,
+                  "price_ask": null,
+                  "explained": [],
+                  "slots": {
+                    "age": 36,
+                    "time_trying": "2 years",
+                    "partner_status": "partnered",
+                    "pregnancy_priority": "high",
+                    "diagnoses": [
+                      "unexplained"
+                    ],
+                    "attendance": "decides_alone"
+                  },
+                  "flags": {}
+                },
+                "gate": {
+                  "allow_booking": false,
+                  "escalate": false,
+                  "reason": "",
+                  "handover_message": "",
+                  "price": "",
+                  "notes": [
+                    "after the link: attendance"
+                  ]
+                },
+                "playbooks": [
+                  "direct_answer",
+                  "direct_answer_levels",
+                  "direct_answer_pregnancy",
+                  "nurturing",
+                  "nurturing_endo_male_factor",
+                  "nurturing_pcos",
+                  "qualification",
+                  "qualification_age_review",
+                  "qualification_listening",
+                  "qualification_money",
+                  "qualification_ready",
+                  "terminal"
+                ]
+              },
+              "tags": [
+                "attendance_exception"
+              ]
+            },
+            {
+              "lead": "booked! sam.k@gmail.com",
+              "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nPlease mention to my team that we agreed you'd come on your own.",
+              "note": "path qualification | intent warm_prospect | flags says_booked | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"attendance\": \"decides_alone\", \"pregnancy_priority\": \"high\", \"email\": \"sam.k@gmail.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
+              "action": "AFTER_LINK",
+              "trace": {
+                "read": {
+                  "path": "qualification",
+                  "intent": "warm_prospect",
+                  "language": "en",
+                  "explicit_question": null,
+                  "price_ask": null,
+                  "explained": [],
+                  "slots": {
+                    "age": 36,
+                    "time_trying": "2 years",
+                    "diagnoses": [
+                      "unexplained"
+                    ],
+                    "partner_status": "partnered",
+                    "attendance": "decides_alone",
+                    "pregnancy_priority": "high",
+                    "email": "sam.k@gmail.com"
+                  },
+                  "flags": {
+                    "says_booked": true
+                  }
+                },
+                "gate": {
+                  "allow_booking": false,
+                  "escalate": false,
+                  "reason": "",
+                  "handover_message": "",
+                  "price": "",
+                  "notes": [
+                    "after the link: email"
+                  ]
+                },
+                "playbooks": [
+                  "direct_answer",
+                  "direct_answer_levels",
+                  "direct_answer_pregnancy",
+                  "nurturing",
+                  "nurturing_endo_male_factor",
+                  "nurturing_pcos",
+                  "qualification",
+                  "qualification_age_review",
+                  "qualification_listening",
+                  "qualification_money",
+                  "qualification_ready",
+                  "terminal"
+                ]
+              }
+            }
+          ],
+          "id": "e31_independent_decider",
+          "title": "Decides independently",
+          "verdict": "pass",
+          "comment": "\"Do I need him there?\" gets the preference once; deciding herself gets come alone, no proof (attendance_exception tag); reminder to mention it after booking."
+        },
+        {
+          "turns": [
+            {
+              "lead": "i'm 36, trying 2 years with my husband, unexplained. i'm ready to work with you, how do i book?",
+              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
               "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 36, \"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"diagnoses\": [\"unexplained\"], \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
@@ -3412,7 +3639,7 @@
                   "path": "qualification",
                   "intent": "warm_prospect",
                   "language": "en",
-                  "explicit_question": "i'm ready to work with you, how do i book?",
+                  "explicit_question": "how do i book?",
                   "price_ask": null,
                   "explained": [],
                   "slots": {
@@ -3461,62 +3688,9 @@
               "paused_now": "qualified_link_sent"
             },
             {
-              "lead": "do i really need my husband there?",
-              "reply": "Do you make these decisions independently, or would you and your husband be deciding together?",
-              "note": "path qualification | intent warm_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"attendance\": \"pushback\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent",
-              "action": "AFTER_LINK",
-              "trace": {
-                "read": {
-                  "path": "qualification",
-                  "intent": "warm_prospect",
-                  "language": "en",
-                  "explicit_question": "do i really need my husband there?",
-                  "price_ask": null,
-                  "explained": [
-                    "the free call with the team"
-                  ],
-                  "slots": {
-                    "age": 36,
-                    "time_trying": "2 years",
-                    "diagnoses": [
-                      "unexplained"
-                    ],
-                    "partner_status": "partnered",
-                    "pregnancy_priority": "high",
-                    "attendance": "pushback"
-                  },
-                  "flags": {}
-                },
-                "gate": {
-                  "allow_booking": false,
-                  "escalate": false,
-                  "reason": "",
-                  "handover_message": "",
-                  "price": "",
-                  "notes": [
-                    "after the link: attendance"
-                  ]
-                },
-                "playbooks": [
-                  "direct_answer",
-                  "direct_answer_levels",
-                  "direct_answer_pregnancy",
-                  "nurturing",
-                  "nurturing_endo_male_factor",
-                  "nurturing_pcos",
-                  "qualification",
-                  "qualification_age_review",
-                  "qualification_listening",
-                  "qualification_money",
-                  "qualification_ready",
-                  "terminal"
-                ]
-              }
-            },
-            {
-              "lead": "honestly i make these decisions myself",
-              "reply": "Okay, we’ll make an exception and see you on your own. Please mention that we agreed this when you speak with my team.",
-              "note": "path qualification | intent warm_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"attendance\": \"decides_alone\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent | labels attendance_exception",
+              "lead": "he works night shifts and genuinely can't make any of the times",
+              "reply": "I understand. If your partner truly cannot attend with you, we'll make an exception and see you on your own. Please mention to my team that we agreed this.",
+              "note": "path qualification | intent warm_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"attendance\": \"confirmed_cannot_attend\", \"pregnancy_priority\": \"high\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent | labels attendance_exception",
               "action": "AFTER_LINK",
               "trace": {
                 "read": {
@@ -3533,8 +3707,8 @@
                       "unexplained"
                     ],
                     "partner_status": "partnered",
-                    "pregnancy_priority": "high",
-                    "attendance": "decides_alone"
+                    "attendance": "confirmed_cannot_attend",
+                    "pregnancy_priority": "high"
                   },
                   "flags": {}
                 },
@@ -3568,182 +3742,9 @@
               ]
             },
             {
-              "lead": "booked! sam.k@gmail.com",
-              "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nPlease mention to my team that we agreed you’d come on your own.",
-              "note": "path qualification | intent warm_prospect | flags says_booked | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"attendance\": \"decides_alone\", \"pregnancy_priority\": \"high\", \"email\": \"sam.k@gmail.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
-              "action": "AFTER_LINK",
-              "trace": {
-                "read": {
-                  "path": "qualification",
-                  "intent": "warm_prospect",
-                  "language": "en",
-                  "explicit_question": null,
-                  "price_ask": null,
-                  "explained": [
-                    "the free call with Sonia’s team as the first step"
-                  ],
-                  "slots": {
-                    "age": 36,
-                    "time_trying": "2 years",
-                    "diagnoses": [
-                      "unexplained"
-                    ],
-                    "partner_status": "partnered",
-                    "attendance": "decides_alone",
-                    "pregnancy_priority": "high",
-                    "email": "sam.k@gmail.com"
-                  },
-                  "flags": {
-                    "says_booked": true
-                  }
-                },
-                "gate": {
-                  "allow_booking": false,
-                  "escalate": false,
-                  "reason": "",
-                  "handover_message": "",
-                  "price": "",
-                  "notes": [
-                    "after the link: email"
-                  ]
-                },
-                "playbooks": [
-                  "direct_answer",
-                  "direct_answer_levels",
-                  "direct_answer_pregnancy",
-                  "nurturing",
-                  "nurturing_endo_male_factor",
-                  "nurturing_pcos",
-                  "qualification",
-                  "qualification_age_review",
-                  "qualification_listening",
-                  "qualification_money",
-                  "qualification_ready",
-                  "terminal"
-                ]
-              }
-            }
-          ],
-          "id": "e31_independent_decider",
-          "title": "Decides independently",
-          "verdict": "pass",
-          "comment": "Approved line, one attendance question, exception only after she says she decides herself (attendance_exception tag), reminder to mention it after booking."
-        },
-        {
-          "turns": [
-            {
-              "lead": "i'm 36, trying 2 years with my husband, unexplained. i'm ready to work with you, how do i book?",
-              "reply": "The first step is a free call with my team to look at what you need and which level of support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your husband can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
-              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
-              "action": "BOOKING_SENT",
-              "trace": {
-                "read": {
-                  "path": "qualification",
-                  "intent": "warm_prospect",
-                  "language": "en",
-                  "explicit_question": "i'm ready to work with you, how do i book?",
-                  "price_ask": null,
-                  "explained": [],
-                  "slots": {
-                    "age": 36,
-                    "time_trying": "2 years",
-                    "diagnoses": [
-                      "unexplained"
-                    ],
-                    "partner_status": "partnered",
-                    "pregnancy_priority": "high"
-                  },
-                  "flags": {
-                    "wants_to_buy": true
-                  }
-                },
-                "gate": {
-                  "allow_booking": true,
-                  "escalate": false,
-                  "reason": "",
-                  "handover_message": "",
-                  "price": "",
-                  "notes": [
-                    "link available"
-                  ]
-                },
-                "playbooks": [
-                  "direct_answer",
-                  "direct_answer_levels",
-                  "direct_answer_pregnancy",
-                  "nurturing",
-                  "nurturing_endo_male_factor",
-                  "nurturing_pcos",
-                  "qualification",
-                  "qualification_age_review",
-                  "qualification_listening",
-                  "qualification_money",
-                  "qualification_ready",
-                  "terminal"
-                ]
-              },
-              "tag": 86596410,
-              "qualified": true,
-              "paused_now": "qualified_link_sent",
-              "tags": [
-                "qualified"
-              ]
-            },
-            {
-              "lead": "he works night shifts and genuinely can't make any of the times",
-              "reply": "Do you make these decisions independently, or would you and your husband be deciding together?",
-              "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"diagnoses\": [\"unexplained\"], \"attendance\": \"pushback\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent",
-              "action": "AFTER_LINK",
-              "trace": {
-                "read": {
-                  "path": "nurturing",
-                  "intent": "new_prospect",
-                  "language": "en",
-                  "explicit_question": null,
-                  "price_ask": null,
-                  "explained": [],
-                  "slots": {
-                    "age": 36,
-                    "time_trying": "2 years",
-                    "partner_status": "partnered",
-                    "pregnancy_priority": "high",
-                    "diagnoses": [
-                      "unexplained"
-                    ],
-                    "attendance": "pushback"
-                  },
-                  "flags": {}
-                },
-                "gate": {
-                  "allow_booking": false,
-                  "escalate": false,
-                  "reason": "",
-                  "handover_message": "",
-                  "price": "",
-                  "notes": [
-                    "after the link: attendance"
-                  ]
-                },
-                "playbooks": [
-                  "direct_answer",
-                  "direct_answer_levels",
-                  "direct_answer_pregnancy",
-                  "nurturing",
-                  "nurturing_endo_male_factor",
-                  "nurturing_pcos",
-                  "qualification",
-                  "qualification_age_review",
-                  "qualification_listening",
-                  "qualification_money",
-                  "qualification_ready",
-                  "terminal"
-                ]
-              }
-            },
-            {
               "lead": "booked for friday, maria.p@gmail.com",
-              "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nSince you and your husband decide together, he should be on the call on Friday.",
-              "note": "path qualification | intent warm_prospect | flags says_booked | slots {\"age\": 36, \"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"attendance\": \"pushback\", \"pregnancy_priority\": \"high\", \"email\": \"maria.p@gmail.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
+              "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nPlease mention to my team that we agreed you'd come on your own.",
+              "note": "path qualification | intent warm_prospect | flags says_booked | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"attendance\": \"confirmed_cannot_attend\", \"pregnancy_priority\": \"high\", \"email\": \"maria.p@gmail.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
               "action": "AFTER_LINK",
               "trace": {
                 "read": {
@@ -3752,14 +3753,15 @@
                   "language": "en",
                   "explicit_question": null,
                   "price_ask": null,
-                  "explained": [
-                    "the free consultation call"
-                  ],
+                  "explained": [],
                   "slots": {
                     "age": 36,
                     "time_trying": "2 years",
+                    "diagnoses": [
+                      "unexplained"
+                    ],
                     "partner_status": "partnered",
-                    "attendance": "pushback",
+                    "attendance": "confirmed_cannot_attend",
                     "pregnancy_priority": "high",
                     "email": "maria.p@gmail.com"
                   },
@@ -3797,14 +3799,14 @@
           "id": "e32_partner_cannot_attend",
           "title": "Partner genuinely can't attend",
           "verdict": "pass",
-          "comment": "Night shifts get the decision question, no exception given; reminder after booking that he should be on the call."
+          "comment": "Night shifts after the attendance line get the approved exception at once: no decision question, no handover (attendance_exception tag); kept after booking."
         },
         {
           "turns": [
             {
-              "lead": "i'm 36, trying 2 years with my husband, unexplained. i'm ready to work with you, how do i book?",
-              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your husband can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
-              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
+              "lead": "i'm 36, trying 2 years with my husband, unexplained. we decide everything together but he works away for weeks at a time so he can't do calls. how do i book?",
+              "reply": "The first step is a free call with my team to talk through what you need and which level might fit. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI understand he works away for weeks at a time. We really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
+              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"attendance\": \"cannot_attend\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
                 "read": {
@@ -3821,6 +3823,7 @@
                       "unexplained"
                     ],
                     "partner_status": "partnered",
+                    "attendance": "cannot_attend",
                     "pregnancy_priority": "high"
                   },
                   "flags": {
@@ -3854,32 +3857,29 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent",
               "tags": [
                 "qualified"
-              ]
+              ],
+              "paused_now": "qualified_link_sent"
             },
             {
-              "lead": "he's busy, does he have to come?",
-              "reply": "Do you make these decisions independently, or would you and your husband be deciding together?",
-              "note": "path direct_answer | intent warm_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"attendance\": \"pushback\", \"pregnancy_priority\": \"high\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent",
+              "lead": "no he really can't, there's no time that works for him",
+              "reply": "I understand. If your partner truly cannot attend with you, we'll make an exception and see you on your own. Please mention to my team that we agreed this.",
+              "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"attendance\": \"confirmed_cannot_attend\", \"pregnancy_priority\": \"high\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent | labels attendance_exception",
               "action": "AFTER_LINK",
               "trace": {
                 "read": {
-                  "path": "direct_answer",
-                  "intent": "warm_prospect",
+                  "path": "qualification",
+                  "intent": "new_prospect",
                   "language": "en",
-                  "explicit_question": "he's busy, does he have to come?",
+                  "explicit_question": null,
                   "price_ask": null,
                   "explained": [],
                   "slots": {
                     "age": 36,
                     "time_trying": "2 years",
-                    "diagnoses": [
-                      "unexplained"
-                    ],
                     "partner_status": "partnered",
-                    "attendance": "pushback",
+                    "attendance": "confirmed_cannot_attend",
                     "pregnancy_priority": "high"
                   },
                   "flags": {}
@@ -3908,76 +3908,25 @@
                   "qualification_ready",
                   "terminal"
                 ]
-              }
+              },
+              "tags": [
+                "attendance_exception"
+              ]
             },
             {
-              "lead": "we decide together yeah",
-              "reply": "Then it’s worth choosing a time you can both make, even if it’s a little later. You’ll both be able to ask questions and hear what support might fit.",
-              "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"goal_stated\": \"work with you\", \"attendance\": \"together\", \"diagnoses\": [\"unexplained infertility\"]} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent",
+              "lead": "ok booked for monday, jen.w@gmail.com",
+              "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nPlease mention to my team that we agreed you'd come on your own.",
+              "note": "path qualification | intent warm_prospect | flags says_booked | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"attendance\": \"confirmed_cannot_attend\", \"pregnancy_priority\": \"high\", \"email\": \"jen.w@gmail.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
               "action": "AFTER_LINK",
               "trace": {
                 "read": {
                   "path": "qualification",
-                  "intent": "new_prospect",
+                  "intent": "warm_prospect",
                   "language": "en",
                   "explicit_question": null,
                   "price_ask": null,
                   "explained": [
-                    "the free call with Sonia's team"
-                  ],
-                  "slots": {
-                    "age": 36,
-                    "time_trying": "2 years",
-                    "partner_status": "partnered",
-                    "pregnancy_priority": "high",
-                    "goal_stated": "work with you",
-                    "attendance": "together",
-                    "diagnoses": [
-                      "unexplained infertility"
-                    ]
-                  },
-                  "flags": {}
-                },
-                "gate": {
-                  "allow_booking": false,
-                  "escalate": false,
-                  "reason": "",
-                  "handover_message": "",
-                  "price": "",
-                  "notes": [
-                    "after the link: attendance"
-                  ]
-                },
-                "playbooks": [
-                  "direct_answer",
-                  "direct_answer_levels",
-                  "direct_answer_pregnancy",
-                  "nurturing",
-                  "nurturing_endo_male_factor",
-                  "nurturing_pcos",
-                  "qualification",
-                  "qualification_age_review",
-                  "qualification_listening",
-                  "qualification_money",
-                  "qualification_ready",
-                  "terminal"
-                ]
-              }
-            },
-            {
-              "lead": "he's just really busy though",
-              "reply": "I understand he has a busy schedule, but since you decide together, please choose a time you can both attend, even if it’s later.",
-              "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"attendance\": \"pushback\"} | gate after the link: attendance | action AFTER_LINK | pause qualified_link_sent",
-              "action": "AFTER_LINK",
-              "trace": {
-                "read": {
-                  "path": "qualification",
-                  "intent": "new_prospect",
-                  "language": "en",
-                  "explicit_question": null,
-                  "price_ask": null,
-                  "explained": [
-                    "the free call with Sonia’s team to discuss her needs and which level of support fits"
+                    "the free call with the team and how it helps identify which level might fit"
                   ],
                   "slots": {
                     "age": 36,
@@ -3986,10 +3935,13 @@
                       "unexplained"
                     ],
                     "partner_status": "partnered",
+                    "attendance": "confirmed_cannot_attend",
                     "pregnancy_priority": "high",
-                    "attendance": "pushback"
+                    "email": "jen.w@gmail.com"
                   },
-                  "flags": {}
+                  "flags": {
+                    "says_booked": true
+                  }
                 },
                 "gate": {
                   "allow_booking": false,
@@ -3998,7 +3950,7 @@
                   "handover_message": "",
                   "price": "",
                   "notes": [
-                    "after the link: attendance"
+                    "after the link: email"
                   ]
                 },
                 "playbooks": [
@@ -4018,10 +3970,10 @@
               }
             }
           ],
-          "id": "e33_pushback_then_together",
-          "title": "Pushback, then \"we decide together\"",
+          "id": "e33_together_cannot_attend",
+          "title": "Decide together, partner can't attend, said before the link",
           "verdict": "pass",
-          "comment": "One attendance question; \"together\" gets both attend, even later; the second push gets no exception."
+          "comment": "Decide together, partner away, said before the link: link acknowledges it and encourages once; her confirmation gets the approved exception (attendance_exception tag), no handover; kept after booking."
         }
       ]
     },
@@ -4032,7 +3984,7 @@
           "turns": [
             {
               "lead": "i'm 47, trying 1 year, ivf next month. i want to work with you, how do i book?",
-              "reply": "The first step is a free call with my team to talk through what support fits, especially with IVF next month. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your partner can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
+              "reply": "The first step is a free call with my team to talk through what support would fit. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
               "note": "path qualification | intent warm_prospect | flags open_to_ivf, wants_to_buy | slots {\"age\": 47, \"time_trying\": \"1 year\", \"conceiving_mode\": \"ivf\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
@@ -4040,7 +3992,7 @@
                   "path": "qualification",
                   "intent": "warm_prospect",
                   "language": "en",
-                  "explicit_question": "how do i book?",
+                  "explicit_question": "i want to work with you, how do i book?",
                   "price_ask": null,
                   "explained": [],
                   "slots": {
@@ -4081,10 +4033,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent",
               "tags": [
                 "qualified"
-              ]
+              ],
+              "paused_now": "qualified_link_sent"
             }
           ],
           "id": "e34_age_47",
@@ -4096,8 +4048,8 @@
           "turns": [
             {
               "lead": "i'm 48, trying 2 years with my husband, one failed ivf",
-              "reply": "I’m sorry your IVF cycle didn’t work after 2 years of trying. I do work with women preparing for IVF, using my DETOX, NOURISH and FLOW method to look at what in daily life may be getting in the way, what your body needs, and how to make supportive changes that fit your real life. Are you planning another cycle, or still deciding what comes next?",
-              "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 48, \"time_trying\": \"2 years\", \"ivf_history\": \"one failed ivf\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate no link: first_exchange | action REPLY:new_prospect",
+              "reply": "I’m sorry your IVF didn’t work. After 2 years of trying, that’s a lot to carry. What feels most important to get help with right now?",
+              "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 48, \"time_trying\": \"2 years\", \"ivf_history\": \"one failed IVF\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate no link: first_exchange | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -4110,7 +4062,7 @@
                   "slots": {
                     "age": 48,
                     "time_trying": "2 years",
-                    "ivf_history": "one failed ivf",
+                    "ivf_history": "one failed IVF",
                     "partner_status": "partnered",
                     "pregnancy_priority": "high"
                   },
@@ -4144,7 +4096,7 @@
             },
             {
               "lead": "what would you actually work on with me?",
-              "reply": "With you, I’d look at your day-to-day routines and exposures that may be working against you, what your body needs around food, rest, movement and stress, and how to make changes manageable in real life. Since you’ve had one failed IVF cycle, I’d focus on the areas you want support with as you consider what comes next.",
+              "reply": "I’d use my DETOX, NOURISH and FLOW method: look at lifestyle factors and everyday exposures that may be getting in the way, what your body needs across food, rest, movement and emotional support, then build routines that fit your real life. With your failed IVF behind you, the focus would be on supporting your overall health and preparing for whatever next step you choose, without assuming one change explains the outcome.",
               "note": "path qualification | intent new_prospect | flags doubts_value | slots {\"age\": 48, \"time_trying\": \"2 years\", \"ivf_history\": \"one failed ivf\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate no link: value_question | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -4154,9 +4106,7 @@
                   "language": "en",
                   "explicit_question": "what would you actually work on with me?",
                   "price_ask": null,
-                  "explained": [
-                    "DETOX, NOURISH and FLOW"
-                  ],
+                  "explained": [],
                   "slots": {
                     "age": 48,
                     "time_trying": "2 years",
@@ -4197,7 +4147,7 @@
             {
               "lead": "ok i want to book a call",
               "reply": "Thank you for sharing this with me ♡ We'll take a closer look so we can give you a thoughtful, personal response.",
-              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 48, \"time_trying\": \"2 years\", \"ivf_history\": \"one failed IVF cycle\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate handover: age_review, fixed line handover_message_review | action HANDOVER:age_review | pause age_review | tag 86596410 (review) | state: paused",
+              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 48, \"time_trying\": \"2 years\", \"ivf_history\": \"one failed IVF\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate handover: age_review, fixed line handover_message_review | action HANDOVER:age_review | pause age_review | tag 86596410 (review) | state: paused",
               "action": "HANDOVER:age_review",
               "trace": {
                 "read": {
@@ -4207,13 +4157,12 @@
                   "explicit_question": null,
                   "price_ask": null,
                   "explained": [
-                    "DETOX, NOURISH and FLOW",
-                    "day-to-day routines, food, rest, movement and stress"
+                    "DETOX, NOURISH and FLOW"
                   ],
                   "slots": {
                     "age": 48,
                     "time_trying": "2 years",
-                    "ivf_history": "one failed IVF cycle",
+                    "ivf_history": "one failed IVF",
                     "partner_status": "partnered",
                     "pregnancy_priority": "high"
                   },
@@ -4234,10 +4183,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "age_review",
               "tags": [
                 "human_handover"
-              ]
+              ],
+              "paused_now": "age_review"
             },
             {
               "lead": "thanks",
@@ -4255,13 +4204,13 @@
           "id": "e35_age_48_lifecycle",
           "title": "Age 48, review stays with the team",
           "verdict": "pass",
-          "comment": "No assumed next IVF cycle (asks whether she plans one); review handoff at the booking ask, silence after it."
+          "comment": "No assumed next IVF cycle; review handoff at the booking ask, silence after it."
         },
         {
           "turns": [
             {
               "lead": "i'm 50, still having regular cycles, trying with my partner for 1 year. can you help?",
-              "reply": "Yes, I’d be glad to explore how I can support you. With regular cycles, there may be areas we can work on together while you’re trying. What would you most like help with right now?",
+              "reply": "Yes, I can help you look at the lifestyle and day-to-day factors that may be relevant, and support you while you try. What would you most like help with first?",
               "note": "path qualification | intent new_prospect | flags - | slots {\"age\": 50, \"cycles\": \"regular\", \"time_trying\": \"1 year\", \"partner_status\": \"partnered\"} | gate no link: first_exchange | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -4309,7 +4258,7 @@
             {
               "lead": "how do i start?",
               "reply": "Thank you for sharing this with me ♡ We'll take a closer look so we can give you a thoughtful, personal response.",
-              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 50, \"cycles\": \"regular\", \"time_trying\": \"1 year\", \"partner_status\": \"partnered\"} | gate handover: age_review, fixed line handover_message_review | action HANDOVER:age_review | pause age_review | tag 86596410 (review) | state: paused",
+              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 50, \"time_trying\": \"1 year\", \"cycles\": \"regular\", \"partner_status\": \"partnered\"} | gate handover: age_review, fixed line handover_message_review | action HANDOVER:age_review | pause age_review | tag 86596410 (review) | state: paused",
               "action": "HANDOVER:age_review",
               "trace": {
                 "read": {
@@ -4321,8 +4270,8 @@
                   "explained": [],
                   "slots": {
                     "age": 50,
-                    "cycles": "regular",
                     "time_trying": "1 year",
+                    "cycles": "regular",
                     "partner_status": "partnered"
                   },
                   "flags": {
@@ -4342,10 +4291,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "age_review",
               "tags": [
                 "human_handover"
-              ]
+              ],
+              "paused_now": "age_review"
             }
           ],
           "id": "e36_age_50",
@@ -4357,12 +4306,12 @@
           "turns": [
             {
               "lead": "i'm 45 and 8 weeks pregnant after ivf. i'd love support through the pregnancy",
-              "reply": "Congratulations on your pregnancy. I’d love to support you through it. The Pregnancy Solution is my 6 month program for women who are already pregnant, with 18 modules adapted to each pregnancy, including birth preparation and baby essentials.\n\nThere are 3 levels of support. Full includes private sessions with me and unlimited texting between sessions, Group includes weekly live sessions and the community, and Self paced gives you the modules and resources to work through on your own.",
-              "note": "path qualification | intent pregnancy_announcement | flags open_to_ivf, wants_pregnancy_support | slots {\"age\": 45, \"conceiving_mode\": \"ivf\", \"pregnancy_priority\": \"high\"} | gate no link: first_exchange | action REPLY:pregnancy_announcement",
+              "reply": "Congratulations! After IVF, wanting support through the pregnancy makes so much sense. Yes, I offer The Pregnancy Solution, my 6 month program for women who are pregnant. It has 18 modules covering pregnancy, birth preparation and baby essentials, with 3 levels of support depending on how closely you’d like to work with me.",
+              "note": "path nurturing | intent pregnancy_announcement | flags open_to_ivf, wants_pregnancy_support | slots {\"age\": 45, \"conceiving_mode\": \"ivf\", \"pregnancy_priority\": \"high\"} | gate no link: first_exchange | action REPLY:pregnancy_announcement",
               "action": "REPLY:pregnancy_announcement",
               "trace": {
                 "read": {
-                  "path": "qualification",
+                  "path": "nurturing",
                   "intent": "pregnancy_announcement",
                   "language": "en",
                   "explicit_question": null,
@@ -4406,8 +4355,8 @@
             },
             {
               "lead": "how do i sign up?",
-              "reply": "The first step is a free call with my team to talk through what support would fit. When you fill in the form, note that you’re pregnant and seeking pregnancy support:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your partner can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
-              "note": "path qualification | intent warm_prospect | flags wants_pregnancy_support, wants_to_buy | slots {\"age\": 45, \"conceiving_mode\": \"ivf\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
+              "reply": "The first step is a free call with my team to talk through the Pregnancy Solution and find the level of support that fits. When you fill in the form, please note that you’re pregnant and seeking pregnancy support:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
+              "note": "path qualification | intent warm_prospect | flags open_to_ivf, wants_pregnancy_support, wants_to_buy | slots {\"age\": 45, \"conceiving_mode\": \"ivf\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
                 "read": {
@@ -4417,8 +4366,7 @@
                   "explicit_question": "how do i sign up?",
                   "price_ask": null,
                   "explained": [
-                    "The Pregnancy Solution is a 6 month program with 18 modules adapted to each pregnancy, including birth preparation and baby essentials",
-                    "the 3 levels of support and what each includes"
+                    "The Pregnancy Solution is a 6-month program with 18 modules covering pregnancy, birth preparation and baby essentials, and 3 levels of support"
                   ],
                   "slots": {
                     "age": 45,
@@ -4427,7 +4375,8 @@
                   },
                   "flags": {
                     "wants_to_buy": true,
-                    "wants_pregnancy_support": true
+                    "wants_pregnancy_support": true,
+                    "open_to_ivf": true
                   }
                 },
                 "gate": {
@@ -4457,10 +4406,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent",
               "tags": [
                 "qualified"
-              ]
+              ],
+              "paused_now": "qualified_link_sent"
             }
           ],
           "id": "e37_tps_45_pregnant",
@@ -4506,10 +4455,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "asked_for_human",
               "tags": [
                 "human_handover"
-              ]
+              ],
+              "paused_now": "asked_for_human"
             },
             {
               "lead": "thanks",
@@ -4532,7 +4481,7 @@
                   "path": "qualification",
                   "intent": "new_prospect",
                   "language": "en",
-                  "explicit_question": "ok, how much is the program?",
+                  "explicit_question": "how much is the program?",
                   "price_ask": "general",
                   "explained": [],
                   "slots": {},
@@ -4623,7 +4572,7 @@
             },
             {
               "lead": "no it's fine. how long is the program?",
-              "reply": "Both programs run for 6 months, at every support level. The Fertility Solution has 16 modules, and The Pregnancy Solution has 18.",
+              "reply": "Both programs last 6 months. The Fertility Solution has 16 modules, and The Pregnancy Solution has 18.",
               "note": "path qualification | intent new_prospect | flags asked_if_ai | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -4675,7 +4624,7 @@
           "turns": [
             {
               "lead": "hi, i'm 36, trying 1 year",
-              "reply": "Hi, what’s been happening over the past year? Is there a particular concern or test result you’re trying to make sense of?",
+              "reply": "Hi! A year of trying can feel like a long time. What’s been happening so far: have you had any testing, or are you just starting to look into it?",
               "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"1 year\"} | gate no link: not_enough_context | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -4768,11 +4717,11 @@
             {
               "lead": "yes please",
               "reply": "Thank you for sharing this with me ♡ We'll take a closer look so we can give you a thoughtful, personal response.",
-              "note": "path direct_answer | intent new_prospect | flags asked_for_human, asked_if_ai | slots {\"age\": 36, \"time_trying\": \"1 year\"} | gate handover: asked_for_human, fixed line handover_message_review | action HANDOVER:asked_for_human | pause asked_for_human | tag 86596410 (review) | state: paused",
+              "note": "path nurturing | intent new_prospect | flags asked_for_human, asked_if_ai | slots {\"age\": 36, \"time_trying\": \"1 year\"} | gate handover: asked_for_human, fixed line handover_message_review | action HANDOVER:asked_for_human | pause asked_for_human | tag 86596410 (review) | state: paused",
               "action": "HANDOVER:asked_for_human",
               "trace": {
                 "read": {
-                  "path": "direct_answer",
+                  "path": "nurturing",
                   "intent": "new_prospect",
                   "language": "en",
                   "explicit_question": null,
@@ -4800,10 +4749,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "asked_for_human",
               "tags": [
                 "human_handover"
-              ]
+              ],
+              "paused_now": "asked_for_human"
             },
             {
               "lead": "thanks",
@@ -4819,7 +4768,7 @@
           "turns": [
             {
               "lead": "i'm 33 with endometriosis, trying 2 years",
-              "reply": "2 years of trying with endometriosis is a lot to carry. Endometriosis is something I work with, and I’d look at the whole picture rather than treating it as the only factor. What’s been the hardest part for you so far?",
+              "reply": "2 years of trying with endometriosis is a lot to carry. I do work with women with endometriosis, and we can look at the everyday factors around your fertility without pretending coaching can treat the endometriosis itself. What feels most important to get help with right now?",
               "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 33, \"time_trying\": \"2 years\", \"diagnoses\": [\"endometriosis\"], \"pregnancy_priority\": \"high\"} | gate no link: first_exchange | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -4869,7 +4818,7 @@
             {
               "lead": "are you a bot?",
               "reply": "You're chatting with Sonia's AI assistant right now. I'm trained to answer questions here, support you and point you in the right direction based on Sonia's approach. If you'd prefer to speak with a human, I can bring someone from the team into the conversation. Would you like me to do that?",
-              "note": "path direct_answer | intent new_prospect | flags asked_if_ai | slots {\"age\": 33, \"diagnoses\": [\"endometriosis\"], \"time_trying\": \"2 years\", \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
+              "note": "path direct_answer | intent new_prospect | flags asked_if_ai | slots {\"age\": 33, \"time_trying\": \"2 years\", \"diagnoses\": [\"endometriosis\"], \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -4878,13 +4827,15 @@
                   "language": "en",
                   "explicit_question": "are you a bot?",
                   "price_ask": null,
-                  "explained": [],
+                  "explained": [
+                    "coaching can’t treat endometriosis"
+                  ],
                   "slots": {
                     "age": 33,
+                    "time_trying": "2 years",
                     "diagnoses": [
                       "endometriosis"
                     ],
-                    "time_trying": "2 years",
                     "pregnancy_priority": "high"
                   },
                   "flags": {
@@ -4919,7 +4870,7 @@
             },
             {
               "lead": "no that's ok, can coaching help with endo?",
-              "reply": "Yes, coaching can help you work on the wider lifestyle picture around endometriosis and fertility. I work with endometriosis, but coaching can’t treat or remove endometriosis itself.",
+              "reply": "Yes, coaching can support everyday fertility factors alongside endometriosis, but it can’t treat endometriosis itself. My method looks at lifestyle obstacles, what your body needs, and changes that can fit into your real life.",
               "note": "path qualification | intent new_prospect | flags asked_if_ai | slots {\"age\": 33, \"time_trying\": \"2 years\", \"diagnoses\": [\"endometriosis\"], \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -4930,7 +4881,7 @@
                   "explicit_question": "can coaching help with endo?",
                   "price_ask": null,
                   "explained": [
-                    "Sonia works with endometriosis and looks at the whole picture"
+                    "coaching can support everyday fertility factors but cannot treat endometriosis"
                   ],
                   "slots": {
                     "age": 33,
@@ -4985,7 +4936,7 @@
           "turns": [
             {
               "lead": "i'm 36, trying 2 years with my husband, unexplained. i'm ready to work with you, how do i book?",
-              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. You can book here:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your husband can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
+              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. You and your husband can book here:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
               "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
@@ -5036,10 +4987,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent",
               "tags": [
                 "qualified"
-              ]
+              ],
+              "paused_now": "qualified_link_sent"
             },
             {
               "lead": "booked!",
@@ -5053,9 +5004,7 @@
                   "language": "en",
                   "explicit_question": null,
                   "price_ask": null,
-                  "explained": [
-                    "the free call with the team to discuss her needs and which support level fits"
-                  ],
+                  "explained": [],
                   "slots": {
                     "age": 36,
                     "time_trying": "2 years",
@@ -5098,12 +5047,12 @@
             {
               "lead": "ok",
               "reply": "",
-              "note": "path nurturing | intent new_prospect | flags structural | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate after the link: nothing to answer | action AFTER_LINK_SILENT | pause qualified_link_sent | tag 86596410 (review)",
+              "note": "path qualification | intent warm_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate after the link: nothing to answer | action AFTER_LINK_SILENT | pause qualified_link_sent",
               "action": "AFTER_LINK_SILENT",
               "trace": {
                 "read": {
-                  "path": "nurturing",
-                  "intent": "new_prospect",
+                  "path": "qualification",
+                  "intent": "warm_prospect",
                   "language": "en",
                   "explicit_question": null,
                   "price_ask": null,
@@ -5111,15 +5060,10 @@
                   "slots": {
                     "age": 36,
                     "time_trying": "2 years",
-                    "diagnoses": [
-                      "unexplained"
-                    ],
                     "partner_status": "partnered",
                     "pregnancy_priority": "high"
                   },
-                  "flags": {
-                    "structural": "unclear"
-                  }
+                  "flags": {}
                 },
                 "gate": {
                   "allow_booking": false,
@@ -5131,16 +5075,11 @@
                     "after the link: nothing to answer"
                   ]
                 }
-              },
-              "tag": 86596410,
-              "qualified": false,
-              "tags": [
-                "human_handover"
-              ]
+              }
             },
             {
               "lead": "jen.w@mail.com",
-              "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nIf you and your husband make these decisions together, he should be on the call too.",
+              "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nYour husband should be on the call you booked.",
               "note": "path qualification | intent warm_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"email\": \"jen.w@mail.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
               "action": "AFTER_LINK",
               "trace": {
@@ -5192,7 +5131,7 @@
             {
               "lead": "thanks!",
               "reply": "",
-              "note": "path terminal | intent new_prospect | flags structural | slots {\"age\": 36, \"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"email\": \"jen.w@mail.com\", \"goal_stated\": \"work with you\"} | gate after the link: nothing to answer | action AFTER_LINK_SILENT | pause qualified_link_sent | tag 86596410 (review)",
+              "note": "path terminal | intent new_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"email\": \"jen.w@mail.com\"} | gate after the link: nothing to answer | action AFTER_LINK_SILENT | pause qualified_link_sent",
               "action": "AFTER_LINK_SILENT",
               "trace": {
                 "read": {
@@ -5201,22 +5140,18 @@
                   "language": "en",
                   "explicit_question": null,
                   "price_ask": null,
-                  "explained": [
-                    "what the free call covers",
-                    "Sonia’s method and how she works",
-                    "case studies"
-                  ],
+                  "explained": [],
                   "slots": {
                     "age": 36,
                     "time_trying": "2 years",
+                    "diagnoses": [
+                      "unexplained"
+                    ],
                     "partner_status": "partnered",
                     "pregnancy_priority": "high",
-                    "email": "jen.w@mail.com",
-                    "goal_stated": "work with you"
+                    "email": "jen.w@mail.com"
                   },
-                  "flags": {
-                    "structural": "unclear"
-                  }
+                  "flags": {}
                 },
                 "gate": {
                   "allow_booking": false,
@@ -5228,24 +5163,19 @@
                     "after the link: nothing to answer"
                   ]
                 }
-              },
-              "tag": 86596410,
-              "qualified": false,
-              "tags": [
-                "human_handover"
-              ]
+              }
             }
           ],
           "id": "e42_booked_then_email",
           "title": "Booked, email later",
           "verdict": "pass",
-          "comment": "Asks for the email once, then the video and text reply paragraph, then \"if you decide together, he should be on the call\". No softening."
+          "comment": "Asks for the email once, silent on \"ok\", then the video and text reply paragraph and \"your husband should be on the call you booked\"."
         },
         {
           "turns": [
             {
               "lead": "i'm 36, trying 2 years with my husband, unexplained. i'm ready to work with you, how do i book?",
-              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your husband can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
+              "reply": "The first step is a free call with my team to talk through what support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
               "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
@@ -5253,7 +5183,7 @@
                   "path": "qualification",
                   "intent": "warm_prospect",
                   "language": "en",
-                  "explicit_question": "i'm ready to work with you, how do i book?",
+                  "explicit_question": "how do i book?",
                   "price_ask": null,
                   "explained": [],
                   "slots": {
@@ -5296,15 +5226,15 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent",
               "tags": [
                 "qualified"
-              ]
+              ],
+              "paused_now": "qualified_link_sent"
             },
             {
               "lead": "booked for monday, my email is kate.r@outlook.com",
-              "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nIf you and your husband make these decisions together, he should be on the call on Monday too.",
-              "note": "path qualification | intent warm_prospect | flags says_booked | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"email\": \"kate.r@outlook.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
+              "reply": "Before your call, please watch this video. It explains my method and how I work, and shares case studies so you can come prepared.\n\nhttps://www.thefertilitysolution.com/watch-replay\n\nImportant: you'll receive a text from my team asking you to confirm your appointment. You must reply to that text to finalize your confirmation.\n\nYour husband should be on the call you booked.",
+              "note": "path qualification | intent warm_prospect | flags says_booked | slots {\"age\": 36, \"time_trying\": \"2 years\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"email\": \"kate.r@outlook.com\"} | gate after the link: email | action AFTER_LINK | pause qualified_link_sent",
               "action": "AFTER_LINK",
               "trace": {
                 "read": {
@@ -5317,9 +5247,6 @@
                   "slots": {
                     "age": 36,
                     "time_trying": "2 years",
-                    "diagnoses": [
-                      "unexplained"
-                    ],
                     "partner_status": "partnered",
                     "pregnancy_priority": "high",
                     "email": "kate.r@outlook.com"
@@ -5357,7 +5284,7 @@
             {
               "lead": "thank you",
               "reply": "",
-              "note": "path terminal | intent new_prospect | flags - | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"email\": \"kate.r@outlook.com\"} | gate after the link: nothing to answer | action AFTER_LINK_SILENT | pause qualified_link_sent | tag 86596410 (review)",
+              "note": "path terminal | intent new_prospect | flags says_booked | slots {\"age\": 36, \"time_trying\": \"2 years\", \"diagnoses\": [\"unexplained\"], \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\", \"email\": \"kate.r@outlook.com\"} | gate after the link: nothing to answer | action AFTER_LINK_SILENT | pause qualified_link_sent",
               "action": "AFTER_LINK_SILENT",
               "trace": {
                 "read": {
@@ -5366,9 +5293,7 @@
                   "language": "en",
                   "explicit_question": null,
                   "price_ask": null,
-                  "explained": [
-                    "the first step is a free call with the team to discuss her needs and which level of support fits"
-                  ],
+                  "explained": [],
                   "slots": {
                     "age": 36,
                     "time_trying": "2 years",
@@ -5379,7 +5304,9 @@
                     "pregnancy_priority": "high",
                     "email": "kate.r@outlook.com"
                   },
-                  "flags": {}
+                  "flags": {
+                    "says_booked": true
+                  }
                 },
                 "gate": {
                   "allow_booking": false,
@@ -5391,18 +5318,13 @@
                     "after the link: nothing to answer"
                   ]
                 }
-              },
-              "tag": 86596410,
-              "qualified": false,
-              "tags": [
-                "human_handover"
-              ]
+              }
             }
           ],
           "id": "e43_booked_with_email",
           "title": "Booked with email",
           "verdict": "pass",
-          "comment": "Video and text reply paragraph at once; reminder conditional, not assumed."
+          "comment": "Video and text reply paragraph at once, then the one line reminder that her husband should be on the call."
         }
       ]
     },
@@ -5413,8 +5335,8 @@
           "turns": [
             {
               "lead": "i lost my baby last week at 10 weeks. i can't do this anymore.",
-              "reply": "I’m so sorry. Losing your baby last week is so recent. You don’t have to figure anything out right now. Be gentle with yourself.",
-              "note": "path nurturing | intent new_prospect | flags recent_loss | gate no link: recent_loss | action REPLY:new_prospect",
+              "reply": "I’m so sorry. Losing your baby last week is so recent, and you don’t have to make any decisions about what comes next right now. Be gentle with yourself.",
+              "note": "path nurturing | intent new_prospect | flags recent_loss | slots {\"miscarriage_history\": \"lost my baby last week at 10 weeks\"} | gate no link: recent_loss | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -5424,7 +5346,9 @@
                   "explicit_question": null,
                   "price_ask": null,
                   "explained": [],
-                  "slots": {},
+                  "slots": {
+                    "miscarriage_history": "lost my baby last week at 10 weeks"
+                  },
                   "flags": {
                     "recent_loss": true
                   }
@@ -5497,10 +5421,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "crisis",
               "tags": [
                 "human_handover"
-              ]
+              ],
+              "paused_now": "crisis"
             }
           ],
           "id": "e45_crisis",
@@ -5542,10 +5466,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "is_existing_client",
               "tags": [
                 "human_handover"
-              ]
+              ],
+              "paused_now": "is_existing_client"
             }
           ],
           "id": "e46_existing_client",
@@ -5557,8 +5481,8 @@
           "turns": [
             {
               "lead": "i'm 35, trying 1 year with my husband, pcos. how do i book?",
-              "reply": "The first step is a free call with my team to talk through what you need and which level of support might fit. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nI strongly encourage you to choose a time you and your husband can both attend if you make these decisions together. You can both ask questions and explore which support fits.",
-              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 35, \"time_trying\": \"1 year\", \"diagnoses\": [\"PCOS\"], \"partner_status\": \"partnered\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
+              "reply": "The first step is a free call with my team to talk through what you need and which level of support fits. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
+              "note": "path qualification | intent warm_prospect | flags wants_to_buy | slots {\"age\": 35, \"time_trying\": \"1 year\", \"diagnoses\": [\"pcos\"], \"partner_status\": \"partnered\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
                 "read": {
@@ -5572,7 +5496,7 @@
                     "age": 35,
                     "time_trying": "1 year",
                     "diagnoses": [
-                      "PCOS"
+                      "pcos"
                     ],
                     "partner_status": "partnered"
                   },
@@ -5607,10 +5531,10 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent",
               "tags": [
                 "qualified"
-              ]
+              ],
+              "paused_now": "qualified_link_sent"
             },
             {
               "lead": "the link won't load for me",
@@ -5624,7 +5548,9 @@
                   "language": "en",
                   "explicit_question": null,
                   "price_ask": null,
-                  "explained": [],
+                  "explained": [
+                    "the first step is a free call with the team"
+                  ],
                   "slots": {
                     "age": 35,
                     "time_trying": "1 year",
@@ -5648,10 +5574,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "technical_support",
               "tags": [
                 "human_handover"
-              ]
+              ],
+              "paused_now": "technical_support"
             }
           ],
           "id": "e47_technical_link",
@@ -5663,8 +5589,8 @@
           "turns": [
             {
               "lead": "i'm not ready to pay for anything, i just want to learn about fertility",
-              "reply": "That’s completely fine. You don’t need to pay for anything to start learning. My free masterclass is a good place to begin:\n\nhttps://www.thefertilitysolution.com/register",
-              "note": "path nurturing | intent new_prospect | flags - | gate no link: not_enough_context | action REPLY:new_prospect",
+              "reply": "That’s completely fine. You can learn without committing to coaching. My free masterclass is a good place to start:\n\nhttps://www.thefertilitysolution.com/register",
+              "note": "path nurturing | intent new_prospect | flags refuses_paid_coaching | gate no link: refuses_paid_coaching | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -5675,7 +5601,9 @@
                   "price_ask": null,
                   "explained": [],
                   "slots": {},
-                  "flags": {}
+                  "flags": {
+                    "refuses_paid_coaching": true
+                  }
                 },
                 "gate": {
                   "allow_booking": false,
@@ -5684,7 +5612,7 @@
                   "handover_message": "",
                   "price": "",
                   "notes": [
-                    "no link: not_enough_context"
+                    "no link: refuses_paid_coaching"
                   ]
                 },
                 "playbooks": [
@@ -5705,7 +5633,7 @@
             },
             {
               "lead": "what's the best thing to read about egg quality?",
-              "reply": "I don’t have a specific article or book to recommend. Egg quality is a complex topic, and a lot of what’s online can make it sound more certain than it is. My free masterclass is a place to learn how I approach fertility more broadly.",
+              "reply": "There isn’t a particular reading resource I can recommend. I don’t have an approved article or reading list, but my free masterclass is a good place to learn about fertility.",
               "note": "path direct_answer | intent new_prospect | flags refuses_paid_coaching | gate no link: refuses_paid_coaching | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -5759,8 +5687,8 @@
           "turns": [
             {
               "lead": "i'm 35 with pcos and irregular cycles, trying 2 years",
-              "reply": "2 years of trying with PCOS and irregular cycles can be a lot to carry. This is exactly the kind of situation I work with. What would you most like help with right now?",
-              "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 35, \"time_trying\": \"2 years\", \"cycles\": \"irregular\", \"diagnoses\": [\"PCOS\"], \"pregnancy_priority\": \"high\"} | gate no link: first_exchange | action REPLY:new_prospect",
+              "reply": "2 years with PCOS and irregular cycles can be a lot to carry, especially when it’s hard to know what’s happening from month to month. PCOS is something I work with. What would you most like help understanding right now?",
+              "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 35, \"time_trying\": \"2 years\", \"cycles\": \"irregular\", \"diagnoses\": [\"pcos\"], \"pregnancy_priority\": \"high\"} | gate no link: first_exchange | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -5775,7 +5703,7 @@
                     "time_trying": "2 years",
                     "cycles": "irregular",
                     "diagnoses": [
-                      "PCOS"
+                      "pcos"
                     ],
                     "pregnancy_priority": "high"
                   },
@@ -5809,8 +5737,8 @@
             },
             {
               "lead": "have you actually helped women with pcos get pregnant?",
-              "reply": "Yes. Katrina worked with me while dealing with PCOS, irregular cycles and metabolic issues, and later became pregnant naturally.",
-              "note": "path direct_answer | intent new_prospect | flags asked_about_results | slots {\"age\": 35, \"time_trying\": \"2 years\", \"cycles\": \"irregular\", \"diagnoses\": [\"PCOS\"], \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
+              "reply": "Yes. Katrina had PCOS, irregular cycles and metabolic issues when she worked with me, and later became pregnant naturally.",
+              "note": "path direct_answer | intent new_prospect | flags asked_about_results | slots {\"age\": 35, \"time_trying\": \"2 years\", \"cycles\": \"irregular\", \"diagnoses\": [\"pcos\"], \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -5825,7 +5753,7 @@
                     "time_trying": "2 years",
                     "cycles": "irregular",
                     "diagnoses": [
-                      "PCOS"
+                      "pcos"
                     ],
                     "pregnancy_priority": "high"
                   },
@@ -5861,8 +5789,8 @@
             },
             {
               "lead": "what about endometriosis?",
-              "reply": "I work with women with endometriosis too, but I don’t have a documented endometriosis client story to share. I’d rather be honest than stretch someone else’s experience to fit yours.",
-              "note": "path direct_answer | intent new_prospect | flags asked_about_results | slots {\"age\": 35, \"time_trying\": \"2 years\", \"cycles\": \"irregular\", \"diagnoses\": [\"PCOS\"], \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
+              "reply": "I work with women with endometriosis too, though I don’t have a documented endometriosis client story I can share. I’d rather be honest than stretch someone else’s experience to fit yours.",
+              "note": "path direct_answer | intent new_prospect | flags asked_about_results | slots {\"age\": 35, \"diagnoses\": [\"PCOS\"], \"cycles\": \"irregular\", \"time_trying\": \"2 years\", \"pregnancy_priority\": \"high\"} | gate link available | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -5874,11 +5802,11 @@
                   "explained": [],
                   "slots": {
                     "age": 35,
-                    "time_trying": "2 years",
-                    "cycles": "irregular",
                     "diagnoses": [
                       "PCOS"
                     ],
+                    "cycles": "irregular",
+                    "time_trying": "2 years",
                     "pregnancy_priority": "high"
                   },
                   "flags": {
@@ -5921,20 +5849,18 @@
           "turns": [
             {
               "lead": "can you do my ivf transfer for me?",
-              "reply": "No, I can’t perform an IVF transfer. That’s done by your fertility clinic’s medical team.",
-              "note": "path qualification | intent new_prospect | flags wants_unprovided_service | slots {\"conceiving_mode\": \"ivf\"} | gate no link: out_of_scope_request | action REPLY:new_prospect",
+              "reply": "No, I can’t perform an IVF transfer. Your fertility clinic’s medical team carries out the transfer.",
+              "note": "path direct_answer | intent new_prospect | flags wants_unprovided_service | gate no link: out_of_scope_request | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
-                  "path": "qualification",
+                  "path": "direct_answer",
                   "intent": "new_prospect",
                   "language": "en",
                   "explicit_question": "can you do my ivf transfer for me?",
                   "price_ask": null,
                   "explained": [],
-                  "slots": {
-                    "conceiving_mode": "ivf"
-                  },
+                  "slots": {},
                   "flags": {
                     "wants_unprovided_service": true
                   }
@@ -5976,7 +5902,7 @@
             {
               "lead": "i did your program in 2023, we're thinking about trying again",
               "reply": "Thank you for sharing this with me ♡ We'll take a closer look so we can give you a thoughtful, personal response.",
-              "note": "path nurturing | intent new_prospect | flags is_former_client | slots {\"partner_status\": \"partnered\"} | gate handover: is_former_client, fixed line handover_message_review | action HANDOVER:is_former_client | pause is_former_client | tag 86596410 (review) | state: paused",
+              "note": "path nurturing | intent new_prospect | flags is_former_client | slots {\"partner_status\": \"partnered\", \"goal_stated\": \"thinking about trying again\"} | gate handover: is_former_client, fixed line handover_message_review | action HANDOVER:is_former_client | pause is_former_client | tag 86596410 (review) | state: paused",
               "action": "HANDOVER:is_former_client",
               "trace": {
                 "read": {
@@ -5987,7 +5913,8 @@
                   "price_ask": null,
                   "explained": [],
                   "slots": {
-                    "partner_status": "partnered"
+                    "partner_status": "partnered",
+                    "goal_stated": "thinking about trying again"
                   },
                   "flags": {
                     "is_former_client": true
@@ -6006,10 +5933,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "is_former_client",
               "tags": [
                 "human_handover"
-              ]
+              ],
+              "paused_now": "is_former_client"
             }
           ],
           "id": "e51_former_client",
@@ -6021,7 +5948,7 @@
           "turns": [
             {
               "lead": "my tubes are blocked, can you help?",
-              "reply": "I may be able to help with support around your fertility, but it depends on what’s going on with your tubes. Are both tubes blocked, or just one?",
+              "reply": "I may be able to support you, but it depends on the details. Are both tubes blocked, or only one?",
               "note": "path nurturing | intent new_prospect | flags structural | gate no link: tubal_status_unclear | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -6065,7 +5992,7 @@
             },
             {
               "lead": "both",
-              "reply": "If both tubes are blocked, coaching can’t unblock them, so I wouldn’t present my program as a way to conceive naturally. IVF is how clinics work around blocked tubes, and I may be able to support you in preparing for it. Would you consider IVF?",
+              "reply": "If both tubes are blocked, coaching can’t unblock them, so I wouldn’t present my program as a way to conceive naturally. IVF is how clinics work around blocked tubes, and I may be able to support you as you prepare for it. Is IVF something you’d consider?",
               "note": "path nurturing | intent new_prospect | flags structural | gate no link: both_tubes_without_ivf | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -6109,7 +6036,7 @@
             },
             {
               "lead": "no, i don't want ivf",
-              "reply": "I understand. Since you want to conceive naturally and aren’t open to IVF, my program can’t give you what you’re looking for because coaching can’t unblock both tubes.",
+              "reply": "I understand. Since you want to conceive naturally and aren’t open to IVF, my program can’t give you the help you’re looking for because coaching can’t unblock both tubes.",
               "note": "path nurturing | intent new_prospect | flags structural, wants_natural_only | gate no link: both_tubes_without_ivf | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -6120,7 +6047,8 @@
                   "explicit_question": null,
                   "price_ask": null,
                   "explained": [
-                    "coaching can't unblock blocked tubes; IVF works around them"
+                    "coaching can’t unblock blocked tubes",
+                    "IVF works around blocked tubes"
                   ],
                   "slots": {},
                   "flags": {
@@ -6197,10 +6125,10 @@
               },
               "tag": 86596410,
               "qualified": false,
-              "paused_now": "requested_medication",
               "tags": [
                 "human_handover"
-              ]
+              ],
+              "paused_now": "requested_medication"
             },
             {
               "lead": "just roughly?",
@@ -6216,7 +6144,7 @@
           "turns": [
             {
               "lead": "can i get sonia's number to call her?",
-              "reply": "I don’t share my personal number in DMs. If you’d like to talk things through, you can book a free call with my team.\n\nBefore I send you the link, can I ask how old you are?",
+              "reply": "I don’t share my personal number in DMs. If you’d like to talk things through, the first step is a free call with my team.\n\nBefore I send you the link, can I ask how old you are?",
               "note": "path direct_answer | intent new_prospect | flags asked_for_phone | gate link available | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -6260,7 +6188,7 @@
             },
             {
               "lead": "i'm 40, trying 3 years, low amh",
-              "reply": "I have those details already, so you don’t need to repeat them. I don’t share my personal number in DMs, but you can talk with my team on a free call:\n\nhttps://www.thefertilitysolution.com/free-call",
+              "reply": "Thanks, I already have that context. You can book a free call with my team here:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
               "note": "path nurturing | intent new_prospect | flags - | slots {\"age\": 40, \"time_trying\": \"3 years\", \"testing_done\": [\"low AMH\"], \"pregnancy_priority\": \"high\"} | gate link available | action BOOKING_SENT | pause qualified_link_sent | tag 86596410 (qualified) | state: paused",
               "action": "BOOKING_SENT",
               "trace": {
@@ -6308,22 +6236,22 @@
               },
               "tag": 86596410,
               "qualified": true,
-              "paused_now": "qualified_link_sent",
               "tags": [
                 "qualified"
-              ]
+              ],
+              "paused_now": "qualified_link_sent"
             }
           ],
           "id": "e60_phone_number",
           "title": "Sonia's phone number",
-          "verdict": "pass",
-          "comment": "Number not shared; age asked first; link with the approved attendance line (rerun in the browser after the nurturing few-shot fix)."
+          "verdict": "partial",
+          "comment": "Number not shared; age asked first; link with the attendance line. Opens with \"Thanks, I already have that context\" after she gives new details."
         },
         {
           "turns": [
             {
               "lead": "we've decided to stop trying after 6 years. i just wanted to say thank you for your posts",
-              "reply": "That sounds like a deeply considered decision after 6 years. Thank you for being here and for your kind words. I hope what comes next brings you some peace.",
+              "reply": "That’s a huge decision after 6 years, and it sounds like you’ve given it a lot of thought. I hope what comes next brings you some peace, and I’m glad my posts were there for you along the way.",
               "note": "path terminal | intent new_prospect | flags stopped_trying | slots {\"time_trying\": \"6 years\", \"pregnancy_priority\": \"high\"} | gate no link: stopped_trying | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -6370,7 +6298,7 @@
             },
             {
               "lead": "do you think we made the right call?",
-              "reply": "Only you and your partner can know what’s right for you, but choosing to stop after 6 years is a valid decision. You don’t have to keep trying to prove how much you want this.",
+              "reply": "There isn’t one right call for everyone. After 6 years, it’s okay to stop if that’s what feels right for you both, and you don’t have to justify that decision to me.",
               "note": "path direct_answer | intent new_prospect | flags stopped_trying | slots {\"time_trying\": \"6 years\", \"partner_status\": \"partnered\", \"pregnancy_priority\": \"high\"} | gate no link: stopped_trying | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -6472,8 +6400,8 @@
             },
             {
               "lead": "what tests should i ask for before we try again?",
-              "reply": "I can’t recommend which tests to request for your situation. Your OB-GYN or fertility doctor is the right person to discuss whether any testing is appropriate before you try again.",
-              "note": "path direct_answer | intent new_prospect | flags recent_loss, wants_unprovided_service | slots {\"miscarriage_history\": \"miscarried 2 weeks ago at 8 weeks\"} | gate no link: out_of_scope_request | action REPLY:new_prospect",
+              "reply": "I’m so sorry you’re having to think about next steps so soon after your loss. Which tests, if any, are appropriate depends on your situation, so ask the clinician caring for you what they recommend before trying again.",
+              "note": "path direct_answer | intent new_prospect | flags recent_loss | slots {\"miscarriage_history\": \"miscarried 2 weeks ago at 8 weeks\"} | gate no link: recent_loss | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
                 "read": {
@@ -6487,8 +6415,7 @@
                     "miscarriage_history": "miscarried 2 weeks ago at 8 weeks"
                   },
                   "flags": {
-                    "recent_loss": true,
-                    "wants_unprovided_service": true
+                    "recent_loss": true
                   }
                 },
                 "gate": {
@@ -6498,7 +6425,7 @@
                   "handover_message": "",
                   "price": "",
                   "notes": [
-                    "no link: out_of_scope_request"
+                    "no link: recent_loss"
                   ]
                 },
                 "playbooks": [

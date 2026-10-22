@@ -56,21 +56,19 @@ the link, send this instead, as its own message: "Before I send you the link, ca
 are?" Send the link after she answers.
 
 ## partner_solo
-She is doing this on her own. When you send the link, invite her alone.
+She will come to the call on her own. When you send the link, invite her alone.
 
 ## partner_invite
-When you send the link, add the attendance line from KNOWN FACTS.
-
-## attendance_pushback
-She has pushed back on her partner attending. Ask the one attendance question from KNOWN FACTS and
-nothing else. Don't offer an exception yet.
-
-## attendance_together
-They decide together, so both attend. Encourage her to choose a time they can both make, even a
-later one. No exception.
+When you send the link, add the attendance line from KNOWN FACTS. If she has said her partner can't
+make it, say you understand first. No exception yet.
 
 ## attendance_exception
-She decides independently. Give the exception from KNOWN FACTS and don't reopen it.
+Her partner truly can't attend. Give the exception from KNOWN FACTS. Don't ask who decides, ask her
+to prove it, or ask again for a time they can both make.
+
+## attendance_alone
+She makes these decisions on her own, so she can come alone. Tell her that's fine and to mention to
+my team that we agreed this.
 
 ## after_link_question
 She has the booking link and hasn't booked yet. Answer her question. Don't send the link again.
@@ -83,8 +81,7 @@ She has booked and given her email. Send the preparation message, the video link
 confirmation message from KNOWN FACTS. Nothing else.
 
 ## after_link_remind_partner
-After the confirmation, remind her once that if they decide together, her partner should be on
-the call.
+After the confirmation, one sentence: her partner should be on the call she booked.
 
 ## after_link_remind_exception
 After the confirmation, remind her to mention to my team that you agreed she would come on her own.
