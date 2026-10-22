@@ -147,8 +147,10 @@ messages ago, followed by "ok thanks" or a new question, sets nothing now.
 - `doubts_value`: she doubts what working with Sonia would add. "That sounds vague", "what would
   you actually do with me?", "how is that different from reading stuff online?", "how do I know
   it's worth it?".
-- `ambiguous_answer`: Sonia's last message offered a choice ("regular, or do they vary?",
-  "naturally, or with a clinic?") and her reply doesn't say which: "yes", "no", "ok", "maybe".
+- `ambiguous_answer`: her reply doesn't answer Sonia's last question: "yes", "no", "ok" or "maybe"
+  to a choice ("regular, or do they vary?") or to an open question ("what feels hardest?").
+- `answered_link_age`: Sonia's last message asked her age before sending the booking link, and
+  this message gives it.
 
 **Her position.** These stay set, so set them only on her own words.
 

@@ -241,6 +241,8 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str],
         add("booking_open")
         if not dossier._stated(slots.get("age")) and not dossier._pregnancy_prospect(state):
             add("age_unknown")
+        elif flags.get("answered_link_age"):
+            add("age_answered")
         alone = (slots.get("partner_status") == "single_by_choice"
                  or slots.get("attendance") in dossier.ATTENDING_ALONE)
         add("partner_solo" if alone else "partner_invite")
