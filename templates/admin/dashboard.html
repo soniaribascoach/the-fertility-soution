@@ -132,6 +132,8 @@
         "requested_surgery_advice": ("Procedure decision · clinician line sent", "warn"),
         "crisis": ("Crisis · helpline sent", "warn"),
         "pregnancy_transfer": ("Client pregnant · move to The Pregnancy Solution", "ok"),
+        "not_qualified": ("Not qualified · one line sent, no handover", "ok"),
+        "structural_unclear": ("Tubes or menopause still unclear · review", "warn"),
       } %}
       {% for lead in paused_leads %}
       {% if lead.opted_out_at %}

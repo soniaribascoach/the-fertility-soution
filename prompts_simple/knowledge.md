@@ -29,6 +29,10 @@ and trackers. Eat Well has hundreds of recipes. Modules: 1 Welcome and Prepare, 
 Environment, 10 Think Better, 11 Feel More Joy, 12 Empower Yourself, 13 Improve Your Relationships,
 14 Find Your Groove, 15 Attract, 16 Male Factor.
 
+Supplement support, approved wording, sent word for word when she asks whether I offer supplement
+support: "Yes, absolutely! I'll give you a personalized supplement routine, alongside helping you
+boost your fertility from every possible angle. My support goes way beyond supplements."
+
 The Pregnancy Solution: 18 modules, for women who are already pregnant or who become pregnant during
 The Fertility Solution, adapted to each pregnancy. Modules 1 to 15 match The Fertility Solution, then
 16 Birth Preparation, 17 Baby Essentials, 18 Embracing Your New Journey. It has no Male Factor
@@ -105,7 +109,8 @@ seeking pregnancy support. There is no other form note.
 Attendance line, approved wording, for when the link goes to anyone who hasn't said she is doing
 this alone: "We really prefer it when both partners join the call. It makes for a much more powerful
 conversation when you can both ask questions and explore important decisions for your family
-together. Could you choose a time you can both attend?" Word for word.
+together. Could you choose a time you can both attend?" Word for word. Until the exception below is
+agreed, this line is also the answer when she asks to come alone.
 Exception, approved wording, once she confirms her partner truly can't attend, even if they decide
 together: "I understand. If your partner truly cannot attend with you, we'll make an exception and
 see you on your own. Please mention to my team that we agreed this."

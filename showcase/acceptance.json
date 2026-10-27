@@ -1,7 +1,8 @@
 {
-  "version": "v4.3",
-  "manual": "v4.3 (Oct 20, 2026)",
-  "run_at": "2026-10-22 07:21 UTC",
+  "version": "v4.4",
+  "revision": "bcc3ca1",
+  "manual": "v4.4 (Oct 22, 2026)",
+  "run_at": "2026-10-26 16:45 UTC",
   "sections": [
     {
       "name": "Program basics",
@@ -5959,7 +5960,7 @@
           "turns": [
             {
               "lead": "my tubes are blocked, can you help?",
-              "reply": "I may be able to help, depending on what’s going on. Are both tubes blocked, or is only one affected?",
+              "reply": "I may be able to help, but it depends on what’s going on with your tubes. Are both tubes blocked or removed, or is only one affected?",
               "note": "path nurturing | intent new_prospect | flags structural | gate no link: tubal_status_unclear | action REPLY:new_prospect",
               "action": "REPLY:new_prospect",
               "trace": {
@@ -6002,10 +6003,10 @@
               }
             },
             {
-              "lead": "both",
-              "reply": "If both tubes are blocked, coaching can’t unblock them, so I wouldn’t present my program as a way to conceive naturally. IVF is how clinics work around blocked tubes, and I may be able to support you in preparing for it. Is IVF something you’re considering?",
-              "note": "path nurturing | intent new_prospect | flags structural | gate no link: both_tubes_without_ivf | action REPLY:new_prospect",
-              "action": "REPLY:new_prospect",
+              "lead": "both, i'm preparing for ivf in march",
+              "reply": "I'm so sorry, I don't think I can help you.",
+              "note": "path nurturing | intent new_prospect | flags structural | slots {\"conceiving_mode\": \"ivf\", \"pregnancy_priority\": \"high\"} | gate no link: not_qualified | action NOT_QUALIFIED | pause not_qualified | labels not_qualified | state: paused",
+              "action": "NOT_QUALIFIED",
               "trace": {
                 "read": {
                   "path": "nurturing",
@@ -6014,7 +6015,10 @@
                   "explicit_question": null,
                   "price_ask": null,
                   "explained": [],
-                  "slots": {},
+                  "slots": {
+                    "conceiving_mode": "ivf",
+                    "pregnancy_priority": "high"
+                  },
                   "flags": {
                     "structural": "both_tubes"
                   }
@@ -6026,7 +6030,7 @@
                   "handover_message": "",
                   "price": "",
                   "notes": [
-                    "no link: both_tubes_without_ivf"
+                    "no link: not_qualified"
                   ]
                 },
                 "playbooks": [
@@ -6043,61 +6047,21 @@
                   "qualification_ready",
                   "terminal"
                 ]
-              }
+              },
+              "tags": [
+                "not_qualified"
+              ],
+              "paused_now": "not_qualified"
             },
             {
-              "lead": "no, i don't want ivf",
-              "reply": "I understand. Since you want to try naturally and aren’t open to IVF, my program can’t give you what you’re looking for.",
-              "note": "path nurturing | intent new_prospect | flags structural, wants_natural_only | gate no link: both_tubes_without_ivf | action REPLY:new_prospect",
-              "action": "REPLY:new_prospect",
-              "trace": {
-                "read": {
-                  "path": "nurturing",
-                  "intent": "new_prospect",
-                  "language": "en",
-                  "explicit_question": null,
-                  "price_ask": null,
-                  "explained": [
-                    "coaching can’t unblock blocked tubes",
-                    "IVF works around blocked tubes"
-                  ],
-                  "slots": {},
-                  "flags": {
-                    "wants_natural_only": true,
-                    "structural": "both_tubes"
-                  }
-                },
-                "gate": {
-                  "allow_booking": false,
-                  "escalate": false,
-                  "reason": "",
-                  "handover_message": "",
-                  "price": "",
-                  "notes": [
-                    "no link: both_tubes_without_ivf"
-                  ]
-                },
-                "playbooks": [
-                  "direct_answer",
-                  "direct_answer_levels",
-                  "direct_answer_pregnancy",
-                  "nurturing",
-                  "nurturing_endo_male_factor",
-                  "nurturing_pcos",
-                  "qualification",
-                  "qualification_age_review",
-                  "qualification_listening",
-                  "qualification_money",
-                  "qualification_ready",
-                  "terminal"
-                ]
-              }
+              "lead": "can you at least help me get my body ready for it?",
+              "paused": "not_qualified"
             }
           ],
           "id": "e53_tubes",
-          "title": "Both tubes, no IVF",
+          "title": "Both tubes, preparing for IVF: not qualified",
           "verdict": "pass",
-          "comment": "Asks one or both, asks about IVF, says honestly the program can't help once IVF is ruled out."
+          "comment": "Asks one or both first. Both, preparing for IVF: the exact Not Qualified line, no IVF offer, no link, no handover tag. Her next message gets no reply."
         },
         {
           "turns": [

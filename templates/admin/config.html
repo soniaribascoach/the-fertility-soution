@@ -140,8 +140,12 @@
       <input type="text" name="attendance_exception_tag_id" value="{{ cfg.attendance_exception_tag_id or '' }}" class="{{ input_cls }}">
     {% endcall %}
 
-    {% call field('Pregnancy Transfer Tag ID', 'ManyChat tag applied, beside human_handover, when a current client is pregnant and her account moves to The Pregnancy Solution.', 'mb-0') %}
+    {% call field('Pregnancy Transfer Tag ID', 'ManyChat tag applied, beside human_handover, when a current client is pregnant and her account moves to The Pregnancy Solution.') %}
       <input type="text" name="pregnancy_transfer_tag_id" value="{{ cfg.pregnancy_transfer_tag_id or '' }}" class="{{ input_cls }}">
+    {% endcall %}
+
+    {% call field('Not Qualified Tag ID', 'ManyChat tag applied, with no human_handover, when she has confirmed menopause or both tubes blocked or removed. The AI sends one line and then stays silent.', 'mb-0') %}
+      <input type="text" name="not_qualified_tag_id" value="{{ cfg.not_qualified_tag_id or '' }}" class="{{ input_cls }}">
     {% endcall %}
   </section>
 

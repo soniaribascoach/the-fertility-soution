@@ -204,6 +204,11 @@ def _brief(gate: dossier.Gate, read: dict, state: dict, openings: list[str],
     sticky = state.get("flags") or {}
     slots = state.get("slots") or {}
 
+    # The approved line is the whole reply, so her question gets no note of its own.
+    if gate.block_reason == "not_qualified":
+        add("reason_not_qualified")
+        return "\n".join(lines)
+
     if read.get("explicit_question"):
         add("question", question=read["explicit_question"])
 
@@ -311,6 +316,8 @@ def _handover_result(gate: dossier.Gate, cfg: dict, state: dict, usage: dict,
     if gate.escalate_reason == "age_review":
         # The review was asked for. Only the team's approval, recorded separately, opens the link.
         state["flags"]["age_review_requested"] = True
+    if gate.escalate_reason == "structural_unclear":
+        state["flags"]["structural_review_requested"] = True
     return TurnResult(
         reply_text=fixed or None, reply_if_unrouted=unrouted or None, lead_state=state,
         pause=True, pause_reason=gate.escalate_reason, add_tag=True, handover=True,
@@ -479,6 +486,10 @@ async def run_turn(
     if gate.block_reason == "english_materials_undisclosed" and reply:
         state["flags"]["english_materials_told"] = True
 
+    # Asked once (v4.4 2B.1 §8, §9). Still unclear on her next message, the team reviews it.
+    if gate.block_reason in ("tubal_status_unclear", "menopause_status_unclear") and reply:
+        state["flags"]["structural_asked"] = True
+
     # What the team should see on her contact, beside the handover or qualified tag.
     labels = [gate.route] if gate.route else []
     if attendance:
@@ -492,6 +503,14 @@ async def run_turn(
             reply_text=reply or None, lead_state=state, pause=True,
             pause_reason="qualified_link_sent", add_tag=False, labels=labels,
             action="AFTER_LINK", usage=usage, trace=trace,
+        )
+
+    if gate.block_reason == "not_qualified":
+        # She has the one line (v4.4). No handover tag, so the team is not asked to pick her up,
+        # and the pause keeps the AI from answering anything she sends after it.
+        return TurnResult(
+            reply_text=reply or None, lead_state=state, pause=True, pause_reason="not_qualified",
+            labels=labels + ["not_qualified"], action="NOT_QUALIFIED", usage=usage, trace=trace,
         )
 
     if sent_link:

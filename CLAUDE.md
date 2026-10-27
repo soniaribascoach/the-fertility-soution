@@ -40,7 +40,7 @@ grep -rn "[—–]" --include="*.py" --include="*.html" --include="*.md" . \
   only when a lead's first message is a single word.
 - `few_shots/*`: complete example conversations, first message to final outcome. All of them go
   to the writer on every turn (`app/services/few_shots.py`); there is no selection.
-- `manual/`: the Operating Manual (v4.3), the source of truth for all of the above.
+- `manual/`: the Operating Manual (v4.4), the source of truth for all of the above.
 
 Prefer changing a prompt layer or a few-shot conversation over adding Python. Gates in
 `dossier.py` decide what the writer is *given*; nothing inspects generated text after the fact.

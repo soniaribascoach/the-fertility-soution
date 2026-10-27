@@ -74,10 +74,10 @@ on its own does not mean she is pregnant.
 - `attendance`: whether her partner will be on the call, from what she said once the call came up.
   `together` | `cannot_attend` | `confirmed_cannot_attend` | `decides_alone`.
   - `together`: her partner will be on the call.
-  - `cannot_attend`: her partner can't make it (away, shifts, busy), or she asks to come alone.
-    Who decides doesn't change this.
-  - `confirmed_cannot_attend`: Sonia has already asked her to choose a time they can both attend,
-    and she says her partner still can't.
+  - `cannot_attend`: her partner can't make it (away, shifts, busy). Who decides doesn't change
+    this.
+  - `confirmed_cannot_attend`: Sonia has already asked for them both, in any words, and she says
+    her partner still can't. It stays once set.
   - `decides_alone`: she says she makes these decisions on her own.
   - The latest thing she said wins.
 - `pregnancy_priority`: `high` | `unclear` | `low`.
@@ -158,9 +158,6 @@ messages ago, followed by "ok thanks" or a new question, sets nothing now.
 - `wants_pregnancy_support`: she is pregnant and asks for support through it, or asks about The
   Pregnancy Solution.
 - `in_my_program`: she says she is in Sonia's program now.
-- `wants_natural_only`: she has ruled out IVF.
-- `open_to_ivf`: she is doing IVF, preparing for it, or would consider it. A past round alone is not
-  this.
 - `refuses_paid_coaching`: she says she can't or won't pay.
 - `stopped_trying`: she says trying is over. Exhaustion, a break, or leaving one clinic is not this.
 - `accepts_english_materials` / `declines_english_materials`: she writes in Spanish, was told the
@@ -189,8 +186,10 @@ when there is nothing.
 
 `one_tube` | `both_tubes` | `unclear_tubal` | `no_uterus` | `menopause` | `unclear_menopause`
 
-- Blocked tubes without saying how many is `unclear_tubal`.
-- She is asking whether she is in menopause: `unclear_menopause`.
+- Both blocked, tied or removed is `both_tubes`. Blocked tubes without saying how many is
+  `unclear_tubal`.
+- `menopause`: she says she is in menopause. Perimenopause, POI, missed periods or age are not.
+- She isn't sure whether she is in menopause: `unclear_menopause`.
 - The latest thing she said wins.
 
 ## LANGUAGE

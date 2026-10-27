@@ -84,7 +84,14 @@ AGE_REVIEW = 48
 ATTENDING_ALONE = ("confirmed_cannot_attend", "decides_alone")
 
 # Structural findings that close off a booking entirely (2B.1 §6, §9).
-BLOCKING_STRUCTURAL = ("no_uterus", "menopause")
+BLOCKING_STRUCTURAL = ("no_uterus",)
+
+# Not Qualified (v4.4 2B.1 §8, §9), IVF or not: one approved line, then nothing from the AI and no
+# handover to the team.
+NOT_QUALIFIED = ("menopause", "both_tubes")
+
+# Asked about once (v4.4 2B.1 §8, §9). Still unclear after that, a person looks at it.
+UNCLEAR_STRUCTURAL = ("unclear_tubal", "unclear_menopause")
 
 SLOT_LABELS = {
     "age": "Age",
@@ -278,8 +285,9 @@ def _escalation_reason(state: dict, read: dict, before: dict | None = None) -> s
     if slots.get("language") == "other" and new("slots", "language"):
         return "language_not_supported"
 
-    if flags.get("structural") == "unclear_menopause" and new("flags", "structural"):
-        return "menopause_unclear"
+    if (flags.get("structural") in UNCLEAR_STRUCTURAL and flags.get("structural_asked")
+            and not flags.get("structural_review_requested")):
+        return "structural_unclear"
 
     return ""
 
@@ -299,12 +307,14 @@ def _booking_blocked(state: dict, read: dict) -> str:
     # 2B.2 §10: a current client is never qualified or sold to.
     if flags.get("in_my_program"):
         return "in_my_program"
+    if structural in NOT_QUALIFIED:
+        return "not_qualified"
     if structural in BLOCKING_STRUCTURAL:
         return f"structural_{structural}"
     if structural == "unclear_tubal":
         return "tubal_status_unclear"
-    if structural == "both_tubes" and (flags.get("wants_natural_only") or not flags.get("open_to_ivf")):
-        return "both_tubes_without_ivf"
+    if structural == "unclear_menopause":
+        return "menopause_status_unclear"
     if flags.get("refuses_paid_coaching"):
         return "refuses_paid_coaching"
     # This turn only, like the two below. Sticky, one demand shut the link for good: she accepted
@@ -498,6 +508,9 @@ def gate(state: dict, read: dict, before: dict | None = None) -> Gate:
         blocks.discard("free_resource")
 
     blocked_for = _booking_blocked(state, read)
+    # The approved line is the whole reply, so there is no price or free resource to give it.
+    if blocked_for == "not_qualified":
+        return Gate(block_reason=blocked_for, notes=[f"no link: {blocked_for}"])
     # Someone who opens with "how do I work with you" is ready and should not be re-qualified;
     # everyone else gets at least one real exchange before a call is mentioned. A woman who says
     # "take my money" and tells you nothing about herself is still held by the `known < 3` check:
@@ -568,10 +581,6 @@ def render(state: dict) -> str:
 
     if flags.get("structural") and flags["structural"] not in ("none",):
         lines.append(f"- Structural finding she has mentioned: {flags['structural']}")
-    if flags.get("wants_natural_only"):
-        lines.append("- She wants natural conception and is not open to IVF")
-    if flags.get("open_to_ivf"):
-        lines.append("- She is open to IVF")
 
     if not lines:
         about_her = (

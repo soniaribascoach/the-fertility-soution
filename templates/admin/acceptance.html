@@ -6,6 +6,7 @@
   "age_review": "age review",
   "asked_for_human": "she asked for a person",
   "requested_medication": "medication question",
+  "structural_unclear": "tubes or menopause still unclear",
 } %}
 
 <style>
@@ -104,7 +105,7 @@
 
           {% if t.paused and not t.reply %}
           <div class="flex justify-center py-1">
-            <span class="text-[12px] px-3 py-1.5 rounded-full bg-slate-100 text-slate-500">Paused · saved for the team, no AI reply</span>
+            <span class="text-[12px] px-3 py-1.5 rounded-full bg-slate-100 text-slate-500">{{ 'Not qualified · saved, no AI reply' if t.paused == 'not_qualified' else 'Paused · saved for the team, no AI reply' }}</span>
           </div>
           {% else %}
 
@@ -124,6 +125,10 @@
             {% if t.paused_now == "qualified_link_sent" %}
             <div class="flex justify-center py-1">
               <span class="text-[12px] px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Booking link sent · {{ ('tags ' ~ tags) if tags else 'tag added' }}</span>
+            </div>
+            {% elif t.paused_now == "not_qualified" %}
+            <div class="flex justify-center py-1">
+              <span class="text-[12px] px-3 py-1.5 rounded-full bg-sky-50 text-sky-700 border border-sky-100">Not qualified · {{ ('tags ' ~ tags) if tags else 'tag added' }} · no handover · AI stops</span>
             </div>
             {% elif t.paused_now %}
             <div class="flex justify-center py-1">
