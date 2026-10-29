@@ -52,7 +52,7 @@ is given. Rebuild the writer's input before any edit. Net word count down.
   the writer (`brain.py:303`), so the `asked_if_ai` note (`turn.md:18`) never runs. Repro 2 of 2.
 - **Done (Oct 28, not committed):** new fixed line `handover_message_ai_human`: "You're chatting
   with Sonia's AI assistant right now." plus the review line. Chosen in `dossier.gate` when she
-  asks for a person and asks about AI for the first time. Migration `c7e2a9d4f1b6`, admin field,
+  asks for a person and asks about AI for the first time. Migration `a4f8c2e6d9b1`, admin field,
   `regress.load_cfg`.
   - Side effect found and closed: `asked_if_ai` is sticky, so e40's "yes please" after the full
     disclosure would have repeated the identity sentence. Only a first ask counts.
@@ -148,7 +148,7 @@ is given. Rebuild the writer's input before any edit. Net word count down.
 
 ## 7. Deploy, acceptance, Instagram evidence (§3, §5)
 
-- [ ] Commit and deploy §1 to §4 (migration `c7e2a9d4f1b6` runs on deploy). Run acceptance with
+- [ ] Commit and deploy §1 to §4 (migration `a4f8c2e6d9b1` runs on deploy). Run acceptance with
   `--remote` against the deployment so the page shows the running build (it showed `6435d45`,
   live is `602d087`).
 - [ ] Add cases: her two messages, Spanish supplement, the 3 supplement cases, "what does your
