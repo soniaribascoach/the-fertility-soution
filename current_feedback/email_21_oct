@@ -1,0 +1,22 @@
+Hi Asjad,
+
+I’m sorry, my mistake on the partner attendance handover. I’ve reviewed it and want to simplify this so we minimize unnecessary human handovers.
+
+We should strongly encourage both partners to attend and explain why. But if the partner truly cannot attend, we will make an exception, even if they make decisions together. The AI can agree and record that exception without handing her to the team just for approval.
+
+Suggested wording:
+
+“We really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?”
+
+If she confirms that truly isn’t possible:
+
+“I understand. If your partner truly cannot attend with you, we’ll make an exception and see you on your own. Please mention to my team that we agreed this.”
+
+Please don’t keep pushing after that, require her to be the sole decision maker, or ask her to prove the scheduling issue. Keep the agreed exception in the preparation message too. Solo parents and independent decision makers can still attend alone.
+
+The attached v4.3 replaces v4.2 and my earlier instruction to hand over unresolved partner attendance cases. I’ve updated the relevant rules, booking, preparation and testing scenarios. Other human review rules remain unchanged, as does the rest of my testing feedback.
+
+Please apply this throughout the system and test the shared decision maker whose partner truly cannot attend, including the message after booking.
+
+Thanks,
+Sonia

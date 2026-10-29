@@ -62,6 +62,9 @@ ESCALATION_INTENTS = (
 #
 # An opt out is not a handover at all. It is its own recorded state (v4.1 §R), see `Gate.opt_out`.
 REVIEW_MESSAGE = "handover_message_review"
+# She asks whether this is AI and for a person in the same message (Oct 28 email §3). The handover
+# line is her only reply, so it answers the question before the acknowledgment.
+AI_HUMAN_MESSAGE = "handover_message_ai_human"
 HANDOVER_MESSAGES = {
     "crisis": "handover_message_crisis",
     "urgent_medical": "handover_message_urgent_medical",
@@ -466,6 +469,12 @@ def gate(state: dict, read: dict, before: dict | None = None) -> Gate:
 
     reason = _escalation_reason(state, read, before)
     if reason:
+        # `asked_if_ai` is sticky, so only a first ask counts: once she has had the disclosure,
+        # "yes please" gets the acknowledgment alone.
+        asked_ai_now = ((read.get("flags") or {}).get("asked_if_ai")
+                        and not ((before or {}).get("flags") or {}).get("asked_if_ai"))
+        if reason == "asked_for_human" and asked_ai_now:
+            return _handover(reason, AI_HUMAN_MESSAGE)
         return _handover(reason)
 
     flags = state.get("flags") or {}
@@ -555,8 +564,8 @@ def gate(state: dict, read: dict, before: dict | None = None) -> Gate:
     return Gate(allow_booking=True, blocks=blocks, price=price, notes=["link available"])
 
 
-def _handover(reason: str) -> Gate:
-    message = handover_message(reason)
+def _handover(reason: str, message: str | None = None) -> Gate:
+    message = handover_message(reason) if message is None else message
     return Gate(
         escalate=True,
         escalate_reason=reason,

@@ -6,6 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func, delete
 from app.models.conversation import Conversation
 
+# `ai_model` on a line a ManyChat automation sent, not the AI. It is in her history, but it is not
+# an AI reply for the stats or for the openings other leads are compared against.
+AUTOMATION_SENDER = "manychat"
+
 
 async def save_message(
     db: AsyncSession,
@@ -103,13 +107,15 @@ async def get_stats(db: AsyncSession) -> dict:
             func.sum(Conversation.prompt_tokens).label("total_prompt_tokens"),
             func.sum(Conversation.completion_tokens).label("total_completion_tokens"),
             func.avg(Conversation.token_cost).label("avg_cost_per_message"),
-        ).where(Conversation.role == "assistant")
+        ).where(Conversation.role == "assistant",
+                Conversation.ai_model.is_distinct_from(AUTOMATION_SENDER))
     )
     row = result.one()
 
     models_result = await db.execute(
         select(func.distinct(Conversation.ai_model))
-        .where(Conversation.role == "assistant", Conversation.ai_model.is_not(None))
+        .where(Conversation.role == "assistant", Conversation.ai_model.is_not(None),
+               Conversation.ai_model != AUTOMATION_SENDER)
     )
     models = [m for (m,) in models_result.all() if m]
 
@@ -197,6 +203,7 @@ async def recent_opening_sentences(
         .where(
             Conversation.instagram_user_id != exclude_instagram_user_id,
             Conversation.role == "assistant",
+            Conversation.ai_model.is_distinct_from(AUTOMATION_SENDER),
         )
         .order_by(desc(Conversation.created_at))
         .limit(limit)

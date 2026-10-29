@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.repositories.conversation import save_message
+from app.repositories.conversation import AUTOMATION_SENDER, save_message
 from app.repositories.pending_message import insert_message, is_duplicate
 from app.services.resume import RESUMED, approve_lead_age, resume_lead
 from config import settings
@@ -74,9 +74,22 @@ async def receive_webhook(
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     payload = await request.json()
-    manychat_contact_id: str = str(payload.get("id", ""))
-    ig_user_id: str = str(payload.get("ig_id", ""))
+    # Default Reply posts ManyChat's contact data as the whole body. A flow that also says what it
+    # sent wraps it in `contact` (the Instagram ID has no field of its own to insert) and passes her
+    # answer, if any, at the top level, so the welcome never replays an old message of hers.
+    contact = payload.get("contact") or payload
+    manychat_contact_id: str = str(contact.get("id", ""))
+    ig_user_id: str = str(contact.get("ig_id", ""))
     text: str = (payload.get("last_input_text") or "").strip()
+
+    # A ManyChat automation (a freebie, the follower welcome) talks to her before the AI does. It
+    # posts what it sent, so the AI reads those lines as its own and carries on from them instead
+    # of greeting her again. The flow itself is the only copy: nothing here lists freebies.
+    sent = payload.get("sent") or []
+    for line in [sent] if isinstance(sent, str) else sent:
+        if str(line).strip():
+            await save_message(db, ig_user_id, "assistant", str(line).strip(),
+                               ai_model=AUTOMATION_SENDER)
 
     if not text:
         return {"status": "ok"}

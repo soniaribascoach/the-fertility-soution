@@ -108,7 +108,11 @@
       <textarea name="handover_message_review" rows="4" class="{{ textarea_cls }}">{{ cfg.handover_message_review or '' }}</textarea>
     {% endcall %}
 
-    {% call field('Handover Message: Crisis', 'Sent when someone writes about not wanting to be alive. Include a helpline. This is the one message that must never be left empty.') %}
+    {% call field('Handover Message: AI and Human', 'Sent instead of the review line when she asks whether this is AI and for a person in the same message. Answers who she is talking to, then the acknowledgment.') %}
+      <textarea name="handover_message_ai_human" rows="4" class="{{ textarea_cls }}">{{ cfg.handover_message_ai_human or '' }}</textarea>
+    {% endcall %}
+
+    {% call field('Handover Message: Crisis','Sent when someone writes about not wanting to be alive. Include a helpline. This is the one message that must never be left empty.') %}
       <textarea name="handover_message_crisis" rows="5" class="{{ textarea_cls }}">{{ cfg.handover_message_crisis or '' }}</textarea>
     {% endcall %}
 

@@ -972,6 +972,18 @@ def test_every_review_sends_the_acknowledgment_except_safety_and_abuse(reason, m
     assert dossier.handover_message(reason) == message
 
 
+def test_ai_question_and_human_request_together_get_the_identity_line():
+    """Oct 28 email §3: the handover line answers the AI question, once. After the disclosure,
+    accepting the offer gets the acknowledgment alone (e40)."""
+    read = {"intent": "new_prospect", "flags": {"asked_if_ai": True, "asked_for_human": True}}
+    before = _state()
+    gate = dossier.gate(dossier.merge(before, read), read, before)
+    assert gate.handover_message == "handover_message_ai_human"
+    told = _state(flags={"asked_if_ai": True})
+    gate = dossier.gate(dossier.merge(told, read), read, told)
+    assert gate.handover_message == "handover_message_review"
+
+
 def _after_link(slots=None, phase=dossier.LINK_SENT):
     state = _state({**QUALIFIED, **(slots or {})}, phase=phase)
     return state
@@ -1018,16 +1030,32 @@ def test_a_crisis_after_the_link_still_hands_over():
 def test_a_confirmed_cannot_attend_gets_the_exception_once():
     """2B.1 §12 (v4.3): the exception follows her confirmation, even if they decide together."""
     before = _after_link({"partner_status": "partnered"})
-    state = dossier.merge(before, {"slots": {"attendance": "confirmed_cannot_attend"}, "flags": {}})
-    assert brain._attendance_note(state, before) == "attendance_exception"
-    assert brain._attendance_note(dossier.merge(state, {"slots": {}, "flags": {}}), state) == ""
+    read = {"slots": {"attendance": "confirmed_cannot_attend"}, "flags": {}}
+    state = dossier.merge(before, read)
+    assert brain._attendance_note(state, dossier.gate(state, read, before)) == "attendance_exception"
+    state["flags"]["attendance_told"] = "confirmed_cannot_attend"
+    later = dossier.merge(state, {"slots": {}, "flags": {}})
+    assert brain._attendance_note(later, dossier.gate(later, read, state)) == ""
+
+
+def test_an_exception_said_before_the_link_opens_waits_for_it():
+    """Oct 28 email §3: "he truly can't attend any call" can come before the link is open. The
+    exception goes on the turn the attendance block opens, with its approved wording and label."""
+    read = {"intent": "warm_prospect", "slots": {}, "flags": {}}
+    early = _state({"partner_status": "partnered", "attendance": "confirmed_cannot_attend"})
+    assert brain._attendance_note(early, dossier.gate(early, read)) == ""
+    ready = _state({**QUALIFIED, "partner_status": "partnered",
+                    "attendance": "confirmed_cannot_attend"})
+    gate = dossier.gate(ready, read, ready)
+    assert brain._attendance_note(ready, gate) == "attendance_exception"
+    assert "invite her alone" in brain._brief(gate, read, ready, [], "attendance_exception")
 
 
 def test_cannot_attend_before_the_link_waits_for_the_attendance_line():
     before = _state({**QUALIFIED, "partner_status": "partnered"})
     state = dossier.merge(before, {"slots": {"attendance": "cannot_attend"}, "flags": {}})
-    assert brain._attendance_note(state, before) == ""
     gate = dossier.gate(state, {"intent": "warm_prospect"})
+    assert brain._attendance_note(state, gate) == ""
     assert "attendance line" in brain._brief(gate, {"intent": "warm_prospect"}, state, [])
 
 

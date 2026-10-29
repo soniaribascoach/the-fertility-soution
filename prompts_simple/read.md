@@ -76,8 +76,8 @@ on its own does not mean she is pregnant.
   - `together`: her partner will be on the call.
   - `cannot_attend`: her partner can't make it (away, shifts, busy). Who decides doesn't change
     this.
-  - `confirmed_cannot_attend`: Sonia has already asked for them both, in any words, and she says
-    her partner still can't. It stays once set.
+  - `confirmed_cannot_attend`: she says her partner truly can't attend any call, or still can't
+    after Sonia asked for them both in any words. It stays once set.
   - `decides_alone`: she says she makes these decisions on her own.
   - The latest thing she said wins.
 - `pregnancy_priority`: `high` | `unclear` | `low`.

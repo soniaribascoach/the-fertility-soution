@@ -1,0 +1,54 @@
+Hi Asjad,
+
+Thanks for the update. Here are my answers and the consolidated feedback from testing v4.4, build 602d087.
+
+1. Supplement support and how we describe the program
+
+The personalized supplement routine is included only in Full. However, we are not volunteering details about the different levels in DMs. When we say “The Fertility Solution” or “my fertility coaching program,” we mean the Full offering. Please use those names in normal conversations rather than calling it Full or introducing a menu of options.
+
+Only discuss other levels when she asks whether we have different programs or options, or brings them up after learning about them on a call with the team. Apply this consistently to program descriptions, benefit explanations and pricing replies, while answering direct questions accurately.
+
+For Spanish speakers, yes, please translate the approved supplement reply naturally into Spanish.
+
+2. Freebie automations and conversation keywords
+
+I want the existing active freebie automations to take priority. When someone sends a trigger word, first check whether it matches an active freebie automation for that channel and entry point. If it does, let that automation deliver the resource and ask its existing conversation question, without a competing AI reply. When she answers, the AI should continue from there, knowing exactly which resource and messages she received and which question she is answering. It should not restart the conversation or repeat the question.
+
+If there is no matching active freebie automation, the AI should handle the word as the usual conversation starter. I will use distinctive words for freebies. New conversation words should continue to work without registration, and activating or deactivating a freebie should not require maintaining a separate duplicate list for the brain.
+
+I checked the published ManyChat automations. “AMH | Megan Guide | any reel SRC” has active MEGAN triggers for Instagram comments, story replies and DMs. “TikTok | MEGAN | AMH Freebie” has an active message trigger for MEGAN/Megan/megan. Please use these existing flows as the first test.
+
+The Instagram MEGAN flow offers the guide, collects first name and email, adds the contact to ActiveCampaign, says the guide was sent by email, and asks how long she has been trying to get pregnant. The answer to that question currently leads to an action assigning the conversation to Reggie Ray. Please implement the intended AI handover at that point, preserving context and the existing delivery sequence. Do not assume the default reply alone will handle a reply captured inside the automation. Please also check priority against the older active MEGAN story and post flows; their triggers overlap, although duplicate delivery has not been demonstrated.
+
+Please test the matching freebie, an unmatched conversation word, and the reply to the freebie’s question. Confirm there are no duplicate messages or conflicting follow-ups, and that opt-outs and human handovers remain respected.
+
+3. Two issues are still present in the deployed sandbox
+
+Partner exception: I tested: “I'm 39, trying for two years, and want to book a call about your Full program. My husband and I make decisions together, but he truly cannot attend any call because of his work. Can I attend alone?”
+
+The reply accepted the exception and sent the booking link, then still asked, “Could you choose a time you can both attend?” Please remove that contradictory request once the exception is accepted. The following preparation message correctly preserved the exception, included the video and required text confirmation, and applied attendance_exception.
+
+AI identity: “Are you Sonia or an AI? I want to speak to a human” received only the review acknowledgment, without identifying itself as Sonia’s AI assistant. The trace recognized both asked_if_ai and asked_for_human. Please answer the identity question briefly before handing over. The follow-up correctly received no automated reply.
+
+The other targeted checks worked: the approved Full supplement response, confirmed menopause and subsequent reply suppression, both tubes removed even with IVF preparation, no automatic exclusion for one affected tube or perimenopause, and clarification followed by team review when tube status remained uncertain.
+
+Please rerun the failed cases on the version actually deployed. The Acceptance Results page shows 6435d45 while the live sidebar shows 602d087. I understand your earlier explanation about publishing results in a later build, but the remaining failures need resolving on the running version.
+
+4. Facebook and account scope
+
+The Facebook permission save succeeded and Facebook confirmed Sonia Ribas was connected to ManyChat. Detox To Replenish was excluded. Only @soniaribascoach is in scope; please continue to leave @thefertilitysolution disconnected.
+
+I have now completed the Instagram connection update. ManyChat confirms “Instagram channel permissions successfully refreshed” for @soniaribascoach. The previous Instagram OAuth / “Connect Via Meta” warning is gone, and “Say hi to new followers” now offers “Set Up” and “Select Existing” instead of the permissions warning. The feature is available, but no welcome automation is selected yet and actual delivery has not been tested. Please finish configuring and testing the follower welcome and verify that the existing automations still work after the connection update.
+
+5. Live status and next steps
+
+I inspected the published Instagram Default Reply. It first stops opted_out contacts, then an “If Beta Users” condition sends only six listed usernames to “AI Reply”; nonmatching contacts reach “Do nothing.” Therefore, this published default-reply route is still restricted to testers despite the Live badge. Please confirm whether any other route is serving the wider audience and explain the plan to remove this restriction after the fixes are verified. Confirm the actual launch time in Pacific time when it happens.
+
+We still need actual Instagram evidence for team handover receipt, preserved history, pause and release, queued follow-up suppression, and the scope of the emergency stop.
+
+Instagram remains the priority. After it is running well, please apply the agreed TikTok financial qualification before the booking link, together with partner attendance or an accepted exception.
+
+Please align the shared manual and deployed instructions with these clarifications, and send one consolidated update with the remaining fixes, test evidence and timing.
+
+Thanks,
+Sonia

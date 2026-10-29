@@ -47,7 +47,7 @@ CONFIG_KEYS = [
     "price_first_reply",
     "qualified_tag_id", "opted_out_tag_id", "attendance_exception_tag_id",
     "pregnancy_transfer_tag_id", "not_qualified_tag_id",
-    "handover_message_review", "handover_message_crisis", "handover_message_crisis_unrouted",
+    "handover_message_review", "handover_message_ai_human", "handover_message_crisis", "handover_message_crisis_unrouted",
     "handover_message_urgent_medical", "handover_message_medication", "handover_message_procedure",
     "brain_model", "read_model", "brain_temperature",
 ]

@@ -148,14 +148,18 @@ def _usage(read_model: str, write_model: str, read_usage: dict, response) -> dic
     }
 
 
-def _attendance_note(state: dict, before: dict) -> str:
-    """The attendance note for this turn, "" when what she said about it hasn't changed.
+def _attendance_note(state: dict, gate: dossier.Gate) -> str:
+    """The attendance note for this turn, "" when she was already told or the block is closed.
 
     2B.1 §12 (v4.3): the attendance line with the link is the one encouragement. When she confirms
     after it that her partner can't come, she gets the exception, even if they decide together.
+    She can say so before the link opens, so the note waits for the turn the attendance block is
+    open, where the approved wording and the label go with it.
     """
+    if "attendance" not in gate.blocks:
+        return ""
     attendance = (state.get("slots") or {}).get("attendance")
-    if attendance == ((before.get("slots") or {}).get("attendance")):
+    if attendance == (state.get("flags") or {}).get("attendance_told"):
         return ""
     return {"confirmed_cannot_attend": "attendance_exception",
             "decides_alone": "attendance_alone"}.get(attendance, "")
@@ -409,7 +413,7 @@ async def run_turn(
     before = state
     state = dossier.merge(state, read)
     gate = dossier.gate(state, read, before)
-    attendance = _attendance_note(state, before) if not (gate.escalate or gate.silent) else ""
+    attendance = _attendance_note(state, gate)
 
     trace = {
         "read": read,
@@ -485,6 +489,10 @@ async def run_turn(
     # Told once (v4.1 §L). From the next turn the gate stops asking for the explanation again.
     if gate.block_reason == "english_materials_undisclosed" and reply:
         state["flags"]["english_materials_told"] = True
+
+    # The exception, or that she can come alone, is given once (2B.1 §12).
+    if attendance and reply:
+        state["flags"]["attendance_told"] = state["slots"].get("attendance")
 
     # Asked once (v4.4 2B.1 §8, §9). Still unclear on her next message, the team reviews it.
     if gate.block_reason in ("tubal_status_unclear", "menopause_status_unclear") and reply:

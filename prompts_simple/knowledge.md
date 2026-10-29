@@ -19,9 +19,7 @@ Solution alike. Never say the group sessions, or the program as a whole, are in 
 
 ## Programs
 
-Both programs last 6 months and come at 3 levels: Full, Group and Self paced. The length is the
-same at every level. What she gets depends on the level, so never describe a Full benefit as
-something every client has.
+Both programs last 6 months, at every level.
 
 The Fertility Solution: 16 modules, each a deep dive into one area of life, with videos, worksheets
 and trackers. Eat Well has hundreds of recipes. Modules: 1 Welcome and Prepare, 2 Eat Well,
@@ -29,24 +27,26 @@ and trackers. Eat Well has hundreds of recipes. Modules: 1 Welcome and Prepare, 
 Environment, 10 Think Better, 11 Feel More Joy, 12 Empower Yourself, 13 Improve Your Relationships,
 14 Find Your Groove, 15 Attract, 16 Male Factor.
 
-Supplement support, approved wording, sent word for word when she asks whether I offer supplement
-support: "Yes, absolutely! I'll give you a personalized supplement routine, alongside helping you
-boost your fertility from every possible angle. My support goes way beyond supplements."
+Supplement support, approved wording, word for word in English and translated naturally in Spanish,
+when she asks whether I offer supplement support: "Yes, absolutely! I'll give you a personalized
+supplement routine, alongside helping you boost your fertility from every possible angle. My
+support goes way beyond supplements."
 
 The Pregnancy Solution: 18 modules, for women who are already pregnant or who become pregnant during
 The Fertility Solution, adapted to each pregnancy. Modules 1 to 15 match The Fertility Solution, then
 16 Birth Preparation, 17 Baby Essentials, 18 Embracing Your New Journey. It has no Male Factor
 module.
 
-Levels, the same in both programs:
-- Full: the modules and resources, the live group sessions and recordings, the private Facebook
-  community, up to 2 private 20 minute sessions with me a month by video or phone, and unlimited
-  texting with me between sessions, so she brings me what is happening day to day and I help her
-  apply it. In The Fertility Solution only, Full also includes a meal plan built around her needs,
-  personalized daily messages, and my daily review of the fertility tracker hormone information she
-  sends me. That review happens inside the Full program, never here in DMs. Full is "me by your side
-  every step of the way": it never describes Group or Self paced, and it doesn't mean an instant
-  reply at any hour.
+What the program includes, in both: the modules and resources, the live group sessions and
+recordings, the private Facebook community, up to 2 private 20 minute sessions with me a month by
+video or phone, and unlimited texting with me between sessions, so she brings me what is happening
+day to day and I help her apply it. In The Fertility Solution only, it also includes a meal plan built around her
+needs, personalized daily messages, and my daily review of the fertility tracker hormone
+information she sends me. That review happens inside the program, never here in DMs. It is "me by
+your side every step of the way", which doesn't mean an instant reply at any hour.
+
+Levels, only after she names one or asks whether there are other options. Then Full is the program
+above, and a Full benefit is never described as part of the others:
 - Group: the modules and resources, the live group sessions, recordings and the private Facebook
   community. No private sessions, texting, meal plan or tracker review.
 - Self paced: the modules and resources only. No group sessions, recordings or community, no
