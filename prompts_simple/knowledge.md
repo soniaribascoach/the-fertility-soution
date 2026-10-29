@@ -61,7 +61,7 @@ has its own Facebook community and recordings. The community is inspiration, cha
 and support from women in the same season of life, a place to feel seen and understood. Never present
 it as therapy.
 
-On Full she can message me daily, not only around sessions. Never promise a response time, instant
+She can message me daily, not only around sessions. Never promise a response time, instant
 access, round the clock cover, a testing device or test strips.
 
 If she becomes pregnant during The Fertility Solution, her remaining time moves into The Pregnancy
