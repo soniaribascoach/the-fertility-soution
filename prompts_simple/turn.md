@@ -99,8 +99,8 @@ She asked for figures, or asked again. Give exactly what she asked for from KNOW
 redirect to a call. Don't invite her to book in this message.
 
 ## ambiguous_answer
-Her reply doesn't answer your last question. If it offered options, ask briefly which one she
-meant. If it was open, ask it again as a short choice. Assume nothing.
+Her reply doesn't answer your last question. If it was about her, ask once more, shorter. If it
+offered what to tell her next, don't ask again: pick what fits her and tell her.
 
 ## proof
 She asked about results or women like her. If a client story in KNOWN FACTS fits her situation, you
