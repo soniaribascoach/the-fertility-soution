@@ -20,16 +20,16 @@
 
 {% if not data %}
   <div class="p-10">
-    <h1 class="ar-display text-4xl text-slate-900">Acceptance Results</h1>
-    <p class="mt-3 text-slate-500 text-[15px]">No acceptance run found. Run <code>manual_testing/acceptance.py</code>.</p>
+    <h1 class="ar-display text-4xl text-slate-900">{{ page.title }}</h1>
+    <p class="mt-3 text-slate-500 text-[15px]">{{ page.empty | safe }}</p>
   </div>
 {% else %}
 
   <!-- ── Case list ──────────────────────────────────────────────────────── -->
   <aside class="w-[290px] flex-shrink-0 border-r border-slate-200 bg-white flex flex-col">
     <div class="px-5 pt-6 pb-4 border-b border-slate-100">
-      <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-violet-600">Appendix E · manual {{ data.manual.split(" ")[0] }}</p>
-      <p class="ar-display mt-1 text-[26px] leading-tight text-slate-900">Acceptance Results</p>
+      <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-violet-600">{{ page.eyebrow }} · manual {{ data.manual.split(" ")[0] }}</p>
+      <p class="ar-display mt-1 text-[26px] leading-tight text-slate-900">{{ page.title }}</p>
       {% set all_convs = data.sections | sum(attribute="conversations", start=[]) %}
       {% set passed = all_convs | selectattr("verdict", "equalto", "pass") | list | length %}
       {% set partial = all_convs | selectattr("verdict", "equalto", "partial") | list | length %}
@@ -98,6 +98,17 @@
           </div>
 
           {% else %}
+
+          {% for line in t.sent or [] %}
+          <div class="flex flex-col items-end gap-1">
+            <span class="text-[10px] uppercase tracking-widest text-slate-400">ManyChat</span>
+            <div class="bubble max-w-[80%] rounded-2xl rounded-br-md bg-slate-200 text-slate-700 px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-line">{{ line | linkify }}</div>
+          </div>
+          {% endfor %}
+
+          {% if t.at %}
+          <p class="text-center text-[11px] text-slate-400">{{ t.at }}{% if t.latency_s is defined %} · replied in {{ t.latency_s }}s{% endif %}</p>
+          {% endif %}
 
           <div class="flex justify-start">
             <div class="bubble max-w-[80%] rounded-2xl rounded-bl-md bg-white border border-slate-200 text-slate-800 px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-line">{{ t.lead }}</div>

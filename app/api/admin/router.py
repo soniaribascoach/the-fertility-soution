@@ -25,6 +25,8 @@ from config import settings, APP_VERSION, APP_BRAIN, APP_REVISION, APP_STARTED_A
 FEW_SHOTS_DIR = "few_shots"
 # Written by `manual_testing/acceptance.py`, with the verdicts added by hand after the run.
 ACCEPTANCE_PATH = "showcase/acceptance.json"
+# Written by `manual_testing/live_run.py` from the production database, verdicts added by hand.
+LIVE_RUN_PATH = "showcase/live_run.json"
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -216,11 +218,30 @@ async def showcase_get():
 async def acceptance_get(request: Request):
     if not is_authenticated(request):
         return RedirectResponse("/admin/login", status_code=302)
+    return _results_page(request, ACCEPTANCE_PATH, {
+        "title": "Acceptance Results",
+        "eyebrow": "Appendix E",
+        "empty": "No acceptance run found. Run <code>manual_testing/acceptance.py</code>.",
+    })
+
+
+@router.get("/admin/live-run", response_class=HTMLResponse)
+async def live_run_get(request: Request):
+    if not is_authenticated(request):
+        return RedirectResponse("/admin/login", status_code=302)
+    return _results_page(request, LIVE_RUN_PATH, {
+        "title": "Live Run",
+        "eyebrow": "Production",
+        "empty": "No live conversations pulled. Run <code>manual_testing/live_run.py</code>.",
+    })
+
+
+def _results_page(request: Request, path: str, page: dict):
     data = None
-    if os.path.isfile(ACCEPTANCE_PATH):
-        with open(ACCEPTANCE_PATH, encoding="utf-8") as fh:
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as fh:
             data = _json.load(fh)
-    return templates.TemplateResponse(request, "admin/acceptance.html", {"data": data})
+    return templates.TemplateResponse(request, "admin/acceptance.html", {"data": data, "page": page})
 
 
 # ── Few-shots ─────────────────────────────────────────────────────────────────

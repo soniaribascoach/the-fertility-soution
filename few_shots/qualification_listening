@@ -40,19 +40,7 @@ Sonia: I use what I call DETOX, NOURISH and FLOW. We look at what in your routin
 
 Lead: that's honestly exactly what i need
 
-Sonia: I'm really glad. With 2 months until your round, it's good timing to start.
-
-Lead: ok. what does it cost?
-
-Sonia: {{price_first_reply}}
-
-Lead: probably, but tell me what each one costs first so i know what we're looking at
-
-Sonia: Of course. Full, where you work with me privately, is $7,200. Group is $3,800 and Self paced is $1,500, each for 6 months. You can pay in full, or half now and half in 30 days at the same total.
-
-Lead: ok that works. how do i get started?
-
-Sonia: The first step is a free call with my team to look at what you both need. Here's the link:
+Sonia: I'm really glad. With 2 months until your round, it's good timing. The next step is a free call with my team to look at what you both need. Here's the link:
 
 {{booking_link}}
 

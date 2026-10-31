@@ -45,6 +45,22 @@ grep -rn "[—–]" --include="*.py" --include="*.html" --include="*.md" . \
 Prefer changing a prompt layer or a few-shot conversation over adding Python. Gates in
 `dossier.py` decide what the writer is *given*; nothing inspects generated text after the fact.
 
+## Production
+
+- Hosted on DigitalOcean App Platform. Base URL: `https://jellyfish-app-qwns9.ondigitalocean.app`.
+- Admin: `/admin/chat` (login at `/admin/login`). Dashboard lists paused leads and recent events.
+- SQLAdmin (raw tables): `/sqladmin` (separate login at `/sqladmin/login`).
+- ManyChat launch gate: the `Instagram Default Reply` automation routes DMs through an
+  `If Beta Users` username condition before the `AI Reply` external request. Connecting that
+  condition's "doesn't match" output to `AI Reply` is what opens the AI to everyone.
+  `Resume AI` and `AMH | Megan Guide | any reel SRC` had the same gate and were opened the same
+  way at launch (Oct 30 2026). `IG | Follower Welcome` still has it on purpose: not launched.
+- ManyChat sends every inbound DM to `POST /webhook`. There is no on/off switch in our code: the
+  AI is live exactly when the ManyChat Default Reply or flow that calls the webhook is on.
+- Logs: `doctl apps logs <app-id> --type run --follow` (`doctl apps list` gives the ID). `doctl`
+  is installed via Homebrew; the user runs `doctl auth init` themselves so the token never passes
+  through the assistant.
+
 ## Few-shot conventions
 
 One conversation per file, transcript only. Links are placeholders (`{{booking_link}}`,

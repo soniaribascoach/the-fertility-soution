@@ -1,0 +1,1407 @@
+{
+  "version": "Live",
+  "revision": "prod DB",
+  "manual": "v4.4",
+  "run_at": "since Oct 30 16:00 UTC, pulled Oct 31 08:30 UTC",
+  "sections": [
+    {
+      "name": "Booking link sent",
+      "conversations": [
+        {
+          "id": "l22_2229299017647519",
+          "ig_id": "2229299017647519",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.\nYes I have been trying for the longest please help me",
+              "reply": "I’m sorry you’ve been trying for so long. My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in the way, what your body needs, and build changes that can work in your real life. It runs for 6 months and includes 16 modules.\n\nHow long have you been trying?",
+              "sent": [],
+              "at": "Oct 30 20:30 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 31
+            },
+            {
+              "lead": "Okay so I have four children already and I've been trying to have another one for the past 3 years I am 41 years old and I'm not sure if I can even have kids anymore because it doesn't seem like you",
+              "reply": "Having 4 children already doesn’t make these 3 years of trying for another any less hard. I can’t tell from DMs whether you can conceive, but not getting pregnant doesn’t by itself tell us that it’s impossible.\n\nSince you’ve been trying for 3 years and having another is important to you, we could look at your situation together and see what support would be useful. What feels most concerning right now: not knowing why it hasn’t happened, or worrying that it may no longer be possible?",
+              "sent": [],
+              "at": "Oct 30 20:32 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 25
+            },
+            {
+              "lead": "Please and yes I would love that because I'm really not understanding it's going almost to 4 years now and I've been trying and it's driving me crazy I don't know if it's me or my partner but for some reason we're just not conceiving",
+              "reply": "Nearly 4 years of trying without knowing why would leave anyone feeling worn down. It may involve one or both of you, so I wouldn’t want to guess from messages.\n\nSince you’d like support, the next step is a free call with my team to talk through what might fit your needs. Here’s the link:\n\nhttps://www.thefertilitysolution.com/free-call\n\nWe really prefer it when both partners join the call. It makes for a much more powerful conversation when you can both ask questions and explore important decisions for your family together. Could you choose a time you can both attend?",
+              "sent": [],
+              "at": "Oct 30 21:03 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 38
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Only booking in the run. 3 to 4 years trying, open to support, link sent with the partner line. Never asked her age, but 41 needs no review."
+        }
+      ]
+    },
+    {
+      "name": "Handed to the team",
+      "conversations": [
+        {
+          "id": "l27_1068895928420163",
+          "ig_id": "1068895928420163",
+          "title": "https://lookaside.fbsbx.com/ig_messaging_c...",
+          "turns": [
+            {
+              "lead": "https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=2201212957135787&signature=Ab2rHuAeMe7ZZBX5pR28jm-zka-TQOlv8ropPs1Cxq8haj5ASMT06UaiMAZ9pSMM66rxTb3ZIzrraF6X-l3oFgOKhri1lUFdwbEQmBDWLHajTXySH9NoEQ__EeDNrfz4erjwBohP5y2dZZ0l1Mv9JaCVQC5tkBW5llOiuucpHjz1X73O7c662sayL4IEHI2NQvJ6LurxzPx6T7TT-oFiDjGBVujSIg\nMade with the Muse app.\nhttps://muse.ai/join",
+              "reply": "Thank you for sharing this with me ♡ We'll take a closer look so we can give you a thoughtful, personal response.",
+              "sent": [],
+              "at": "Oct 30 21:01 UTC",
+              "model": "gpt-6-luna",
+              "paused_now": "needs_human",
+              "latency_s": 33
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Shared media link the AI cannot read went to the team with the approved review acknowledgment, AI paused."
+        }
+      ]
+    },
+    {
+      "name": "Still talking",
+      "conversations": [
+        {
+          "id": "l01_1156407796899533",
+          "ig_id": "1156407796899533",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My method is DETOX, NOURISH and FLOW: we look at everyday factors that may be getting in the way, what your body needs, and how to build supportive routines that fit your life. The Fertility Solution takes you through 16 modules over 6 months. What would you most like to know about it?",
+              "sent": [],
+              "at": "Oct 30 16:21 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 27
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l02_1438937585013481",
+          "ig_id": "1438937585013481",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "The Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in the way, what your body needs, and how to build supportive routines that fit your real life. It takes you through 16 modules over 6 months.\n\nWhat would you most like support with?",
+              "sent": [],
+              "at": "Oct 30 16:45 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 51
+            },
+            {
+              "lead": "I want information to understand better the context and process",
+              "reply": "The Fertility Solution is a 6-month program with 16 modules, each exploring an area of daily life through videos, worksheets and trackers. There are also live group sessions and recordings, a private community, and support options that vary by level.\n\nThe work follows my DETOX, NOURISH and FLOW method, helping you identify everyday factors to work on, understand what you need, and apply changes in a sustainable way. Are you most interested in what happens in the modules or the support you get while working through them?",
+              "sent": [],
+              "at": "Oct 30 17:17 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 28
+            },
+            {
+              "lead": "Yes",
+              "reply": "Would you like to know more about what happens in the modules, or about the support you get while working through them?",
+              "sent": [],
+              "at": "Oct 30 17:57 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 35
+            },
+            {
+              "lead": "Both",
+              "reply": "The modules cover areas such as food, hydration, movement, stress, sleep, your environment and relationships, with videos, worksheets and trackers to help you put the ideas into practice.\n\nSupport depends on the level. Full includes up to 2 private sessions with me each month and unlimited texting between sessions, plus a meal plan built around your needs, daily messages and my daily review of the tracker information you send. Group includes live group sessions, recordings and the private community. Self paced includes the modules and resources only.",
+              "sent": [],
+              "at": "Oct 30 18:03 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 27
+            },
+            {
+              "lead": "What would be the price",
+              "reply": "We have a few different options depending on how much support you’d like. The best way to work out which fits your needs is a free call with my team, where we can talk through the options and pricing together. Would you like the booking link?",
+              "sent": [],
+              "at": "Oct 30 18:06 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 33
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Asked the same modules or support menu again after her \"Yes\" (never ask twice). First price question correctly got the options and a call offer, no figures."
+        },
+        {
+          "id": "l03_1657207449444955",
+          "ig_id": "1657207449444955",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in the way, what your body needs, and how to build supportive routines that fit your life. It takes you through 16 modules over 6 months.\n\nWhat would you most like support with right now?",
+              "sent": [],
+              "at": "Oct 30 16:52 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l04_1822651331951302",
+          "ig_id": "1822651331951302",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "The Fertility Solution takes you through 16 modules over 6 months. I use my DETOX, NOURISH and FLOW method to explore everyday factors that may be getting in the way, what your body needs, and how to build supportive routines that fit your life. What would you most like support with right now?",
+              "sent": [],
+              "at": "Oct 30 16:54 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 23
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l05_1061372473611224",
+          "ig_id": "1061372473611224",
+          "title": "I’d like to get pregnant",
+          "turns": [
+            {
+              "lead": "I’d like to get pregnant",
+              "reply": "I’d love to help you work toward that. What’s been happening so far: have you just started trying, or has it been a while?",
+              "sent": [],
+              "at": "Oct 30 17:00 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 31
+            },
+            {
+              "lead": "Been awhile",
+              "reply": "That can feel like a long time to carry the hope month after month. About how long have you been trying?",
+              "sent": [],
+              "at": "Oct 30 17:23 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 24
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Warm, asks how long she has been trying, then follows up on \"been awhile\" with one question."
+        },
+        {
+          "id": "l06_1945472373081012",
+          "ig_id": "1945472373081012",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My method is DETOX, NOURISH and FLOW: we look at everyday factors that may be getting in the way, what your body needs, and how to build supportive routines that fit your real life. The Fertility Solution takes you through 16 modules over 6 months. What would you most like help with right now?",
+              "sent": [],
+              "at": "Oct 30 17:07 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 32
+            },
+            {
+              "lead": "Not sure",
+              "reply": "That’s okay. Is your main interest support with trying to conceive, or are you already pregnant and looking for pregnancy support?",
+              "sent": [],
+              "at": "Oct 30 17:08 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 32
+            },
+            {
+              "lead": "I have had two full term pregnancies 16 years ago I had a miscarriage in may and now unable to conceive",
+              "reply": "I’m so sorry about your miscarriage in May, especially after having been able to conceive before. Not being able to conceive now can feel confusing and painful.\n\nI work with women facing unexplained difficulties conceiving, and we can look at what may be affecting your fertility now and what support could fit your situation. How long have you been trying since the miscarriage?",
+              "sent": [],
+              "at": "Oct 30 17:10 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            },
+            {
+              "lead": "I had an iud in for 15 years. I got it out in October got pregnant end of February",
+              "reply": "It sounds like you conceived within a few months of having the IUD removed, then had the miscarriage in May. I’m so sorry. What would you most like help understanding or with now?",
+              "sent": [],
+              "at": "Oct 30 17:12 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 32
+            },
+            {
+              "lead": "I guess I’m just trying to figure out why I can’t conceive. I am tracking my periods being intimate during my ovulations, taking supplements.",
+              "reply": "You’ve already been tracking, timing sex around ovulation and taking supplements, so it makes sense to want a clearer explanation rather than another generic checklist. I can’t tell what’s causing the difficulty from DMs, but I can help you look at the wider picture and make the information more manageable.",
+              "sent": [],
+              "at": "Oct 30 17:14 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 26
+            },
+            {
+              "lead": "Ok",
+              "reply": "Would it help more to understand what areas I look at, or how the support works day to day?",
+              "sent": [],
+              "at": "Oct 30 17:31 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 28
+            },
+            {
+              "lead": "Sure",
+              "reply": "Which would be more helpful to start with: the areas I look at, or what the day-to-day support is like?",
+              "sent": [],
+              "at": "Oct 30 17:31 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 25
+            },
+            {
+              "lead": "Whichever",
+              "reply": "I’d start with the areas I look at: daily routines and exposures that may be getting in the way, what your body needs around food, rest, movement and emotional support, and how to make changes that fit your life. We work through those together using DETOX, NOURISH and FLOW.",
+              "sent": [],
+              "at": "Oct 30 17:32 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 26
+            },
+            {
+              "lead": "Ok",
+              "reply": "If it would help, I can explain what working together looks like day to day, or we can leave it there for now.",
+              "sent": [],
+              "at": "Oct 30 17:33 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 36
+            },
+            {
+              "lead": "We can keep going",
+              "reply": "Absolutely. In The Fertility Solution, you can text me about what’s coming up day to day, and I help you apply the work as you go. It also includes a meal plan built around your needs and my daily review of the fertility tracker information you send.",
+              "sent": [],
+              "at": "Oct 30 17:36 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 39
+            }
+          ],
+          "verdict": "fail",
+          "comment": "Engaged lead (miscarriage in May, cannot conceive, \"we can keep going\") never offered a call. Repeated the same areas or support menu after \"Sure\", then listed texting and meal plan with no Full label."
+        },
+        {
+          "id": "l07_7097353067036286",
+          "ig_id": "7097353067036286",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "The Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in your way, what your body needs, and how to build supportive routines that fit your life. It runs for 6 months across 16 modules, with videos, worksheets and trackers. What would you most like to know about it?",
+              "sent": [],
+              "at": "Oct 30 17:10 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 28
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l08_1891053572331472",
+          "ig_id": "1891053572331472",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My method is DETOX, NOURISH and FLOW: we look at everyday factors that may be getting in your way, what your body needs, and build routines that fit your real life. The Fertility Solution takes you through 16 modules over 6 months. What would you most like support with?",
+              "sent": [],
+              "at": "Oct 30 17:20 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 36
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l09_1749294973863855",
+          "ig_id": "1749294973863855",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.\nI’d love to learn more about your program.",
+              "reply": "The Fertility Solution is a 6-month program with 16 modules, each focused on an area of daily life. My method is DETOX, NOURISH and FLOW: we look at everyday factors that may be getting in your way, what your body needs, and build routines that fit your real life. You also get live group sessions, recordings, a private community, and support between sessions.",
+              "sent": [],
+              "at": "Oct 30 18:01 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 47
+            },
+            {
+              "lead": "Whats the catch and whats the cost",
+              "reply": "We have a few different options depending on how much support you’d like. The best way to work out which fits your needs is a free call with my team, where we can talk through the options and pricing together. Would you like the booking link?",
+              "sent": [],
+              "at": "Oct 30 22:13 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 28
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Duplicate opener merged fine. \"What's the catch\" was ignored; the cost half got the correct first price step."
+        },
+        {
+          "id": "l10_1420176150283609",
+          "ig_id": "1420176150283609",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in your way, what your body needs, and how to make supportive changes that fit your real life.\n\nIt runs for 6 months across 16 modules, with videos, worksheets and trackers. What would you most like help with right now?",
+              "sent": [],
+              "at": "Oct 30 18:07 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 23
+            },
+            {
+              "lead": "Most all them",
+              "reply": "It sounds like you’re looking for support across several areas, not just one. My program covers food, rest, movement, stress, daily routines and relationships, and the support you get depends on the level you choose. Which area feels most urgent for you right now?",
+              "sent": [],
+              "at": "Oct 30 18:11 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 26
+            },
+            {
+              "lead": "Food, daily routine, stress",
+              "reply": "Food, daily routines and stress are all part of the work. In The Fertility Solution, I help you apply it to your own life through a meal plan built around your needs, personalized daily messages and my daily review of the tracker information you send me.",
+              "sent": [],
+              "at": "Oct 30 18:14 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 27
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Good follow up on her areas, but described meal plan, daily messages and tracker review as part of The Fertility Solution without saying they are Full only. No question or next step at the end."
+        },
+        {
+          "id": "l11_1984664875534869",
+          "ig_id": "1984664875534869",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My method is DETOX, NOURISH and FLOW: we look at everyday factors that may be getting in the way, what your body needs, and how to make supportive changes that fit your real life. The Fertility Solution takes you through 16 modules over 6 months, with videos, worksheets and trackers.\n\nWould you like to hear more about the topics in the modules, or the support you get while working through them?",
+              "sent": [],
+              "at": "Oct 30 18:15 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 33
+            },
+            {
+              "lead": "Yea",
+              "reply": "Would it help more to hear about the module topics, or the support included as you work through them?",
+              "sent": [],
+              "at": "Oct 30 20:40 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 27
+            },
+            {
+              "lead": "Probably both",
+              "reply": "The modules cover areas like food, hydration, movement, sleep, stress, your environment and relationships, with videos, worksheets and trackers to help you put the work into practice.\n\nThere are also live group sessions and recordings, a private Facebook community, up to 2 private 20-minute sessions with me each month, and unlimited texting with me between sessions. In The Fertility Solution, your meal plan is built around your needs, you receive personalized daily messages, and I review the fertility tracker information you send me daily.",
+              "sent": [],
+              "at": "Oct 30 20:41 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 27
+            }
+          ],
+          "verdict": "fail",
+          "comment": "Asked the modules or support menu again after \"Yea\". Then listed private sessions, unlimited texting and the meal plan as if every level includes them (Full benefits must not be implied for Group or Self paced)."
+        },
+        {
+          "id": "l12_2282327212614121",
+          "ig_id": "2282327212614121",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "The Fertility Solution is a 6-month program with 16 modules. I use my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in the way, what your body needs, and how to build changes that fit your real life.\n\nWould you like to hear more about the modules or the support while you work through them?",
+              "sent": [],
+              "at": "Oct 30 18:22 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 29
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l13_1614188440450917",
+          "ig_id": "1614188440450917",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in the way, what your body needs, and how to build supportive changes into your real life. It’s a 6-month program with 16 modules, videos, worksheets and trackers. What would you most like support with?",
+              "sent": [],
+              "at": "Oct 30 18:37 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 35
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l14_1102788979232513",
+          "ig_id": "1102788979232513",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be affecting your fertility, what your body needs, and how to make supportive changes that fit your real life. It takes you through 16 modules over 6 months, with videos, worksheets and trackers.\n\nWhat would you most like to know about it: the modules or the support while you work through them?",
+              "sent": [],
+              "at": "Oct 30 18:42 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 24
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l15_2615868385607172",
+          "ig_id": "2615868385607172",
+          "title": "Hi",
+          "turns": [
+            {
+              "lead": "Hi",
+              "reply": "Hi, thanks for reaching out ♡ What would you like support with?",
+              "sent": [],
+              "at": "Oct 30 18:59 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            },
+            {
+              "lead": "I want to get pregnant",
+              "reply": "I’d love to support you. What’s been the hardest part so far?",
+              "sent": [],
+              "at": "Oct 30 19:01 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 33
+            }
+          ],
+          "verdict": "pass",
+          "comment": "\"Hi\" got a warm welcome, \"I want to get pregnant\" got one relevant question."
+        },
+        {
+          "id": "l16_1411544166538854",
+          "ig_id": "1411544166538854",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "The Fertility Solution is my 6-month program with 16 modules. I use my DETOX, NOURISH and FLOW method to look at everyday factors that may be getting in the way, what your body needs, and how to build supportive changes into your real life.\n\nWhat would you most like support with right now?",
+              "sent": [],
+              "at": "Oct 30 19:04 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 33
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l17_1467213728931541",
+          "ig_id": "1467213728931541",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in the way, what your body needs, and how to build changes that fit your real life. It takes you through 16 modules over 6 months. What would you most like support with right now?",
+              "sent": [],
+              "at": "Oct 30 19:06 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 36
+            },
+            {
+              "lead": "I have two kids. We are trying for our third. I had a miscarriage prior to my second child and a chemical pregnancy this year. We are ready to grow as a family",
+              "reply": "Trying for another after those losses can bring a lot to carry, even when you’re ready to grow your family. I can support you with a thoughtful look at the everyday factors around fertility and changes that fit your life. What feels most important to get support with right now?",
+              "sent": [],
+              "at": "Oct 30 19:08 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 21
+            },
+            {
+              "lead": "But I’m not sure what’s going on. It doesn’t seem like I can’t get pregnant fast enough. \nI track my fertile days with a stick",
+              "reply": "It sounds like you’re getting a positive sign for your fertile days, but still don’t have a clear picture of why this pregnancy hasn’t happened yet. Tracking can help with timing, but it doesn’t explain the whole picture. Has anyone looked at both your and your partner’s fertility, or has the focus mainly been on timing?",
+              "sent": [],
+              "at": "Oct 30 19:09 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 32
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Empathetic about the losses and picks up her tracking, but the last question defaults to what has been tested (manual B: do not default to clinic investigation)."
+        },
+        {
+          "id": "l18_590967937406165",
+          "ig_id": "590967937406165",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "Of course. My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in your way, what your body needs, and how to build supportive changes into your real life. It takes you through 16 modules over 6 months. What would you most like support with?",
+              "sent": [],
+              "at": "Oct 30 19:22 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 35
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l19_1791121802192952",
+          "ig_id": "1791121802192952",
+          "title": "Yes !Currently on my journey to conceive",
+          "turns": [
+            {
+              "lead": "Yes !Currently on my journey to conceive",
+              "reply": "I’m glad you reached out. What’s been the hardest part of trying to conceive so far?",
+              "sent": [],
+              "at": "Oct 30 19:53 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            },
+            {
+              "lead": "Figuring out if I’m ovulating or not",
+              "reply": "Not knowing whether ovulation is happening can make it hard to know what’s going on with your cycle. Have your cycles been regular, or do they vary a lot?",
+              "sent": [],
+              "at": "Oct 30 19:55 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 25
+            },
+            {
+              "lead": "My cycles are usually spot on 30 days. Sometimes 29. Last cycle I had spotting day 14,15",
+              "reply": "With cycles that regular, spotting around days 14 to 15 doesn’t confirm whether you ovulated. What are you using to track ovulation right now?",
+              "sent": [],
+              "at": "Oct 30 19:56 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 25
+            },
+            {
+              "lead": "Clue. I stopped the Lh strips , they’re just stressful to me",
+              "reply": "That makes sense. If the LH strips are making tracking more stressful, you don’t have to force yourself to use them. Clue can log your cycle, but it can’t confirm ovulation. Are you looking for a way to check ovulation without strips, or would you rather take a break from tracking?",
+              "sent": [],
+              "at": "Oct 30 19:58 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 24
+            },
+            {
+              "lead": "I took a break this cycle. If I get my period I wanted to try tracking again without the strips",
+              "reply": "That sounds like a gentler way to try again. Clue can help you notice cycle patterns, but it can’t confirm ovulation, so tracking without strips may still leave that question open.",
+              "sent": [],
+              "at": "Oct 30 20:01 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 34
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Stays on her ovulation question, but repeats \"Clue can't confirm ovulation\" twice, never connects to Sonia's support and ends with no next step."
+        },
+        {
+          "id": "l20_2150785675645604",
+          "ig_id": "2150785675645604",
+          "title": "Ok",
+          "turns": [
+            {
+              "lead": "Ok",
+              "reply": "Thanks for reaching out with OK ♡ What would you like support with?",
+              "sent": [],
+              "at": "Oct 30 20:02 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 26
+            },
+            {
+              "lead": "Nothing I’m going book my consultation",
+              "reply": "Great, I hope the consultation is helpful for you.",
+              "sent": [],
+              "at": "Oct 30 20:03 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 21
+            }
+          ],
+          "verdict": "fail",
+          "comment": "\"Ok\" was treated as a keyword (\"Thanks for reaching out with OK\"). She then said she is going to book her consultation and got no booking link."
+        },
+        {
+          "id": "l21_1419831109777592",
+          "ig_id": "1419831109777592",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in the way, what your body needs, and how to build changes that fit your real life. It takes you through 16 modules over 6 months.\n\nWhat would you most like support with right now?",
+              "sent": [],
+              "at": "Oct 30 20:04 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 22
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l23_2509856149506519",
+          "ig_id": "2509856149506519",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My method is DETOX, NOURISH and FLOW: we look at everyday factors that may be getting in your way, what your body needs, and how to build changes that fit your real life. The Fertility Solution takes you through 16 modules over 6 months.",
+              "sent": [],
+              "at": "Oct 30 20:33 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 24
+            },
+            {
+              "lead": "FERTILITY",
+              "reply": "The Fertility Solution is a 6-month program with 16 modules, videos, worksheets and trackers, covering areas like food, sleep, stress, movement and your environment. It also includes live group sessions and recordings, a private community, and support between sessions.",
+              "sent": [],
+              "at": "Oct 30 20:39 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            }
+          ],
+          "verdict": "partial",
+          "comment": "\"FERTILITY\" got the program description again, close to the reply before it, with no question. Repeats instead of moving on."
+        },
+        {
+          "id": "l24_4509488965982974",
+          "ig_id": "4509488965982974",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "The Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in your way, what your body needs, and how to build changes that fit your real life. It takes you through 16 modules over 6 months.\n\nWhat would you most like support with right now?",
+              "sent": [],
+              "at": "Oct 30 20:38 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 26
+            },
+            {
+              "lead": "I want to get pregnant",
+              "reply": "That’s the goal we’d be working toward together. The program helps you make fertility-supportive changes that fit your life, but it can’t guarantee a pregnancy.\n\nWhat feels like the biggest challenge for you right now?",
+              "sent": [],
+              "at": "Oct 30 20:39 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 36
+            },
+            {
+              "lead": "And I’m also not regular\nWe just started trying, I miscarried early 2 months ago and I’m scared",
+              "reply": "I’m so sorry you went through that. After an early loss, it makes sense that trying again feels scary, especially with irregular cycles. Since you’ve only just started trying, you may not need intensive support yet, but I can help you understand your cycle patterns and make a steadier plan around them.",
+              "sent": [],
+              "at": "Oct 30 20:41 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            },
+            {
+              "lead": "Sounds good",
+              "reply": "I’m glad that feels helpful. Since your cycles are irregular, has anyone helped you understand what might be behind that, or are you still figuring it out?",
+              "sent": [],
+              "at": "Oct 30 20:42 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 37
+            },
+            {
+              "lead": "Still figuring it out",
+              "reply": "That uncertainty can make it hard to know what to focus on, especially after your loss. Irregular cycles can have different causes, so a clinician can help assess what may be behind yours. I can support you with the everyday factors around fertility and help you make the changes manageable, but I can’t work out the cause from DMs.",
+              "sent": [],
+              "at": "Oct 30 20:43 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 36
+            },
+            {
+              "lead": "Sounds good\nI’m trying to track it",
+              "reply": "Tracking can help you notice patterns over time, though irregular cycles can make timing harder to interpret. What are you using to track right now?",
+              "sent": [],
+              "at": "Oct 30 20:44 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 45
+            },
+            {
+              "lead": "The app flo",
+              "reply": "Flo can be handy for logging your cycles, though its predictions may be less reliable when your cycles are irregular. You could keep recording your period dates and any signs you notice, and bring that record to your clinician to help make sense of the pattern.",
+              "sent": [],
+              "at": "Oct 30 20:45 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 34
+            },
+            {
+              "lead": "Do u have any other recommendations for logging",
+              "reply": "Yes. Alongside period dates, note any cycle signs you notice, such as cervical mucus or spotting, and keep it simple and consistent. Since your cycles are irregular, these notes can help your clinician see patterns, even if they don’t predict ovulation precisely.",
+              "sent": [],
+              "at": "Oct 30 20:46 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            },
+            {
+              "lead": "Whats cervical mucus",
+              "reply": "Cervical mucus is the fluid or discharge you may notice from your vagina across your cycle. Its texture and amount can change, and around ovulation it may become clearer, slippery and stretchy, though it varies from person to person. You can simply note what you notice in your tracker.",
+              "sent": [],
+              "at": "Oct 30 20:47 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 25
+            },
+            {
+              "lead": "Got it!",
+              "reply": "Glad that helped. Keep noting what you observe in Flo, and you’ll have a useful record to discuss with your clinician.",
+              "sent": [],
+              "at": "Oct 30 20:48 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 33
+            },
+            {
+              "lead": "Great thank you",
+              "reply": "You’re welcome. I hope the tracking helps you feel a little clearer as you learn your cycle patterns.",
+              "sent": [],
+              "at": "Oct 30 20:49 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 31
+            },
+            {
+              "lead": "Thank you",
+              "reply": "You’re welcome. Take care of yourself.",
+              "sent": [],
+              "at": "Oct 30 20:50 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 31
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Kind and useful on tracking and cervical mucus, but told an engaged TTC lead with irregular cycles and a recent loss she may not need intensive support yet, and closed with a goodbye. No call offered."
+        },
+        {
+          "id": "l25_355531800348885",
+          "ig_id": "355531800348885",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.\nI do",
+              "reply": "I use my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in your way, what your body needs, and how to build changes that fit your real life. The Fertility Solution takes you through 16 modules over 6 months, with videos, worksheets and trackers.\n\nWould you like to hear more about the topics covered or the support included?",
+              "sent": [],
+              "at": "Oct 30 20:46 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            },
+            {
+              "lead": "Not understanding",
+              "reply": "I mean the program isn’t just information to read. We work on practical areas like food, sleep, stress and your environment, then make changes that fit your everyday life. Would it help to hear how the support works, or what the modules cover?",
+              "sent": [],
+              "at": "Oct 30 20:47 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 25
+            },
+            {
+              "lead": "Yss please",
+              "reply": "The modules cover practical areas like food, hydration, movement, sleep, stress, your environment and relationships, with videos, worksheets and trackers to help you put the work into practice. The Fertility Solution runs for 6 months.",
+              "sent": [],
+              "at": "Oct 30 20:48 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 33
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Rephrased when she did not understand, but after \"Yss please\" gave only the modules and \"6 months\" again, no question."
+        },
+        {
+          "id": "l26_1143782334768552",
+          "ig_id": "1143782334768552",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in your way, what your body needs, and how to build supportive changes that fit your real life. It runs for 6 months across 16 modules, with videos, worksheets and trackers. What would you most like support with right now?",
+              "sent": [],
+              "at": "Oct 30 21:01 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 35
+            },
+            {
+              "lead": "Yes",
+              "reply": "What would you most like support with right now: preparing for treatment, understanding your cycles, or something else?",
+              "sent": [],
+              "at": "Oct 30 21:48 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 36
+            },
+            {
+              "lead": "Preparing for treatment",
+              "reply": "Since you’re preparing for treatment, we can focus on practical changes around your daily routine, nourishment, rest and stress, and make them manageable in real life. What kind of treatment are you preparing for?",
+              "sent": [],
+              "at": "Oct 30 21:50 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 36
+            },
+            {
+              "lead": "Iui treatment",
+              "reply": "Since you’re preparing for IUI, I can help you make the preparation feel more joined up and manageable, rather than sorting through advice on your own. What part of getting ready feels least clear right now?",
+              "sent": [],
+              "at": "Oct 30 22:52 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 28
+            },
+            {
+              "lead": "When taking the trigger shot",
+              "reply": "The timing around a trigger shot can feel like a lot to keep track of. I can’t advise on when to take it or change your clinic’s instructions, but I can help with the day-to-day preparation around your IUI. Is the timing itself what you’re unsure about?",
+              "sent": [],
+              "at": "Oct 30 22:57 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 28
+            },
+            {
+              "lead": "Just doing the shot myself be feeling like a lot",
+              "reply": "Doing the trigger shot yourself can feel like a lot, especially when it’s one more thing to manage during treatment. It may help to ask your clinic to talk you through the steps or show you again before you do it.",
+              "sent": [],
+              "at": "Oct 30 22:59 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 31
+            },
+            {
+              "lead": "Ok",
+              "reply": "I’m glad you’ll ask them to walk you through it. You don’t have to figure out every part of treatment alone.",
+              "sent": [],
+              "at": "Oct 30 23:05 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 33
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Preparing for IUI is high intent (manual 2A.17), yet after 6 turns no call was offered. Trigger shot boundary handled without boilerplate."
+        },
+        {
+          "id": "l28_2411326436065766",
+          "ig_id": "2411326436065766",
+          "title": "I do",
+          "turns": [
+            {
+              "lead": "I do",
+              "reply": "What are you hoping I can help you with?",
+              "sent": [],
+              "at": "Oct 30 21:05 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 24
+            }
+          ],
+          "verdict": "pass",
+          "comment": "\"I do\" with no context got one open question."
+        },
+        {
+          "id": "l29_1656397289453789",
+          "ig_id": "1656397289453789",
+          "title": "I’ve been to the obgyn and they tell me no...",
+          "turns": [
+            {
+              "lead": "I’ve been to the obgyn and they tell me not to worry. I have PCOS and hormonal imbalance. I have done research on food for PCOS and healthy diets for conception eating non inflammatory foods. I work out often cardio and weights. I’ve tried different tricks that have helped other women conceive but nothing has helped.",
+              "reply": "It’s frustrating to put so much effort into food, exercise and all the advice you’ve found, and still not have answers. With PCOS, doing more of the same tips isn’t always what helps. I work with PCOS through DETOX, NOURISH and FLOW: looking at everyday factors that may be getting in your way, what your body needs, and changes you can realistically sustain.\n\nHas anyone helped you connect all those pieces into one plan, or have you mostly been figuring it out yourself?",
+              "sent": [],
+              "at": "Oct 30 21:06 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 38
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Validates her PCOS effort, explains the method in her terms, one question about whether anyone has connected the pieces."
+        },
+        {
+          "id": "l30_2604259676744014",
+          "ig_id": "2604259676744014",
+          "title": "How can you help",
+          "turns": [
+            {
+              "lead": "How can you help",
+              "reply": "I use my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in your way, what your body needs, and how to build supportive changes that fit your real life. The Fertility Solution takes you through 16 modules over 6 months.",
+              "sent": [],
+              "at": "Oct 30 21:31 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 33
+            }
+          ],
+          "verdict": "partial",
+          "comment": "\"How can you help\" got the stock program paragraph with no question and nothing tied to her."
+        },
+        {
+          "id": "l31_1599032755585097",
+          "ig_id": "1599032755585097",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.\nI want too",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in your way, what your body needs, and how to build supportive changes that fit your real life. It takes you through 16 modules over 6 months, with videos, worksheets and trackers.\n\nWhat would you most like support with right now?",
+              "sent": [],
+              "at": "Oct 30 21:33 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 62
+            },
+            {
+              "lead": "Getting pregnant",
+              "reply": "Since getting pregnant is your goal, the program focuses on practical changes across your everyday life, with support to help you apply them consistently. What feels like the biggest challenge right now?",
+              "sent": [],
+              "at": "Oct 30 23:09 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 29
+            },
+            {
+              "lead": "Losing weight",
+              "reply": "Weight can be one part of the picture, but I wouldn’t assume it’s the key for you or make weight loss the goal without understanding what you need. My approach looks at nourishment, rest, movement and routines in a way that supports your fertility and feels sustainable. Is weight loss something your clinician has specifically recommended, or a goal you’ve set for yourself?",
+              "sent": [],
+              "at": "Oct 30 23:16 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 29
+            }
+          ],
+          "verdict": "partial",
+          "comment": "She named losing weight as her biggest challenge. The reply argues against it and asks whether a clinician recommended it, although Optimize Body Weight is one of the 16 modules."
+        },
+        {
+          "id": "l32_1090993150377411",
+          "ig_id": "1090993150377411",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in your way, what your body needs, and how to build supportive changes that fit your real life. It takes you through 16 modules over 6 months, with videos, worksheets and trackers.\n\nWhat would you most like support with right now?",
+              "sent": [],
+              "at": "Oct 30 21:37 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 36
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l33_3097729373722986",
+          "ig_id": "3097729373722986",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.\nI’d love to learn more about your program.",
+              "reply": "The Fertility Solution is my 6-month program with 16 modules. I use my DETOX, NOURISH and FLOW method to explore everyday factors that may be getting in the way, what your body needs, and how to build supportive changes that fit your life. It includes videos, worksheets and trackers, plus live group sessions and a private community.\n\nAre you looking for support while trying to conceive, or are you already pregnant?",
+              "sent": [],
+              "at": "Oct 30 21:38 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 42
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Duplicate opener merged, explains the program, one useful question (trying to conceive or pregnant)."
+        },
+        {
+          "id": "l34_1336635452873926",
+          "ig_id": "1336635452873926",
+          "title": "Nope",
+          "turns": [
+            {
+              "lead": "Nope\nHow can we do that",
+              "reply": "We can start by looking at the everyday factors that may be getting in your way, what your body needs, and how to build changes that fit your real life. That’s my DETOX, NOURISH and FLOW method, and The Fertility Solution guides you through it over 16 modules and 6 months.",
+              "sent": [],
+              "at": "Oct 30 21:38 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 42
+            }
+          ],
+          "verdict": "partial",
+          "comment": "\"Nope / How can we do that\" got the stock program paragraph with no question. Whatever she was answering was not captured."
+        },
+        {
+          "id": "l35_1137647127911836",
+          "ig_id": "1137647127911836",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.\nI’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in your way, what your body needs, and how to build supportive changes that fit your real life. It takes you through 16 modules over 6 months.\n\nWhat would you most like support with right now?",
+              "sent": [],
+              "at": "Oct 30 22:01 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 34
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l36_29542442045347624",
+          "ig_id": "29542442045347624",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday factors that may be getting in your way, what your body needs, and how to make supportive changes work in your real life. It runs for 6 months and takes you through 16 modules.",
+              "sent": [],
+              "at": "Oct 30 22:04 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 23
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Opener explains the method and the 16 modules but ends with no question or next step, so the conversation has nowhere to go. She did not reply."
+        },
+        {
+          "id": "l37_1019733711157848",
+          "ig_id": "1019733711157848",
+          "title": "Yes i do",
+          "turns": [
+            {
+              "lead": "Yes i do",
+              "reply": "That sounds like a lot to carry on your own. Has anyone helped you with the prep side, or is it just you and Google?",
+              "sent": [],
+              "at": "Oct 30 22:16 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 24
+            },
+            {
+              "lead": "Only me",
+              "reply": "Trying to sort through all the prep on your own can feel overwhelming. What part feels hardest to figure out right now?",
+              "sent": [],
+              "at": "Oct 30 22:17 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 56
+            }
+          ],
+          "verdict": "fail",
+          "comment": "\"Yes i do\" got \"That sounds like a lot to carry on your own\" and a question about prep, context she never gave. Invented her situation."
+        },
+        {
+          "id": "l38_1680581489709850",
+          "ig_id": "1680581489709850",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at lifestyle factors that may be getting in your way, what your body needs, and how to make supportive changes fit your real life. It runs for 6 months and takes you through 16 modules.\n\nWhat kind of support are you hoping for right now?",
+              "sent": [],
+              "at": "Oct 30 22:26 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 34
+            },
+            {
+              "lead": "Getting pregnant",
+              "reply": "I know getting pregnant is what you’re hoping for. The Fertility Solution gives you 16 modules over 6 months, with resources and live group sessions. What would be most helpful to learn about: what’s inside the program, or the support you get while going through it?",
+              "sent": [],
+              "at": "Oct 30 22:27 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 23
+            },
+            {
+              "lead": "Risky pregnancy",
+              "reply": "When you say a risky pregnancy, are you worried about a specific risk in a pregnancy you’re currently experiencing, or hoping to reduce risks before you conceive?",
+              "sent": [],
+              "at": "Oct 30 22:28 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 34
+            },
+            {
+              "lead": "While pregnant had a miscarriage last year",
+              "reply": "I’m so sorry you went through that. A previous miscarriage can make the thought of another pregnancy feel frightening. Are you currently pregnant, or hoping for support before trying again?",
+              "sent": [],
+              "at": "Oct 30 22:30 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            },
+            {
+              "lead": "Trying to get pregnant",
+              "reply": "I’m sorry the miscarriage is part of what you’re carrying as you try again. The Fertility Solution is for women trying to conceive, and we can focus on support that fits your needs after your loss.",
+              "sent": [],
+              "at": "Oct 30 22:32 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 36
+            },
+            {
+              "lead": "I want to try again",
+              "reply": "I remember you want to try again. After your miscarriage last year, it makes sense to want support as you take that step. What feels most important to you right now: getting practical help with the trying-to-conceive side, or having support as you prepare emotionally?",
+              "sent": [],
+              "at": "Oct 30 22:34 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            },
+            {
+              "lead": "Trying to conceive side",
+              "reply": "I can support you with the practical side of trying to conceive, including looking at daily routines, nourishment, rest and stress in a way that fits your life. Since you’ve already been through a miscarriage, what would be most useful to focus on first: understanding your cycle or building a routine for trying again?",
+              "sent": [],
+              "at": "Oct 30 22:35 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 31
+            },
+            {
+              "lead": "Building routine",
+              "reply": "A routine can give you some steadiness while you try again. I’d look at what feels manageable in your real day, rather than adding another set of rigid rules. What part of your day feels hardest to make consistent right now?",
+              "sent": [],
+              "at": "Oct 30 22:37 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 34
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Good clarification on \"risky pregnancy\", but the modules or support menu after \"Getting pregnant\", \"I remember you want to try again\" reads robotic, and 8 turns with a clear fit never reached a call."
+        },
+        {
+          "id": "l39_1425052669843649",
+          "ig_id": "1425052669843649",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at lifestyle obstacles that may be getting in your way, what your body needs, and how to make supportive changes fit your real life. It takes you through 16 modules over 6 months.",
+              "sent": [],
+              "at": "Oct 30 22:45 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 35
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Opener explains the method and the 16 modules but ends with no question or next step, so the conversation has nowhere to go. She did not reply."
+        },
+        {
+          "id": "l40_1444386887652880",
+          "ig_id": "1444386887652880",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My Fertility Solution uses my DETOX, NOURISH and FLOW method. We look at everyday lifestyle factors that may be getting in your way, what your body needs, and how to build supportive routines that fit your life. It’s a 6-month program with 16 modules, videos, worksheets, trackers and live group sessions, with support that varies by level.",
+              "sent": [],
+              "at": "Oct 30 22:48 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 25
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Opener explains the method and the 16 modules but ends with no question or next step, so the conversation has nowhere to go. She did not reply."
+        },
+        {
+          "id": "l41_1286487279122707",
+          "ig_id": "1286487279122707",
+          "title": "Yes I am but how much will that be",
+          "turns": [
+            {
+              "lead": "Yes I am but how much will that be",
+              "reply": "We have a few different options depending on how much support you’d like. The best way to work out which fits your needs is a free call with my team, where we can talk through the options and pricing together. Would you like the booking link?",
+              "sent": [],
+              "at": "Oct 30 22:56 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 25
+            },
+            {
+              "lead": "Yes please",
+              "reply": "I’d like to understand a bit more about what you’re looking for first. What kind of support would help you most right now?",
+              "sent": [],
+              "at": "Oct 30 23:22 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 34
+            }
+          ],
+          "verdict": "fail",
+          "comment": "First price question got the call offer \"Would you like the booking link?\". She said \"Yes please\" and the AI withheld the link and started qualifying."
+        },
+        {
+          "id": "l42_3837326016510343",
+          "ig_id": "3837326016510343",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My method is DETOX, NOURISH and FLOW: we look at lifestyle obstacles that may be getting in your way, what your body needs, and how to build supportive habits that fit your real life. The Fertility Solution takes you through 16 modules over 6 months. What would you most like support with right now?",
+              "sent": [],
+              "at": "Oct 30 22:58 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 32
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l43_1501478671871278",
+          "ig_id": "1501478671871278",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My method is DETOX, NOURISH and FLOW: we look at everyday exposures and habits that may be getting in your way, what your body needs, and how to make supportive changes fit your real life. The Fertility Solution takes you through 16 modules over 6 months.",
+              "sent": [],
+              "at": "Oct 30 23:07 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 27
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Opener explains the method and the 16 modules but ends with no question or next step, so the conversation has nowhere to go. She did not reply."
+        },
+        {
+          "id": "l44_3580667178764855",
+          "ig_id": "3580667178764855",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "The Fertility Solution uses my DETOX, NOURISH and FLOW method: we look at everyday lifestyle factors that may be getting in your way, what your body needs, and how to build supportive routines that fit your real life. It takes you through 16 modules over 6 months, with videos, worksheets and trackers.",
+              "sent": [],
+              "at": "Oct 30 23:20 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 23
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Opener explains the method and the 16 modules but ends with no question or next step, so the conversation has nowhere to go. She did not reply."
+        },
+        {
+          "id": "l45_2042816469712294",
+          "ig_id": "2042816469712294",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.\nHi I would love to know more about your program.",
+              "reply": "The Fertility Solution uses my DETOX, NOURISH and FLOW method. We look at everyday obstacles that may be getting in your way, what your body needs, and how to build supportive routines that work in your real life. It runs for 6 months and includes 16 modules, with videos, worksheets and trackers. What are you hoping to get support with?",
+              "sent": [],
+              "at": "Oct 30 23:21 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 33
+            }
+          ],
+          "verdict": "pass",
+          "comment": "Program opener with DETOX, NOURISH and FLOW, 16 modules over 6 months, ends on one open question. She did not reply."
+        },
+        {
+          "id": "l46_1101999059257357",
+          "ig_id": "1101999059257357",
+          "title": "Never thought about it",
+          "turns": [
+            {
+              "lead": "Never thought about it",
+              "reply": "That’s completely okay. What’s been on your mind about fertility lately?",
+              "sent": [],
+              "at": "Oct 30 23:47 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 25
+            },
+            {
+              "lead": "Aham \nI prefer to think that’s God’s plan for my life. Maybe just the time to feel the consequences of my sins, or he has a purpose with this waiting time. \nThere are many women with PCOS that can conceive without a problem, there are also many that can’t ! \nMaybe isn’t just the time yet?",
+              "reply": "It may simply not be the time yet. And if your faith helps you make sense of the waiting, you can hold onto that without treating this as punishment for your sins. PCOS affects women differently, so other women’s experiences can’t tell us what will happen for you.\n\nAre you hoping for support with PCOS, or are you mainly looking for reassurance right now?",
+              "sent": [],
+              "at": "Oct 30 23:50 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 25
+            },
+            {
+              "lead": "My doctor prescribed me with Metformin to help with Hormone imbalance, she is trying to manage the PCOS before move on to another attempt. \nSo I don’t know",
+              "reply": "It sounds like your doctor is taking things step by step with your PCOS before the next attempt. It’s okay not to know what you need right now. I can support you with the everyday side of PCOS too, like making food, rest and routines feel more manageable alongside what you’re already doing.",
+              "sent": [],
+              "at": "Oct 30 23:52 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            },
+            {
+              "lead": "That would be awesome",
+              "reply": "I’m glad that sounds helpful. With PCOS, I look at your individual needs and daily routines, then help you find changes that feel manageable and sustainable. What feels hardest to manage day to day right now?",
+              "sent": [],
+              "at": "Oct 30 23:54 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 26
+            },
+            {
+              "lead": "Getting to cook ! Due to anxiety and deep sadness, can’t sleep well! It’s Hard having to take pills everyday, yeah",
+              "reply": "That sounds like a lot to carry, especially when anxiety and sadness are affecting your sleep and making cooking feel hard. We can start with making daily life feel more manageable, without adding another list of demands. What feels most difficult right now: finding easy ways to eat, or getting through the day with the anxiety and sadness?",
+              "sent": [],
+              "at": "Oct 30 23:56 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 37
+            },
+            {
+              "lead": "Finding easy ways to eat, I might have healthier options but wanting to eat different things",
+              "reply": "It’s understandable to want variety, especially when cooking already feels hard. We can work on making food feel easier and more enjoyable, rather than turning it into another set of rules. What kinds of meals or flavors do you find yourself wanting lately?",
+              "sent": [],
+              "at": "Oct 31 00:00 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 34
+            }
+          ],
+          "verdict": "partial",
+          "comment": "Handled faith, sins and PCOS with care and without preaching. She said support \"would be awesome\" and the AI kept asking food questions instead of moving toward a call."
+        },
+        {
+          "id": "l47_1602763494330441",
+          "ig_id": "1602763494330441",
+          "title": "I’d love to learn more about your program.",
+          "turns": [
+            {
+              "lead": "I’d love to learn more about your program.",
+              "reply": "My method is DETOX, NOURISH and FLOW: we look at everyday factors that may be getting in the way, what your body needs, and how to build supportive routines that fit your life. The Fertility Solution takes you through 16 modules over 6 months, with resources and support to help you put the work into practice.",
+              "sent": [],
+              "at": "Oct 30 23:59 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 22
+            },
+            {
+              "lead": "Okay great",
+              "reply": "What would you most like support with right now: preparing to conceive, or navigating fertility treatment?",
+              "sent": [],
+              "at": "Oct 31 00:00 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 38
+            },
+            {
+              "lead": "Preparing to conceive",
+              "reply": "Since preparing to conceive is your focus, the program can help you work through the different areas of daily life that may support fertility, with guidance to apply them in a way that fits you. What feels most important to get help with as you prepare?",
+              "sent": [],
+              "at": "Oct 31 00:02 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 34
+            },
+            {
+              "lead": "Lose weight, deal with my pmos",
+              "reply": "With PCOS, I wouldn’t make weight loss the whole focus. We can look at what may be affecting your blood sugar and cycles, what your body needs, and build routines that feel manageable for you. Which feels harder right now: making changes to your eating, or keeping them up day to day?",
+              "sent": [],
+              "at": "Oct 31 00:03 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            },
+            {
+              "lead": "Keeping them up day to day",
+              "reply": "Keeping changes going day to day is often the hardest part, especially when advice feels like one more thing to manage. That’s where the ongoing support in my program can help you apply changes in a way that fits your routine. What tends to get in the way most: time, energy, or something else?",
+              "sent": [],
+              "at": "Oct 31 00:04 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 31
+            },
+            {
+              "lead": "Energy",
+              "reply": "Low energy can make even small changes feel like too much. We can focus on routines that fit the energy you have, rather than expecting you to overhaul everything at once. Is low energy affecting your cooking most, or other parts of your day too?",
+              "sent": [],
+              "at": "Oct 31 00:06 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 32
+            },
+            {
+              "lead": "Yes low energy",
+              "reply": "Low energy can make it hard to keep up with changes, so the first step is making them manageable rather than adding more to your plate. Is it mainly making cooking difficult, or affecting other parts of your day too?",
+              "sent": [],
+              "at": "Oct 31 00:08 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 30
+            },
+            {
+              "lead": "Yes making cooking difficult",
+              "reply": "When energy is low, cooking can feel like too much. We can make food changes practical around your actual routine, rather than expecting you to cook from scratch every day. Is it the planning, the cooking itself, or both that takes the most out of you?",
+              "sent": [],
+              "at": "Oct 31 00:11 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 28
+            },
+            {
+              "lead": "The cooking itself",
+              "reply": "Then the cooking is the main hurdle, not a lack of effort. I’d focus on making food support practical without relying on cooking from scratch every day. Are simple meals or batch cooking more realistic for you?",
+              "sent": [],
+              "at": "Oct 31 00:13 UTC",
+              "model": "gpt-6-luna",
+              "latency_s": 28
+            }
+          ],
+          "verdict": "fail",
+          "comment": "Asked whether low energy affects cooking or other parts of the day twice in a row, then kept drilling (energy, cooking, planning, batch cooking) with a clearly fit PCOS lead. Never offered a call."
+        }
+      ]
+    }
+  ]
+}

@@ -147,8 +147,8 @@ messages ago, followed by "ok thanks" or a new question, sets nothing now.
 - `doubts_value`: she doubts what working with Sonia would add. "That sounds vague", "what would
   you actually do with me?", "how is that different from reading stuff online?", "how do I know
   it's worth it?".
-- `ambiguous_answer`: her reply doesn't answer Sonia's last question: "yes", "no", "ok" or "maybe"
-  to a choice ("regular, or do they vary?") or to an open question ("what feels hardest?").
+- `ambiguous_answer`: her reply doesn't answer Sonia's last question: "yes", "no", "ok", "maybe" or
+  "I don't understand" to a choice ("regular, or do they vary?") or to an open question ("what feels hardest?").
 - `answered_link_age`: Sonia's last message asked her age before sending the booking link, and
   this message gives it.
 
@@ -179,8 +179,9 @@ How the levels differ is not a price question, nor is "that's a lot" before she 
 whole conversation, so it is never explained again. One line each, in plain words: "what AMH
 measures and doesn't", "the 3 levels and what each includes", "DETOX, NOURISH and FLOW", "private
 coaching can be in Spanish, groups and materials are in English", "the price range", "the free
-masterclass". Only what Sonia actually explained, not what she mentioned in passing. An empty list
-when there is nothing.
+masterclass". Only what Sonia actually explained, not what she mentioned in passing. Each question
+Sonia asked about her counts too: "asked how long she has been trying". An empty list when there is
+nothing.
 
 ## STRUCTURAL
 

@@ -400,7 +400,7 @@ def _booking_blocked(state: dict, read: dict) -> str:
 
     known = sum(
         1 for key in ("age", "time_trying", "conceiving_mode", "ivf_history", "iui_history",
-                      "pregnancy_priority", "partner_status", "goal_stated")
+                      "miscarriage_history", "pregnancy_priority", "partner_status", "goal_stated")
         if _stated(slots.get(key))
     ) + (1 if slots.get("diagnoses") else 0) + (1 if slots.get("already_tried") else 0)
     if known < 3:
@@ -607,6 +607,6 @@ def render(state: dict) -> str:
         return about_her
     return (
         about_her + "\n\n# WHAT I HAVE ALREADY TOLD HER\n\n"
-        "Never explain any of this again. Build on it, or answer only the part she is asking about "
-        "now.\n\n" + "\n".join(f"- {item}" for item in told)
+        "Never explain or ask any of this again. Build on it, or answer only the part she is "
+        "asking about now.\n\n" + "\n".join(f"- {item}" for item in told)
     )
